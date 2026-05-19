@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 import {
   Sheet,
@@ -59,6 +60,11 @@ function getConfidenceColor(confidence: EvidenceCard["confidence"]) {
 
 export function LeadDetailDrawer({ isOpen, onClose, lead, onStatusChange }: LeadDetailDrawerProps) {
   const [showPersonalizationNotes, setShowPersonalizationNotes] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   // Use mock detail data for the selected lead
   const detail: LeadDetail = lead ? { ...mockLeadDetail, ...lead } : mockLeadDetail;
@@ -71,7 +77,7 @@ export function LeadDetailDrawer({ isOpen, onClose, lead, onStatusChange }: Lead
   };
 
   return (
-   <Sheet
+<Sheet
   open={isOpen}
   onOpenChange={(open) => {
     if (!open) onClose();
