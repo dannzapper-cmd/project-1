@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { motion } from "framer-motion"
 import { ExternalLink } from "lucide-react"
 
@@ -40,13 +41,15 @@ export function FinalCTASection() {
           transition={{ delay: 0.2 }}
           className="flex flex-col sm:flex-row gap-3 justify-center"
         >
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="px-6 py-2.5 rounded-md bg-[--accent-primary] text-white font-medium hover:brightness-110 transition-all shadow-[0_0_20px_rgba(99,102,241,0.3)]"
-          >
-            Run Sample Demo
-          </motion.button>
+          <Link href="/demo">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="px-6 py-2.5 rounded-md bg-[--accent-primary] text-white font-medium hover:brightness-110 transition-all shadow-[0_0_20px_rgba(99,102,241,0.3)]"
+            >
+              Run Sample Demo
+            </motion.button>
+          </Link>
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
