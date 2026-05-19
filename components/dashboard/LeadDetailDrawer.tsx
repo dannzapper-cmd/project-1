@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 import {
   Sheet,
@@ -59,6 +60,11 @@ function getConfidenceColor(confidence: EvidenceCard["confidence"]) {
 
 export function LeadDetailDrawer({ isOpen, onClose, lead, onStatusChange }: LeadDetailDrawerProps) {
   const [showPersonalizationNotes, setShowPersonalizationNotes] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   // Use mock detail data for the selected lead
   const detail: LeadDetail = lead ? { ...mockLeadDetail, ...lead } : mockLeadDetail;
@@ -72,6 +78,18 @@ export function LeadDetailDrawer({ isOpen, onClose, lead, onStatusChange }: Lead
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
+      {mounted &&
+        isOpen &&
+        createPortal(
+          <button
+            type="button"
+            aria-label="Close lead details"
+            tabIndex={-1}
+            onClick={onClose}
+            className="fixed inset-0 z-[49] bg-black/60 transition-opacity duration-200 animate-in fade-in-0"
+          />,
+          document.body,
+        )}
       <SheetContent className="w-[620px] sm:max-w-[620px] bg-[--bg-base] border-l border-[--border-default] p-0 flex flex-col">
         {/* Sticky Header */}
         <div className="bg-[--bg-elevated] border-b border-[--border-default] px-6 py-4 sticky top-0 z-10">
