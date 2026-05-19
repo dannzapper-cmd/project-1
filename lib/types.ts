@@ -1,0 +1,82 @@
+export interface Lead {
+  id: string;
+  company: string;
+  website: string;
+  industry: string;
+  country: string;
+  employees: string;
+  contact_name: string;
+  contact_role: string;
+  fit_score: number;
+  priority: 'High' | 'Medium' | 'Low';
+  qa_score: number;
+  status: 'Pending Review' | 'Approved' | 'Rejected' | 'Needs Edit';
+  est_cost: string;
+  email_subject: string;
+  run_mode: 'Live' | 'Replay';
+}
+
+export interface AgentStatus {
+  name: string;
+  status: 'success' | 'warning' | 'failed' | 'running' | 'pending';
+  success_rate: string;
+  avg_latency: string;
+}
+
+export interface RunMetrics {
+  total_processed: number;
+  high_fit_leads: number;
+  avg_qa_score: number;
+  total_cost: string;
+  run_timestamp: string;
+  model_used: string;
+  run_mode: 'Live' | 'Replay';
+}
+
+export interface QAScores {
+  personalization: number;
+  evidence_coverage: number;
+  cta_quality: number;
+  tone_match: number;
+  hallucination_risk: 'Low' | 'Medium' | 'High';
+  recommendation: 'Recommended for approval' | 'Review carefully' | 'Regenerate suggested';
+}
+
+export interface TraceEntry {
+  agent: string;
+  status: 'success' | 'warning' | 'failed';
+  input_summary: string;
+  output_summary: string;
+  latency: string;
+  tokens: number;
+  prompt_version: string;
+}
+
+export interface LeadDetail extends Lead {
+  company_summary: string;
+  opportunity_signals: string[];
+  evidence_cards: EvidenceCard[];
+  fit_reasons: string[];
+  fit_risks: string[];
+  pain_hypothesis: string;
+  pain_confidence: 'High' | 'Medium' | 'Low';
+  sales_angle: string;
+  core_message: string;
+  likely_objection: string;
+  email_body: string;
+  personalization_notes: string[];
+  qa_scores: QAScores;
+  est_total_latency: string;
+  model_used: string;
+  agent_steps: number;
+  est_tokens: number;
+  trace: TraceEntry[];
+}
+
+export interface EvidenceCard {
+  id: string;
+  headline: string;
+  source_type: 'Knowledge Base' | 'Public Data' | 'Demo Context';
+  description: string;
+  confidence: 'High' | 'Medium' | 'Low';
+}
