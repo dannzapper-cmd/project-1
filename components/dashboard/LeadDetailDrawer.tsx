@@ -71,8 +71,28 @@ export function LeadDetailDrawer({ isOpen, onClose, lead, onStatusChange }: Lead
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-[620px] sm:max-w-[620px] bg-[--bg-base] border-l border-[--border-default] p-0 flex flex-col">
+   <Sheet
+  open={isOpen}
+  onOpenChange={(open) => {
+    if (!open) onClose();
+  }}
+>
+  <SheetContent
+    side="right"
+    className="
+      z-[100]
+      w-full
+      sm:max-w-[620px]
+      border-l
+      border-[--border-default]
+      !bg-[#18181f]
+      p-0
+      text-[--text-primary]
+      shadow-[-12px_0_50px_rgba(0,0,0,0.85)]
+      flex
+      flex-col
+    "
+  >
         {/* Sticky Header */}
         <div className="bg-[--bg-elevated] border-b border-[--border-default] px-6 py-4 sticky top-0 z-10">
           <div className="flex items-start justify-between">
