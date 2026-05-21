@@ -34,6 +34,15 @@ def preview_intake(request: IntakePreviewRequest) -> IntakePreviewResponse:
                     f"'content' is required when input_type is '{request.input_type}'."
                 ),
             )
+        if request.records is not None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=(
+                    f"'records' must not be provided when input_type is "
+                    f"'{request.input_type}'. It is only accepted for "
+                    f"input_type='records_json'."
+                ),
+            )
 
     if request.input_type == "records_json":
         if request.records is None:

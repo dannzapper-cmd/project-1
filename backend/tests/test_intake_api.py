@@ -51,3 +51,36 @@ def test_16_get_health_still_returns_200() -> None:
         response = client.get("/health")
 
     assert response.status_code == 200
+
+
+def test_17_records_field_rejected_for_non_records_json_input_types() -> None:
+    """`records` must only be accepted for `input_type='records_json'`.
+
+    For csv_text / pasted_table / raw_text, providing `records` (even
+    alongside valid `content`) must return HTTP 422.
+    """
+
+    payloads = [
+        {
+            "input_type": "csv_text",
+            "content": "company_name\nAcme Corp\n",
+            "records": [{"company_name": "Other"}],
+        },
+        {
+            "input_type": "pasted_table",
+            "content": "company_name\tindustry\nAcme\tSaaS\n",
+            "records": [{"company_name": "Other"}],
+        },
+        {
+            "input_type": "raw_text",
+            "content": "Company: Acme Corp\n",
+            "records": [{"company_name": "Other"}],
+        },
+    ]
+    with TestClient(app) as client:
+        for payload in payloads:
+            response = client.post("/api/intake/preview", json=payload)
+            assert response.status_code == 422, (
+                f"Expected 422 for input_type={payload['input_type']} "
+                f"with records provided, got {response.status_code}: {response.text}"
+            )

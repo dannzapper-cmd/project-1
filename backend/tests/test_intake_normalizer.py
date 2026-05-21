@@ -267,6 +267,41 @@ def test_11_missing_lead_id_generates_preview_001() -> None:
     assert info_issues[0].severity == "info"
 
 
+def test_11b_missing_lead_id_with_generate_false_uses_empty_string() -> None:
+    """Documents the Fase 4.3A compatibility behavior.
+
+    ``LeadIn.lead_id`` is a required ``str`` (we are explicitly forbidden
+    from modifying ``backend/app/schemas/lead.py`` in this phase). The
+    spec states that when ``generate_missing_lead_ids=False`` and the
+    lead has no id, the row must still be produced and must not error on
+    that alone. The current implementation therefore surfaces the
+    "missing id" as the empty string, keeping ``LeadIn`` valid. No
+    ``generated_lead_id`` info issue is emitted in this case.
+    """
+
+    records = [
+        {
+            "company_name": "Acme Corp",
+            "industry": "SaaS",
+            "website": "acme.com",
+        }
+    ]
+    response = build_preview(
+        IntakePreviewRequest(
+            input_type="records_json",
+            records=records,
+            options=IntakeOptions(generate_missing_lead_ids=False),
+        )
+    )
+
+    row = response.normalized_leads[0]
+    assert row.lead is not None
+    assert row.lead.lead_id == ""
+    assert _issues_with_code(row, "generated_lead_id") == []
+    assert _issues_with_code(row, "missing_company_name") == []
+    assert response.failed_rows == 0
+
+
 def test_12_unknown_column_appears_in_unmapped_columns() -> None:
     """Test 12: unknown column "Budget" appears in unmapped_columns."""
 
