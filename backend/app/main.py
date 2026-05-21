@@ -12,6 +12,7 @@ from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routes import demo as demo_routes
 from app.api.routes import health as health_routes
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
@@ -54,6 +55,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(health_routes.router)
+    app.include_router(demo_routes.router)
 
     return app
 
