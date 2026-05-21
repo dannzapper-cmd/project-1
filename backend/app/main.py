@@ -9,6 +9,9 @@ Wires the LeadForge backend together:
   Fase 4.1).
 - Read-only demo data endpoints under `/api/demo/*` (added in Fase 4.2),
   exposing the static files shipped under `data/demo/`.
+- Smart lead intake preview at `POST /api/intake/preview` (added in
+  Fase 4.3A): a preview-only normalization layer with no DB writes,
+  agents, or LLM calls.
 
 Out of scope at this layer (and intentionally NOT implemented yet): agents,
 LangGraph orchestration, LLM/model calls, RAG, vector stores, and any real
@@ -25,6 +28,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import demo as demo_routes
 from app.api.routes import health as health_routes
+from app.api.routes import intake as intake_routes
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
 from app.db.init_db import init_db
@@ -52,9 +56,11 @@ def create_app() -> FastAPI:
         version=settings.app_version,
         description=(
             "Backend for LeadForge-Agentic Core. Exposes a health probe "
-            "(`/health`) and read-only demo data endpoints (`/api/demo/*`) "
-            "served from the static files under `data/demo/`. "
-            "No agents, no LLM, no RAG, no real lead processing yet."
+            "(`/health`), read-only demo data endpoints (`/api/demo/*`) "
+            "served from the static files under `data/demo/`, and a "
+            "smart lead intake preview at `POST /api/intake/preview` "
+            "(Fase 4.3A). No agents, no LLM, no RAG, no real lead "
+            "processing yet."
         ),
         lifespan=lifespan,
     )
@@ -69,6 +75,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health_routes.router)
     app.include_router(demo_routes.router)
+    app.include_router(intake_routes.router)
 
     return app
 
