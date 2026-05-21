@@ -1,8 +1,22 @@
 """Application configuration loaded from environment variables.
 
-Only Fase 4.1 settings are active here. Future-phase variables (model
-providers, cost caps, feature flags) are intentionally NOT defined yet to
-keep the surface area small and obvious.
+Active settings groups:
+
+- App identity / runtime: `app_name`, `app_env`, `app_version`, `app_host`,
+  `app_port`, `log_level`.
+- Persistence: `database_url` (SQLite by default).
+- HTTP: `cors_origins`.
+- Filesystem anchors (added in Fase 4.2): `repo_root` plus the derived
+  `demo_data_dir`, `demo_leads_csv_path`, and `demo_company_research_path`
+  properties used by the demo data loader / `/api/demo/*` endpoints.
+- Future use: `knowledge_dir` is exposed as a derived path so callers can
+  reference it consistently, but it is NOT consumed by any code in Fase 4.2.
+  Knowledge-base loading is reserved for a later phase.
+
+Future-phase variables (model providers, cost caps, feature flags, vector
+DB, etc.) are intentionally NOT defined here yet to keep the surface area
+small and obvious. They will be introduced when the matching feature is
+implemented.
 """
 
 from __future__ import annotations
