@@ -112,7 +112,7 @@ def test_raw_text_with_all_labels_present_maps_correctly() -> None:
                 "Contact: Jane Doe\n"
                 "Role: VP Marketing\n"
                 "Notes: Expansion signal\n"
-                "Lead ID: lead_123"
+                "Lead_ID: lead_123"
             ),
         )
     )
