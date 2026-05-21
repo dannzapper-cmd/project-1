@@ -15,12 +15,14 @@ from fastapi import APIRouter, HTTPException, status
 from app.core.logging import get_logger
 from app.schemas.demo import DemoCompanyResearch, DemoSummary
 from app.schemas.lead import LeadIn
+from app.schemas.run import ReplayRunResponse
 from app.services.demo_data_loader import (
     DemoDataError,
     build_demo_summary,
     load_demo_company_research,
     load_demo_leads,
 )
+from app.services.run_service import build_replay_run
 
 router = APIRouter(prefix="/api/demo", tags=["demo"])
 logger = get_logger(__name__)
@@ -95,3 +97,31 @@ def get_demo_summary() -> DemoSummary:
     except DemoDataError as exc:
         _raise_500(exc)
         raise  # pragma: no cover
+
+
+@router.get("/run", response_model=ReplayRunResponse)
+def get_demo_run(include_leads: bool = True) -> ReplayRunResponse:
+    """Return a deterministic replay run built from the demo dataset.
+
+    This endpoint reuses the Phase 4.2 demo loaders. It does not call
+    any model, agent, or external service, and it does not write to the
+    database. The ``run_id`` is fixed so repeated calls produce a
+    stable, testable response.
+    """
+
+    try:
+        leads = load_demo_leads()
+        research = load_demo_company_research()
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+    lead_ids = {lead.lead_id for lead in leads}
+    research_ids = {record.lead_id for record in research}
+    leads_with_company_research = len(lead_ids & research_ids)
+
+    return build_replay_run(
+        leads=leads,
+        leads_with_company_research=leads_with_company_research,
+        include_leads=include_leads,
+    )

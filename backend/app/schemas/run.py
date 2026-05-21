@@ -1,10 +1,29 @@
-"""Run / agent metrics schemas."""
+"""Run / agent metrics schemas.
+
+Phase 4.4 appends two replay-run models (``RunSummary`` and
+``ReplayRunResponse``) used by ``GET /api/demo/run``. The replay-run
+contract intentionally uses lowercase string literals (``"replay"``,
+``"completed"``, ``"demo"``) instead of the existing ``RunMode`` enum so
+the replay-only response object stays self-contained and does not imply
+that real agent execution occurred. The existing ``RunMode`` enum is
+preserved for future real-run contracts.
+"""
 
 from __future__ import annotations
+
+from datetime import datetime
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.common import AgentRunStatus, RunMode
+
+if TYPE_CHECKING:  # pragma: no cover — circular-import-safe type hint
+    # ``app.schemas.lead`` imports ``TraceEntry`` from this module, so
+    # importing ``LeadIn`` at runtime here would create a cycle. The
+    # forward reference is resolved by ``model_rebuild()`` from
+    # ``app.services.run_service`` once both modules are loaded.
+    from app.schemas.lead import LeadIn
 
 
 class AgentStatus(BaseModel):
@@ -38,3 +57,53 @@ class TraceEntry(BaseModel):
     latency: str
     tokens: int = Field(..., ge=0)
     prompt_version: str
+
+
+# --------------------------------------------------------------------------- #
+# Phase 4.4 — Replay run foundation                                            #
+# --------------------------------------------------------------------------- #
+class RunSummary(BaseModel):
+    """Aggregate facts about the leads contained in a replay run.
+
+    All counts are non-negative. ``industries_represented`` and
+    ``countries_represented`` are sorted lists of unique non-``None``
+    values (empty list when no leads provide that field).
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    industries_represented: list[str] = Field(default_factory=list)
+    countries_represented: list[str] = Field(default_factory=list)
+    leads_with_company_research: int = Field(..., ge=0)
+    leads_without_company_research: int = Field(..., ge=0)
+    leads_with_contact: int = Field(..., ge=0)
+    leads_without_contact: int = Field(..., ge=0)
+
+
+class ReplayRunResponse(BaseModel):
+    """Response body for ``GET /api/demo/run``.
+
+    This is a *replay* run built from the static demo dataset. It does
+    NOT represent execution of real agents or model calls and therefore
+    intentionally omits fields such as ``fit_scores``, ``email_drafts``,
+    ``reasoning_traces``, or ``model_responses``. Those belong to future
+    phases that introduce real run execution.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    run_id: str
+    run_mode: Literal["replay"]
+    status: Literal["completed"]
+    data_source: Literal["demo"]
+    source_name: str
+    generated_at: datetime
+    total_leads: int = Field(..., ge=0)
+    valid_leads: int = Field(..., ge=0)
+    failed_leads: int = Field(..., ge=0)
+    rows_with_warnings: int = Field(..., ge=0)
+    model_calls: int = Field(..., ge=0)
+    estimated_cost: str
+    warnings: list[str] = Field(default_factory=list)
+    summary: RunSummary
+    leads: list[LeadIn] | None = None
