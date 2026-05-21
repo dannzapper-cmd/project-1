@@ -1,0 +1,585 @@
+[
+  {
+    "lead_id": "lead_001",
+    "company_name": "Veltrix Systems",
+    "research_status": "complete",
+    "company_summary": "Veltrix Systems is a B2B SaaS company operating in the United States with approximately 140 employees. The company recently closed a Series B funding round and is in an active growth phase, with documented focus on expanding into the mid-market segment.",
+    "business_model": "Subscription-based B2B SaaS targeting mid-market and enterprise customers. Revenue is driven by an outbound and marketing-sourced pipeline managed through HubSpot.",
+    "target_customers": [
+      "Mid-market B2B companies in North America",
+      "Operations and revenue leaders at growing SaaS firms",
+      "Enterprise accounts entering early evaluation cycles"
+    ],
+    "opportunity_signals": [
+      {
+        "signal": "Recently closed Series B funding round",
+        "why_it_matters": "Series B typically triggers aggressive go-to-market expansion and infrastructure investment, including the systems and processes that support a growing sales team.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "signal": "Actively hiring three SDR roles simultaneously",
+        "why_it_matters": "Hiring multiple SDRs at once creates immediate research and qualification load. Manual research per rep does not scale linearly, and qualification consistency degrades as the team grows.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "signal": "Expanding into a new mid-market segment",
+        "why_it_matters": "Entering a new segment requires updated ICP definitions and prioritization logic. Teams entering new segments often discover that their existing qualification approach does not transfer cleanly.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "signal": "Job postings explicitly reference pipeline quality concerns",
+        "why_it_matters": "When pipeline quality is mentioned in role descriptions, the company has already articulated the pain internally. This signals readiness for solutions that address it directly.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "signal": "HubSpot CRM in use",
+        "why_it_matters": "Indicates an established sales operations maturity and a defined pipeline workflow. LeadForge can be positioned as the research and qualification layer before CRM entry.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "medium"
+      }
+    ],
+    "pain_hypotheses": [
+      {
+        "pain": "Research and qualification bottleneck as the SDR team scales",
+        "reasoning": "Adding three SDRs in parallel multiplies manual research demand faster than onboarding can produce consistent qualification quality. This matches the scaling pattern documented for SaaS at Series B stage.",
+        "confidence": "high"
+      },
+      {
+        "pain": "Qualification consistency across a growing team",
+        "reasoning": "With multiple new reps entering a defined mid-market segment, scoring drift between reps becomes a structural risk to pipeline quality.",
+        "confidence": "high"
+      },
+      {
+        "pain": "Generic outreach reducing reply rates at higher volume",
+        "reasoning": "More SDRs typically mean more outbound volume, and volume without research-grounded personalization tends to suppress reply rates over time.",
+        "confidence": "medium"
+      }
+    ],
+    "evidence_cards": [
+      {
+        "title": "Series B growth stage",
+        "description": "Veltrix Systems is in the post-Series B expansion phase characterized by rapid headcount growth, new segment entry, and increased investment in sales operations infrastructure.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "title": "Active SDR team expansion",
+        "description": "Three concurrent SDR job postings indicate immediate growth pressure on the research and qualification function.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "title": "Articulated pipeline quality concern",
+        "description": "Internal language in job descriptions surfaces pipeline quality as a recognized operational priority.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      }
+    ],
+    "information_risks": [
+      "The specific budget owner for sales operations tools is not confirmed; the VP Revenue Operations is a strong influencer but the final decision may involve the CRO or CFO.",
+      "Existing tooling stack beyond HubSpot is not documented; potential overlap with other prospecting or enrichment tools is unknown."
+    ],
+    "recommended_research_summary": "Veltrix Systems is a strong-fit lead at a high-growth Series B stage with multiple converging signals: active SDR hiring, mid-market expansion, and articulated pipeline quality concerns. The contact is a senior RevOps decision-maker. Recommended primary sales angle is Angle A (scaling outbound without adding manual research burden) supported by Angle C (consistent qualification across the team). Email evidence level: high. Personalization can reference Series B stage and SDR hiring directly."
+  },
+  {
+    "lead_id": "lead_002",
+    "company_name": "Clearpath Security",
+    "research_status": "complete",
+    "company_summary": "Clearpath Security is a UK-based cybersecurity company with approximately 210 employees. The company is launching a new enterprise product line in Q3 and is actively expanding into the North American market with a newly recruited BDR team.",
+    "business_model": "B2B cybersecurity solution provider serving mid-market and enterprise customers, with a sales motion that combines outbound prospecting and partner-driven distribution.",
+    "target_customers": [
+      "Mid-market and enterprise IT and security teams",
+      "Regulated industries requiring compliance-grade security posture",
+      "North American enterprises entering or expanding security infrastructure investments"
+    ],
+    "opportunity_signals": [
+      {
+        "signal": "New enterprise product line launching in Q3",
+        "why_it_matters": "A new product line creates a new ICP that the existing sales team has not yet calibrated against. Qualification logic and outreach messaging both need to be adapted for the new buyer profile.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "signal": "Active recruitment of dedicated BDR team",
+        "why_it_matters": "Building a new BDR function from the ground up means establishing research, qualification, and outreach processes during a high-pressure growth window.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "signal": "Entering North American market for the first time",
+        "why_it_matters": "Geographic expansion into an unfamiliar market amplifies the cost of poor account prioritization. Misqualified targets in a new geography burn rep time disproportionately.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "signal": "Multiple open sales roles posted simultaneously",
+        "why_it_matters": "Parallel sales hiring activity indicates a coordinated growth phase rather than backfill, suggesting structural investment in the outbound function.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      }
+    ],
+    "pain_hypotheses": [
+      {
+        "pain": "Lack of standardized qualification for a new product ICP",
+        "reasoning": "Launching an enterprise line means the existing qualification rubric may not apply. Without a structured approach, the BDR team will score the new ICP inconsistently.",
+        "confidence": "high"
+      },
+      {
+        "pain": "High cost of misqualified accounts in a new geography",
+        "reasoning": "Entering North America without local market intuition increases the value of systematic prioritization before reps invest time in outreach.",
+        "confidence": "high"
+      },
+      {
+        "pain": "Generic outreach risk in a skeptical technical buyer market",
+        "reasoning": "Cybersecurity buyers are particularly resistant to generic vendor outreach. New BDR hires building first messages from scratch will struggle to land specific, credible openings.",
+        "confidence": "medium"
+      }
+    ],
+    "evidence_cards": [
+      {
+        "title": "Coordinated North American expansion",
+        "description": "The combination of a new product line, dedicated BDR team formation, and geographic expansion into North America points to a fully resourced market entry effort.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "title": "New ICP under development",
+        "description": "The Q3 enterprise product launch creates a target customer profile that the team has not previously qualified against at scale.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      }
+    ],
+    "information_risks": [
+      "The specific North American market segment being targeted is not documented; vertical focus may further refine the relevance of the outreach angle.",
+      "Existing relationship with research or qualification tools is unknown; possible overlap with security-specific prospecting platforms."
+    ],
+    "recommended_research_summary": "Clearpath Security is a strong-fit lead at a coordinated expansion stage. The combination of new product, new geography, and new BDR team makes qualification consistency a high-leverage operational concern. Recommended primary angle is Angle F (research layer for high-value, long-cycle deals) given the cybersecurity buyer profile, supported by Angle C (consistent qualification). The contact is Head of Sales, a senior decision-maker. Email evidence level: high. Reference the product launch and BDR team build as anchors."
+  },
+  {
+    "lead_id": "lead_003",
+    "company_name": "Havenlog GmbH",
+    "research_status": "complete",
+    "company_summary": "Havenlog GmbH is a German logistics company with approximately 320 employees. The company is in an active expansion phase, growing its freight network into Southern Europe with multiple open sales roles and a Salesforce CRM implementation in place.",
+    "business_model": "B2B logistics services provider focused on freight and supply chain operations across European routes. Revenue is driven by long-cycle account relationships and territory-based sales coverage.",
+    "target_customers": [
+      "Manufacturers and distributors with cross-border freight needs",
+      "E-commerce operators requiring fulfillment partnerships",
+      "Industrial clients with multi-region supply chain operations"
+    ],
+    "opportunity_signals": [
+      {
+        "signal": "Expansion into Southern European freight routes",
+        "why_it_matters": "Entering new regions in logistics requires building account intelligence in unfamiliar markets, which traditionally relies on heavy manual research before any outreach.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "signal": "Three open sales roles posted simultaneously",
+        "why_it_matters": "Parallel sales hiring indicates planned territory growth and an immediate need for consistent qualification and onboarding processes for new reps.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "signal": "Salesforce CRM implemented in the past year",
+        "why_it_matters": "Recent CRM adoption signals a sales operations maturity push. The team is likely actively defining the processes that surround CRM usage, making them receptive to upstream qualification layers.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "signal": "Company blog publicly mentions outbound prospecting challenges",
+        "why_it_matters": "Public articulation of a pain point indicates internal awareness and reduces the work of explaining the problem in outreach.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "medium"
+      }
+    ],
+    "pain_hypotheses": [
+      {
+        "pain": "Manual research burden when entering unfamiliar geographies",
+        "reasoning": "Logistics expansion requires deep account context in markets where reps do not have established relationships, multiplying the research time per qualified opportunity.",
+        "confidence": "high"
+      },
+      {
+        "pain": "Qualification inconsistency in a newly formed CRM workflow",
+        "reasoning": "A team building processes around a recently implemented CRM is still calibrating how leads should be scored and documented before entry.",
+        "confidence": "high"
+      },
+      {
+        "pain": "Generic outreach in a relationship-driven sales motion",
+        "reasoning": "Logistics buyers value specificity and partnership context; generic vendor outreach typically underperforms in this industry.",
+        "confidence": "medium"
+      }
+    ],
+    "evidence_cards": [
+      {
+        "title": "Southern European market expansion",
+        "description": "Havenlog GmbH is extending its freight operations into Southern Europe, requiring new account targeting and research processes.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "title": "Recent Salesforce implementation",
+        "description": "Implementation of Salesforce within the past year signals an active operations modernization effort with room for upstream tooling.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "title": "Publicly articulated outbound challenge",
+        "description": "Blog content references the difficulty of consistent outbound prospecting at scale, indicating internal recognition of the problem.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "medium"
+      }
+    ],
+    "information_risks": [
+      "The decision-making authority of the Revenue Operations Manager is not fully confirmed; budget approval may sit with the VP of Sales or Managing Director.",
+      "Existing third-party research or enrichment tools are not documented and may overlap with parts of LeadForge's value proposition."
+    ],
+    "recommended_research_summary": "Havenlog GmbH is a strong-fit lead with multiple operational signals aligned to LeadForge's value proposition. The contact is a Revenue Operations Manager, an ideal influencer and likely champion. Recommended primary angle is Angle B (pipeline quality before CRM entry), supported by Angle A (scaling outbound without manual research burden). Email evidence level: high. Reference Southern European expansion and the Salesforce implementation as anchors."
+  },
+  {
+    "lead_id": "lead_004",
+    "company_name": "Meraki Workforce",
+    "research_status": "partial",
+    "company_summary": "Meraki Workforce is a Canadian HR Tech company with approximately 88 employees. The company is growing its SMB client base in healthcare and retail sectors and currently has two open sales roles, though public signals beyond hiring activity are limited.",
+    "business_model": "B2B HR Tech platform targeting small and mid-size businesses, with industry focus on healthcare and retail. Revenue is driven by direct sales to SMB operators and HR leaders.",
+    "target_customers": [
+      "Small and mid-size healthcare practices and clinics",
+      "Multi-location retail operators",
+      "SMB HR and operations leaders managing distributed workforces"
+    ],
+    "opportunity_signals": [
+      {
+        "signal": "Two open sales roles currently posted",
+        "why_it_matters": "Active sales hiring at this company size indicates intentional pipeline investment, though the scale of growth is more modest than at later-stage companies.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "medium"
+      },
+      {
+        "signal": "Growing SMB client base in defined vertical segments",
+        "why_it_matters": "Vertical focus suggests an established ICP, but SMB-focused sales motions are particularly sensitive to research and qualification efficiency given lower deal sizes.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "medium"
+      }
+    ],
+    "pain_hypotheses": [
+      {
+        "pain": "Inefficient research per lead at SMB deal sizes",
+        "reasoning": "SMB-focused sales motions cannot afford long manual research cycles per account; the cost of qualification needs to match the deal economics.",
+        "confidence": "medium"
+      },
+      {
+        "pain": "Qualification consistency across a small but growing team",
+        "reasoning": "Adding two sales roles to an existing small team without standardized scoring logic can create scoring drift early in the team's growth.",
+        "confidence": "medium"
+      }
+    ],
+    "evidence_cards": [
+      {
+        "title": "Modest sales team expansion",
+        "description": "Two open sales roles indicate planned but measured growth, consistent with a company at the 88-employee stage.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "medium"
+      },
+      {
+        "title": "Vertical-focused SMB motion",
+        "description": "The company targets specific verticals within the SMB segment, suggesting structured ICP awareness but limited scale signals.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "medium"
+      }
+    ],
+    "information_risks": [
+      "No recent funding or major growth event is documented; the urgency of operational investment is unclear.",
+      "The Sales Director's level of authority over operational tooling decisions is not confirmed at this company size.",
+      "The current sales tech stack and any existing research or enrichment tooling are not documented."
+    ],
+    "recommended_research_summary": "Meraki Workforce is a medium-fit lead. The industry, geography, and contact role are all in-target, but the strength of operational signals is limited. Recommended primary angle is Angle C (consistent qualification across the team) given the team growth pattern, with a softer CTA appropriate for the medium evidence level. Reference SMB sales efficiency in vertical focus as the anchor. Flag for human review before approving outreach."
+  },
+  {
+    "lead_id": "lead_005",
+    "company_name": "Pagalink",
+    "research_status": "partial",
+    "company_summary": "Pagalink is a Mexico-based fintech company with approximately 175 employees, operating a B2B payments platform targeting regional small and mid-size businesses. Recent press coverage mentions cross-border expansion ambitions.",
+    "business_model": "B2B payments and financial infrastructure platform serving SMBs across Latin America, with a stated interest in expanding cross-border payment capabilities.",
+    "target_customers": [
+      "Mexican SMBs requiring cross-border payment infrastructure",
+      "Regional businesses with US or Latin American supplier relationships",
+      "Mid-market operators in commerce, logistics, and services sectors"
+    ],
+    "opportunity_signals": [
+      {
+        "signal": "Recent press mentions cross-border expansion plans",
+        "why_it_matters": "Cross-border expansion in fintech typically requires new compliance posture and new buyer profiles in adjacent markets, which can stretch the existing qualification approach.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "medium"
+      },
+      {
+        "signal": "B2B payments platform serving regional SMBs",
+        "why_it_matters": "SMB-focused fintech sales motions require high volume and tight qualification economics, making research efficiency operationally significant.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "medium"
+      }
+    ],
+    "pain_hypotheses": [
+      {
+        "pain": "Qualification economics under pressure at SMB deal sizes",
+        "reasoning": "Fintech SMB sales motions must process a high volume of leads with limited time per account; manual research at scale erodes margin per qualified deal.",
+        "confidence": "medium"
+      },
+      {
+        "pain": "New ICP definition for cross-border expansion",
+        "reasoning": "Expansion into adjacent markets often surfaces ICP gaps that the existing qualification rubric does not cover.",
+        "confidence": "medium"
+      }
+    ],
+    "evidence_cards": [
+      {
+        "title": "Cross-border expansion narrative",
+        "description": "Pagalink has publicly referenced ambitions to expand cross-border payment services, though specific markets and timelines are not documented.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "medium"
+      },
+      {
+        "title": "SMB-focused fintech sales motion",
+        "description": "The company's target market is small and mid-size regional businesses, a segment with characteristic research and qualification economics.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "medium"
+      }
+    ],
+    "information_risks": [
+      "The contact's role as Business Development Manager places them closer to deal execution than to operational tooling decisions; budget authority is uncertain.",
+      "The company's CRM and sales tech stack are not documented, making it difficult to anticipate integration concerns.",
+      "Compliance posture for cross-border payments may make the buyer particularly cautious about AI-assisted outreach claims."
+    ],
+    "recommended_research_summary": "Pagalink is a medium-fit lead. Industry, geography, and company size are aligned with the ICP, but contact role authority is uncertain and signals are partial. Recommended primary angle is Angle D (personalization at the volume outbound requires) framed for SMB fintech context. Use a soft exploratory CTA. Anticipate Objection 10 (privacy and compliance) as a likely consideration given the fintech context. Flag for human review with a note recommending verification of the contact's authority before any approval."
+  },
+  {
+    "lead_id": "lead_006",
+    "company_name": "Ironcast Industries",
+    "research_status": "partial",
+    "company_summary": "Ironcast Industries is a Spanish industrial equipment manufacturer with approximately 460 employees. The company operates a traditional B2B sales motion with a team of approximately six reps, with no recent public signals or growth announcements documented.",
+    "business_model": "B2B industrial equipment manufacturer serving long-cycle accounts in industrial, construction, and manufacturing sectors. Sales motion is relationship-driven with extended deal cycles.",
+    "target_customers": [
+      "Industrial operators requiring specialized manufacturing equipment",
+      "Construction and infrastructure project contractors",
+      "Long-term partnership-based industrial buyers"
+    ],
+    "opportunity_signals": [
+      {
+        "signal": "Existing B2B sales team of approximately six representatives",
+        "why_it_matters": "An established sales team provides a foundation for qualification process improvement, though without growth signals the urgency of operational investment is limited.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "medium"
+      },
+      {
+        "signal": "Traditional long-cycle B2B sales motion",
+        "why_it_matters": "Long sales cycles increase the cost of misqualified accounts and the value of upfront research, but established teams often resist process changes.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "low"
+      }
+    ],
+    "pain_hypotheses": [
+      {
+        "pain": "Manual account research at high cost per qualified opportunity",
+        "reasoning": "Long-cycle manufacturing sales requires deep account context, typically gathered manually by senior reps, creating per-account research costs that compound across the team.",
+        "confidence": "medium"
+      },
+      {
+        "pain": "Inconsistent qualification standards within an established team",
+        "reasoning": "Established sales teams without standardized scoring often rely on individual rep judgment, producing inconsistent qualification quality across the pipeline.",
+        "confidence": "low"
+      }
+    ],
+    "evidence_cards": [
+      {
+        "title": "Established but unchanging sales structure",
+        "description": "The company operates a stable sales team without documented expansion plans, growth events, or operational transformation initiatives.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "medium"
+      },
+      {
+        "title": "Long-cycle relationship-driven sales motion",
+        "description": "Industrial manufacturing sales cycles favor relationship continuity and deep account familiarity, characteristics that influence the relevance of operational tooling.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "medium"
+      }
+    ],
+    "information_risks": [
+      "No recent growth events, hiring activity, or operational transformation signals are documented; urgency for change is low.",
+      "The Sales Manager contact role is an end-user, not a decision-maker; tool adoption authority likely sits with the VP of Sales or General Manager.",
+      "Existing tooling and CRM usage are unknown, as is the company's openness to operational change."
+    ],
+    "recommended_research_summary": "Ironcast Industries is a borderline medium-fit lead. The industry is in the Tier 2 range and company size fits the broader ICP, but signal strength is low and the contact role is end-user rather than decision-maker. Recommended primary angle is Angle F (research layer for high-value, long-cycle deals) if pursued, framed around per-account research cost rather than scale. Soft exploratory CTA only. Flag for human review with a strong recommendation to either verify a stronger growth signal or deprioritize."
+  },
+  {
+    "lead_id": "lead_007",
+    "company_name": "Parcelbridge Inc.",
+    "research_status": "partial",
+    "company_summary": "Parcelbridge Inc. is a US-based e-commerce operations company with approximately 95 employees, providing B2B fulfillment services for direct-to-consumer brands. The company operates a marketing-led growth model, and its outbound sales motion is not clearly documented.",
+    "business_model": "B2B fulfillment and operations services targeting direct-to-consumer brands, with growth driven primarily through marketing and inbound channels rather than dedicated outbound prospecting.",
+    "target_customers": [
+      "Direct-to-consumer brands at scale-up stage",
+      "E-commerce operators requiring third-party fulfillment partnerships",
+      "Brands transitioning from in-house to outsourced fulfillment"
+    ],
+    "opportunity_signals": [
+      {
+        "signal": "Marketing-led growth model",
+        "why_it_matters": "Companies with a marketing-led motion may still operate outbound activity, but the qualification function typically reports through marketing or revenue operations rather than direct sales leadership.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "medium"
+      },
+      {
+        "signal": "Active in e-commerce operations services",
+        "why_it_matters": "E-commerce operations is a Tier 2 industry fit; relevance depends on whether the company has a true B2B outbound sales motion or is purely inbound.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "low"
+      }
+    ],
+    "pain_hypotheses": [
+      {
+        "pain": "Unclear outbound motion limits the relevance of qualification tooling",
+        "reasoning": "If the company is genuinely inbound-only, the value of an upstream qualification layer is significantly reduced.",
+        "confidence": "medium"
+      },
+      {
+        "pain": "Marketing-to-sales handoff inconsistency",
+        "reasoning": "Marketing-led companies often suffer from inconsistent qualification at the handoff point between marketing-sourced leads and sales follow-up.",
+        "confidence": "medium"
+      }
+    ],
+    "evidence_cards": [
+      {
+        "title": "Marketing-led growth orientation",
+        "description": "Parcelbridge's growth strategy emphasizes marketing-led acquisition over dedicated outbound prospecting motions.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "medium"
+      },
+      {
+        "title": "VP Marketing as primary contact",
+        "description": "The contact is the VP of Marketing, which is influential in marketing-led companies but not the typical buyer for sales operations tooling.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      }
+    ],
+    "information_risks": [
+      "The presence of any meaningful outbound sales motion is not confirmed; the company may be fully inbound, which would significantly reduce ICP relevance.",
+      "The VP Marketing contact role is not the primary decision-maker for sales operations tooling; even with interest, an internal handoff to sales leadership would be required.",
+      "The strength of the marketing-to-sales handoff process is unknown."
+    ],
+    "recommended_research_summary": "Parcelbridge Inc. is a borderline medium-fit lead with significant uncertainty. Industry is in Tier 2 range and company size is in the sweet spot, but the marketing-led growth model and VP Marketing contact role make direct relevance unclear. Recommended primary angle, if pursued, is Angle D (personalization for outbound at scale) framed around marketing-sourced lead handoff quality. Use the softest exploratory CTA. Flag for human review with strong recommendation to verify outbound motion before approving outreach."
+  },
+  {
+    "lead_id": "lead_008",
+    "company_name": "Tanaka Retail Group",
+    "research_status": "complete",
+    "company_summary": "Tanaka Retail Group is a Japanese consumer electronics retail chain with approximately 1800 employees. The company operates primarily as a B2C business with no visible B2B sales function, and the available contact is in HR leadership.",
+    "business_model": "Consumer electronics retail with revenue driven primarily through direct-to-consumer storefront and online channels. No documented B2B sales motion.",
+    "target_customers": [
+      "End consumers purchasing electronics products",
+      "Retail walk-in and online shoppers"
+    ],
+    "opportunity_signals": [],
+    "pain_hypotheses": [],
+    "evidence_cards": [
+      {
+        "title": "B2C-primary business model",
+        "description": "Tanaka Retail Group operates as a consumer electronics retailer with no documented B2B sales function, placing the company outside the LeadForge ICP.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "title": "Out-of-scope contact role",
+        "description": "The available contact is an HR Director, a role that has no purchasing authority or operational relevance to a sales operations workflow tool.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "title": "Company size beyond ICP target range",
+        "description": "At approximately 1800 employees, the company exceeds the LeadForge sweet spot of 50 to 500 employees and falls into the low-priority size band.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      }
+    ],
+    "information_risks": [
+      "No outbound B2B sales function has been identified that would benefit from the LeadForge workflow.",
+      "Contact role is outside the target buyer profile and would require routing through unrelated departments to reach any relevant stakeholder.",
+      "Even if a B2B partnership division exists internally, it is not documented in available context."
+    ],
+    "recommended_research_summary": "Tanaka Retail Group is a clear low-fit lead and should be deprioritized. The company is B2C-primary with no documented B2B sales motion, the contact role is out-of-scope (HR Director), and the company size exceeds the target range. No primary outreach angle is recommended. The Qualifier Agent should apply the negative signal override and cap this lead at Low priority. Do not draft outreach; flag for human review with a recommendation to remove from the active pipeline or reroute if a B2B division can be confirmed."
+  },
+  {
+    "lead_id": "lead_009",
+    "company_name": "Asesoria Prospera",
+    "research_status": "complete",
+    "company_summary": "Asesoria Prospera is a Mexico-based boutique tax and legal consulting firm with approximately 18 employees. The founder handles all client acquisition through referrals, and there is no dedicated sales team or outbound prospecting motion.",
+    "business_model": "Professional services firm providing tax and legal consulting to local and regional clients. Client acquisition is referral-based and founder-led, with no documented outbound sales activity.",
+    "target_customers": [
+      "Small and mid-size businesses requiring tax and legal advisory services",
+      "Local and regional clients sourced through referral networks"
+    ],
+    "opportunity_signals": [],
+    "pain_hypotheses": [
+      {
+        "pain": "No outbound motion to support",
+        "reasoning": "A referral-only client acquisition model does not require a qualification or research layer for cold leads, eliminating the core LeadForge value proposition.",
+        "confidence": "high"
+      }
+    ],
+    "evidence_cards": [
+      {
+        "title": "Founder-led, referral-only client acquisition",
+        "description": "All client acquisition is handled by the founder through referral networks, with no dedicated sales team or outbound prospecting workflow.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "title": "Company size below ICP threshold",
+        "description": "At approximately 18 employees, the company falls below the LeadForge target range and lacks the operational scale that justifies sales operations tooling.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      },
+      {
+        "title": "CEO as contact at small firm",
+        "description": "The CEO is the contact, which is typical for small firms but indicates that any tool adoption would be a personal founder decision rather than a structured operational evaluation.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      }
+    ],
+    "information_risks": [
+      "No outbound sales function exists that would utilize the LeadForge workflow.",
+      "Company size is below the lower bound of the ICP target range.",
+      "Any future growth into outbound motion is not signaled in current context."
+    ],
+    "recommended_research_summary": "Asesoria Prospera is a clear low-fit lead. The company is too small for the target range, operates with a referral-only acquisition model, and has no outbound sales function to support. No primary outreach angle is recommended. The Qualifier Agent should score this lead as Low priority based on the absence of outbound motion and the size mismatch. Do not draft outreach; flag for human review with a recommendation to remove from active pipeline."
+  },
+  {
+    "lead_id": "lead_010",
+    "company_name": "Orbis Solutions",
+    "research_status": "low_evidence",
+    "company_summary": "Insufficient information available to construct a reliable company summary. The lead record is missing website, industry, country, and employee count fields, and the contact role description is vague.",
+    "business_model": "Unknown. No business model context can be inferred from the available data.",
+    "target_customers": [],
+    "opportunity_signals": [],
+    "pain_hypotheses": [],
+    "evidence_cards": [
+      {
+        "title": "Insufficient lead data for research",
+        "description": "Multiple critical fields are missing from the source record, including website, industry, country, and employee count. The contact role is also too vague to anchor qualification.",
+        "source_type": "synthetic_demo_context",
+        "confidence": "high"
+      }
+    ],
+    "information_risks": [
+      "Website is missing; company identity cannot be verified.",
+      "Industry is missing; ICP fit cannot be evaluated.",
+      "Country is missing; geographic fit cannot be evaluated.",
+      "Employee count is missing; company size fit cannot be evaluated.",
+      "Contact role is described only as Manager without department or function context; contact role fit cannot be evaluated.",
+      "The lead may represent a real opportunity, a duplicate, a data entry error, or an invalid record; this cannot be determined from current context."
+    ],
+    "recommended_research_summary": "Orbis Solutions has insufficient data for meaningful qualification or research. The Intake Agent should flag this lead as low_evidence with specific field-level warnings. The Qualifier Agent should not produce a confident score; recommend Low priority by default with explicit acknowledgment of evidence gaps. No outreach should be drafted. Flag for priority human review with a recommendation to either enrich the missing fields (website, industry, country, employee count, full contact role) or remove from the dataset as unqualifiable."
+  }
+]
