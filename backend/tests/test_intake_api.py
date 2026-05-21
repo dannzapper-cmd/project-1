@@ -302,10 +302,25 @@ def test_csv_11_invalid_utf8_bytes_return_422() -> None:
 
 
 def test_csv_12_file_over_1mb_returns_413() -> None:
-    """csv_12: file > 1 MB → 413."""
+    """csv_12: file > 1 MB → 413.
 
-    too_big = b"a" * (1024 * 1024 + 1)
-    files = {"file": ("big.csv", too_big, "text/csv")}
+    The endpoint reads only ``_MAX_CSV_UPLOAD_BYTES + 1`` bytes from the
+    upload before rejecting, so a much larger payload (e.g. 4 MiB) must
+    still be refused with 413 without being fully loaded into memory.
+    """
+
+    # ``1 MiB + 1`` byte — minimal overflow.
+    minimal_overflow = b"a" * (1024 * 1024 + 1)
+    files = {"file": ("big.csv", minimal_overflow, "text/csv")}
+
+    with TestClient(app) as client:
+        response = client.post(_CSV_UPLOAD_URL, files=files)
+
+    assert response.status_code == 413
+
+    # Larger payload also rejected; documents the bounded-read behavior.
+    large_overflow = b"b" * (4 * 1024 * 1024)
+    files = {"file": ("huge.csv", large_overflow, "text/csv")}
 
     with TestClient(app) as client:
         response = client.post(_CSV_UPLOAD_URL, files=files)

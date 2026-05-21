@@ -55,7 +55,9 @@ async def _read_and_decode_csv_upload(file: UploadFile) -> str:
     1. Filename must end with ``.csv`` (case-insensitive) → 415.
     2. ``Content-Type``, if present and non-empty, must be in the
        accepted list → 415.
-    3. Read full bytes; empty payload → 422.
+    3. Read at most ``_MAX_CSV_UPLOAD_BYTES + 1`` bytes (so an oversize
+       upload is rejected without loading the full payload into memory);
+       empty payload → 422.
     4. Reject payloads larger than ``_MAX_CSV_UPLOAD_BYTES`` → 413.
     5. Decode as ``utf-8-sig`` (handles optional BOM). Any failure → 422.
        No further encodings are tried.
@@ -75,7 +77,9 @@ async def _read_and_decode_csv_upload(file: UploadFile) -> str:
             detail=f"Content-Type '{file.content_type}' is not accepted for CSV upload.",
         )
 
-    file_bytes = await file.read()
+    # Read one byte past the limit so we can distinguish "exactly at limit"
+    # from "over limit" without loading an arbitrarily large file into RAM.
+    file_bytes = await file.read(_MAX_CSV_UPLOAD_BYTES + 1)
 
     if len(file_bytes) == 0:
         raise HTTPException(
@@ -162,12 +166,13 @@ async def preview_intake_csv_file(
 
     content = await _read_and_decode_csv_upload(file)
 
+    # The .csv filename validation inside _read_and_decode_csv_upload already
+    # rejects missing/empty filenames with HTTP 415, so at this point
+    # file.filename is guaranteed to be a non-empty string ending in .csv.
     if source_name is not None and source_name.strip() != "":
         resolved_source_name = source_name
-    elif file.filename:
-        resolved_source_name = file.filename
     else:
-        resolved_source_name = "uploaded_csv"
+        resolved_source_name = file.filename  # type: ignore[assignment]
 
     generate_missing_lead_ids = generate_missing_lead_ids_str.lower() != "false"
 
