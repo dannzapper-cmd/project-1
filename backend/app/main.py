@@ -1,7 +1,18 @@
-"""FastAPI application entry point — Fase 4.1.
+"""FastAPI application entry point.
 
-Strict scope: app factory, CORS, logging, DB init on startup, /health route.
-No agents, no LangGraph, no LLM, no RAG, no real lead processing.
+Wires the LeadForge backend together:
+
+- App factory with CORS middleware.
+- Centralized logging configuration.
+- SQLite schema initialization on startup (via lifespan).
+- `/health` endpoint (mounted at the application root, kept stable since
+  Fase 4.1).
+- Read-only demo data endpoints under `/api/demo/*` (added in Fase 4.2),
+  exposing the static files shipped under `data/demo/`.
+
+Out of scope at this layer (and intentionally NOT implemented yet): agents,
+LangGraph orchestration, LLM/model calls, RAG, vector stores, and any real
+lead processing or external side effects. Those belong to later phases.
 """
 
 from __future__ import annotations
@@ -12,6 +23,7 @@ from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routes import demo as demo_routes
 from app.api.routes import health as health_routes
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
@@ -39,8 +51,10 @@ def create_app() -> FastAPI:
         title="LeadForge Backend",
         version=settings.app_version,
         description=(
-            "Backend foundation for LeadForge-Agentic Core. "
-            "Fase 4.1: skeleton only (no agents, no LLM, no RAG)."
+            "Backend for LeadForge-Agentic Core. Exposes a health probe "
+            "(`/health`) and read-only demo data endpoints (`/api/demo/*`) "
+            "served from the static files under `data/demo/`. "
+            "No agents, no LLM, no RAG, no real lead processing yet."
         ),
         lifespan=lifespan,
     )
@@ -54,6 +68,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(health_routes.router)
+    app.include_router(demo_routes.router)
 
     return app
 
