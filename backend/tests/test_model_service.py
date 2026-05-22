@@ -202,20 +202,28 @@ def test_s13_factory_returns_mock_service_for_mock_provider() -> None:
     assert isinstance(svc, BaseModelService)
 
 
-def test_s14_factory_raises_not_implemented_for_groq() -> None:
-    """S-14: get_model_service(ModelProvider.GROQ) raises NotImplementedError
-    with a clear, provider-aware message (FIX 1).
+def test_s14_factory_raises_not_implemented_for_unimplemented_providers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """S-14: ``get_model_service`` raises ``NotImplementedError`` for
+    every provider that has NOT been wired into the factory.
 
-    Also asserts the same for OLLAMA and OPENAI so it is structurally
-    impossible to accidentally fall back to the mock for a real provider.
+    Phase 5.4 raised this for ``GROQ`` / ``OLLAMA`` / ``OPENAI``. Phase
+    5.5B implemented the Groq path, so it now raises ``ValueError``
+    (when no ``GROQ_API_KEY`` is set) rather than ``NotImplementedError``
+    — that behavior is covered by ``test_groq_model_service.py``. The
+    invariant we still need here is that ``OLLAMA`` and ``OPENAI``
+    continue to raise ``NotImplementedError`` so a real provider call
+    cannot happen accidentally for them.
     """
 
-    for provider in (ModelProvider.GROQ, ModelProvider.OLLAMA, ModelProvider.OPENAI):
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    for provider in (ModelProvider.OLLAMA, ModelProvider.OPENAI):
         with pytest.raises(NotImplementedError) as excinfo:
             get_model_service(provider)
         message = str(excinfo.value)
         assert provider.value in message
-        assert "Phase 5.4" in message
+        assert "Phase 5.5B" in message
 
 
 # --------------------------------------------------------------------------- #

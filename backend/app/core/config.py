@@ -56,6 +56,16 @@ class Settings(BaseSettings):
     # Default to the repository root so the backend can be run from any CWD.
     repo_root: Path = Field(default_factory=_default_repo_root)
 
+    # Phase 5.5B: optional Groq provider settings. ``groq_api_key`` is the
+    # only credential read by the backend; it is OPTIONAL — when missing,
+    # the app starts normally and ``GroqModelService`` simply cannot be
+    # instantiated (a 503 is surfaced by the ``/groq-check`` route).
+    # ``llama-3.1-8b-instant`` is the Phase 5.5B default model; do NOT
+    # default to ``llama-3.3-70b-versatile`` in this phase.
+    groq_api_key: str | None = None
+    groq_default_model: str = "llama-3.1-8b-instant"
+    groq_timeout_seconds: int = 30
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_cors_origins(cls, value: object) -> object:

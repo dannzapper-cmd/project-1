@@ -23,6 +23,7 @@ from app.schemas.evaluation import (
 )
 from app.schemas.lead import LeadIn
 from app.schemas.model import (
+    ModelConfig,
     ModelMessage,
     ModelProvider,
     ModelRequest,
@@ -47,7 +48,7 @@ from app.services.evaluation_service import (
     build_run_evaluation_summary,
     build_run_trace_report,
 )
-from app.services.model_service import get_model_service
+from app.services.model_service import GroqModelService, get_model_service
 from app.services.run_service import build_replay_run
 from app.services.simulation_service import build_simulation_run
 
@@ -315,5 +316,50 @@ def model_service_mock_check() -> ModelResponse:
                 content="Check LeadForge model service foundation.",
             )
         ],
+    )
+    return service.complete(request)
+
+
+# --------------------------------------------------------------------------- #
+# Phase 5.5B — Groq provider foundation                                       #
+#                                                                             #
+# Optional, read-only endpoint that proves the Groq pathway end-to-end        #
+# WHEN a ``GROQ_API_KEY`` has been configured. When the key is missing,       #
+# the endpoint returns HTTP 503 with a clear configuration message — the      #
+# app itself starts and serves normally without the key.                      #
+# --------------------------------------------------------------------------- #
+
+_GROQ_CHECK_MODEL: str = "llama-3.1-8b-instant"
+_GROQ_CHECK_PROMPT: str = "Return exactly: LeadForge Groq check OK"
+_GROQ_CHECK_MAX_TOKENS: int = 32
+
+
+@router.get("/model-service/groq-check", response_model=ModelResponse)
+def model_service_groq_check() -> ModelResponse:
+    """One-shot, server-side prompt routed through ``GroqModelService``.
+
+    No user input. No arbitrary-prompt surface. When ``GROQ_API_KEY`` is
+    missing, returns HTTP 503 with a clear configuration message instead
+    of attempting a call.
+    """
+
+    try:
+        service = GroqModelService(default_model=_GROQ_CHECK_MODEL)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        )
+
+    request = ModelRequest(
+        request_id="model_service_groq_check",
+        messages=[
+            ModelMessage(role=ModelRole.USER, content=_GROQ_CHECK_PROMPT)
+        ],
+        config=ModelConfig(
+            provider=ModelProvider.GROQ,
+            model_name=_GROQ_CHECK_MODEL,
+            max_tokens=_GROQ_CHECK_MAX_TOKENS,
+        ),
     )
     return service.complete(request)
