@@ -21,6 +21,13 @@ from app.schemas.evaluation import (
     RunTraceReport,
 )
 from app.schemas.lead import LeadIn
+from app.schemas.model import (
+    ModelMessage,
+    ModelProvider,
+    ModelRequest,
+    ModelResponse,
+    ModelRole,
+)
 from app.schemas.run import ReplayRunResponse
 from app.schemas.simulation import SimulationRunResponse
 from app.services.demo_data_loader import (
@@ -35,6 +42,7 @@ from app.services.evaluation_service import (
     build_run_evaluation_summary,
     build_run_trace_report,
 )
+from app.services.model_service import get_model_service
 from app.services.run_service import build_replay_run
 from app.services.simulation_service import build_simulation_run
 
@@ -227,3 +235,37 @@ def get_simulation_evaluation_for_lead(lead_id: str) -> LeadEvaluationReport:
     except DemoDataError as exc:
         _raise_500(exc)
         raise  # pragma: no cover
+
+
+# --------------------------------------------------------------------------- #
+# Phase 5.4 — Model service foundation                                        #
+#                                                                             #
+# The prefix /api/demo/model-service/ does not conflict with any existing     #
+# /api/demo/simulation/ route (Phase 5.4 FIX 5). Phase 5.4 intentionally      #
+# ships ONLY the mock-check endpoint: there is no POST completion endpoint    #
+# and no way to feed an arbitrary prompt to a real provider through the      #
+# HTTP surface in this phase.                                                 #
+# --------------------------------------------------------------------------- #
+
+
+@router.get("/model-service/mock-check", response_model=ModelResponse)
+def model_service_mock_check() -> ModelResponse:
+    """Return a deterministic mock ``ModelResponse`` for foundation checks.
+
+    Uses ``MockModelService`` only — no external provider, no API key,
+    no network call. The response is clearly labelled with
+    ``provider="mock"``, ``simulated=True``, and a ``[MOCK MODEL
+    RESPONSE — no external model was called]`` marker in the content.
+    """
+
+    service = get_model_service(ModelProvider.MOCK)
+    request = ModelRequest(
+        request_id="model_service_mock_check",
+        messages=[
+            ModelMessage(
+                role=ModelRole.USER,
+                content="Check LeadForge model service foundation.",
+            )
+        ],
+    )
+    return service.complete(request)
