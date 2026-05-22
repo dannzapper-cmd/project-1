@@ -15,6 +15,7 @@ from fastapi import APIRouter, HTTPException, status
 from app.core.logging import get_logger
 from app.schemas.agents import (
     EmailDrafterAgentOutput,
+    QAEvaluatorAgentOutput,
     QualifierAgentOutput,
     ResearchAgentOutput,
     StrategistAgentOutput,
@@ -39,11 +40,14 @@ from app.schemas.run import ReplayRunResponse
 from app.schemas.simulation import SimulationRunResponse
 from app.services.agent_demo_service import (
     build_all_demo_email_drafter_agent_outputs,
+    build_all_demo_qa_evaluator_agent_outputs,
     build_all_demo_qualifier_agent_outputs,
     build_all_demo_research_agent_outputs,
     build_all_demo_strategist_agent_outputs,
     build_demo_email_drafter_agent_groq_output,
     build_demo_email_drafter_agent_output,
+    build_demo_qa_evaluator_agent_groq_output,
+    build_demo_qa_evaluator_agent_output,
     build_demo_qualifier_agent_output,
     build_demo_research_agent_output,
     build_demo_strategist_agent_groq_output,
@@ -424,6 +428,84 @@ def get_agents_strategist_groq_for_lead(lead_id: str) -> StrategistAgentOutput:
     # does not need to introduce a new exception class.
     try:
         return build_demo_strategist_agent_groq_output(lead_id)
+    except ValueError as exc:
+        message = str(exc)
+        if "GROQ_API_KEY" in message:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=message,
+            )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=message,
+        )
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+
+# --------------------------------------------------------------------------- #
+# Phase 5.9 — QA Evaluator Agent foundation + optional Groq synthesis         #
+#                                                                             #
+# Sibling routes to /api/demo/agents/research, /qualifier, /strategist and    #
+# /email-drafter. /qa-evaluator[/lead_id] are deterministic (no Groq);       #
+# /qa-evaluator-groq/{id} is the single-lead-at-a-time Groq path (HTTP 503    #
+# when GROQ_API_KEY is missing). No POST endpoint, no all-leads Groq         #
+# endpoint, no email is ever sent — the QA Evaluator only evaluates.        #
+# --------------------------------------------------------------------------- #
+
+
+@router.get("/agents/qa-evaluator", response_model=list[QAEvaluatorAgentOutput])
+def get_agents_qa_evaluator() -> list[QAEvaluatorAgentOutput]:
+    """Run the Phase 5.9 deterministic QA Evaluator Agent against every
+    demo lead. No Groq call. No email is sent."""
+
+    try:
+        return build_all_demo_qa_evaluator_agent_outputs()
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+
+@router.get(
+    "/agents/qa-evaluator/{lead_id}", response_model=QAEvaluatorAgentOutput
+)
+def get_agents_qa_evaluator_for_lead(
+    lead_id: str,
+) -> QAEvaluatorAgentOutput:
+    """Run the Phase 5.9 deterministic QA Evaluator Agent against a
+    single demo lead."""
+
+    try:
+        return build_demo_qa_evaluator_agent_output(lead_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        )
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+
+@router.get(
+    "/agents/qa-evaluator-groq/{lead_id}",
+    response_model=QAEvaluatorAgentOutput,
+)
+def get_agents_qa_evaluator_groq_for_lead(
+    lead_id: str,
+) -> QAEvaluatorAgentOutput:
+    """Run the Phase 5.9 QA Evaluator Agent against a single demo lead
+    via :class:`GroqModelService` with ``use_model_synthesis=True``.
+
+    Returns HTTP 503 when ``GROQ_API_KEY`` is missing, HTTP 404 when
+    ``lead_id`` is unknown. On JSON validation or guardrail failure
+    the agent falls back to the deterministic evaluation with an
+    explicit risk note.
+    """
+
+    try:
+        return build_demo_qa_evaluator_agent_groq_output(lead_id)
     except ValueError as exc:
         message = str(exc)
         if "GROQ_API_KEY" in message:
