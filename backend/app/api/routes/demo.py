@@ -16,6 +16,7 @@ from app.core.logging import get_logger
 from app.schemas.demo import DemoCompanyResearch, DemoSummary
 from app.schemas.lead import LeadIn
 from app.schemas.run import ReplayRunResponse
+from app.schemas.simulation import SimulationRunResponse
 from app.services.demo_data_loader import (
     DemoDataError,
     build_demo_summary,
@@ -23,6 +24,7 @@ from app.services.demo_data_loader import (
     load_demo_leads,
 )
 from app.services.run_service import build_replay_run
+from app.services.simulation_service import build_simulation_run
 
 router = APIRouter(prefix="/api/demo", tags=["demo"])
 logger = get_logger(__name__)
@@ -125,3 +127,24 @@ def get_demo_run(include_leads: bool = True) -> ReplayRunResponse:
         leads_with_company_research=leads_with_company_research,
         include_leads=include_leads,
     )
+
+
+@router.get("/simulation", response_model=SimulationRunResponse)
+def get_simulation_run() -> SimulationRunResponse:
+    """Return a deterministic pipeline simulation built from the demo dataset.
+
+    Phase 5.1. This endpoint produces per-lead simulated agent outputs
+    (research summary, qualification, strategy, email draft, QA scores,
+    trace) using the rubric transcribed from ``knowledge/icp_rules.md``.
+    It NEVER calls an LLM, agent framework, RAG system, scraper, or any
+    external service, and it does not write to the database. The
+    response is clearly labelled as a simulation (``run_mode="simulation"``,
+    ``model_calls=0``, ``estimated_cost="$0.00"``, and every trace step
+    carries ``simulated=True`` with ``model="none"``).
+    """
+
+    try:
+        return build_simulation_run()
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
