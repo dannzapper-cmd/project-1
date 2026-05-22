@@ -297,6 +297,89 @@ def get_agents_research_for_lead(lead_id: str) -> ResearchAgentOutput:
         raise  # pragma: no cover
 
 
+# --------------------------------------------------------------------------- #
+# Phase 5.5C — Optional Groq structured-synthesis path for ONE lead at a time #
+#                                                                             #
+# Existing /api/demo/agents/research[/lead_id] routes stay mock-backed by    #
+# default. This endpoint is the only HTTP surface that routes through        #
+# GroqModelService for the Research Agent in Phase 5.5C; it is one-lead-at-a- #
+# time on purpose to control cost. No POST endpoint, no arbitrary-prompt     #
+# surface, no all-leads Groq endpoint.                                       #
+# --------------------------------------------------------------------------- #
+
+
+@router.get(
+    "/agents/research-groq/{lead_id}", response_model=ResearchAgentOutput
+)
+def get_agents_research_groq_for_lead(lead_id: str) -> ResearchAgentOutput:
+    """Run the Research Agent against a single demo lead via GroqModelService.
+
+    Returns HTTP 503 with a clear configuration message when
+    ``GROQ_API_KEY`` is missing. Returns HTTP 404 if ``lead_id`` is
+    unknown. Otherwise routes the lead's demo context through
+    :class:`GroqModelService` with ``use_model_synthesis=True``; if
+    JSON validation fails the agent falls back to the deterministic
+    Phase 5.5A output (with an explicit risk note).
+    """
+
+    # Local imports keep the FastAPI startup path independent of the
+    # Groq SDK availability — the same defensive pattern used for
+    # /model-service/groq-check.
+    from app.agents.research_agent import ResearchAgentService
+    from app.schemas.agents import ResearchAgentInput
+    from app.services.demo_data_loader import (
+        load_demo_company_research,
+        load_demo_leads,
+    )
+    from app.services.model_service import GroqModelService
+
+    try:
+        leads = load_demo_leads()
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+    matching_lead = next((lead for lead in leads if lead.lead_id == lead_id), None)
+    if matching_lead is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Lead '{lead_id}' not found in the demo dataset.",
+        )
+
+    try:
+        research_records = load_demo_company_research()
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+    matching_research = next(
+        (record for record in research_records if record.lead_id == lead_id),
+        None,
+    )
+    available_context = (
+        matching_research.model_dump() if matching_research is not None else None
+    )
+
+    try:
+        groq_service = GroqModelService(default_model="llama-3.1-8b-instant")
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        )
+
+    agent = ResearchAgentService(
+        model_service=groq_service, use_model_synthesis=True
+    )
+    return agent.run(
+        ResearchAgentInput(
+            lead=matching_lead,
+            run_id="research_agent_groq_demo_run_001",
+            available_context=available_context,
+        )
+    )
+
+
 @router.get("/model-service/mock-check", response_model=ModelResponse)
 def model_service_mock_check() -> ModelResponse:
     """Return a deterministic mock ``ModelResponse`` for foundation checks.
