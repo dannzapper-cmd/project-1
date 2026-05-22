@@ -13,7 +13,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 
 from app.core.logging import get_logger
-from app.schemas.agents import ResearchAgentOutput
+from app.schemas.agents import QualifierAgentOutput, ResearchAgentOutput
 from app.schemas.demo import DemoCompanyResearch, DemoSummary
 from app.schemas.evaluation import (
     LeadEvaluationReport,
@@ -33,7 +33,9 @@ from app.schemas.model import (
 from app.schemas.run import ReplayRunResponse
 from app.schemas.simulation import SimulationRunResponse
 from app.services.agent_demo_service import (
+    build_all_demo_qualifier_agent_outputs,
     build_all_demo_research_agent_outputs,
+    build_demo_qualifier_agent_output,
     build_demo_research_agent_output,
 )
 from app.services.demo_data_loader import (
@@ -287,6 +289,49 @@ def get_agents_research_for_lead(lead_id: str) -> ResearchAgentOutput:
 
     try:
         return build_demo_research_agent_output(lead_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        )
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+
+# --------------------------------------------------------------------------- #
+# Phase 5.6A — Qualifier Agent foundation                                     #
+#                                                                             #
+# Sibling routes to /api/demo/agents/research. Deterministic and mock-only:   #
+# the qualifier never calls Groq in this phase. No POST endpoint, no          #
+# arbitrary-prompt surface.                                                   #
+# --------------------------------------------------------------------------- #
+
+
+@router.get("/agents/qualifier", response_model=list[QualifierAgentOutput])
+def get_agents_qualifier() -> list[QualifierAgentOutput]:
+    """Run the Phase 5.6A Qualifier Agent against every demo lead.
+
+    Deterministic scoring via the shared :mod:`app.services.icp_scoring`
+    rubric; no model service call, no real provider. Output order
+    mirrors the demo CSV row order.
+    """
+
+    try:
+        return build_all_demo_qualifier_agent_outputs()
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+
+@router.get(
+    "/agents/qualifier/{lead_id}", response_model=QualifierAgentOutput
+)
+def get_agents_qualifier_for_lead(lead_id: str) -> QualifierAgentOutput:
+    """Run the Phase 5.6A Qualifier Agent against a single demo lead."""
+
+    try:
+        return build_demo_qualifier_agent_output(lead_id)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

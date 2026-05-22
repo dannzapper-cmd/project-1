@@ -26,8 +26,14 @@ Public surface:
 
 from __future__ import annotations
 
+from app.agents.qualifier_agent import QualifierAgentService
 from app.agents.research_agent import ResearchAgentService
-from app.schemas.agents import ResearchAgentInput, ResearchAgentOutput
+from app.schemas.agents import (
+    QualifierAgentInput,
+    QualifierAgentOutput,
+    ResearchAgentInput,
+    ResearchAgentOutput,
+)
 from app.schemas.demo import DemoCompanyResearch
 from app.schemas.lead import LeadIn
 from app.services.demo_data_loader import (
@@ -36,6 +42,7 @@ from app.services.demo_data_loader import (
 )
 
 _DEMO_RUN_ID: str = "research_agent_demo_run_001"
+_DEMO_QUALIFIER_RUN_ID: str = "qualifier_agent_demo_run_001"
 
 
 def _build_available_context(
@@ -121,7 +128,112 @@ def build_all_demo_research_agent_outputs() -> list[ResearchAgentOutput]:
     return outputs
 
 
+# --------------------------------------------------------------------------- #
+# Phase 5.6A — Qualifier Agent demo wiring                                    #
+# --------------------------------------------------------------------------- #
+def _build_qualifier_input(
+    lead: LeadIn,
+    research: DemoCompanyResearch | None,
+) -> QualifierAgentInput:
+    """Project demo data onto a ``QualifierAgentInput``.
+
+    Demo opportunity signals (``DemoOpportunitySignal``) are projected
+    to plain strings since the Phase 5.2 contract types
+    ``opportunity_signals`` as ``list[str]``. Information risks pass
+    through unchanged.
+    """
+
+    research_summary: str | None = None
+    opportunity_signals: list[str] = []
+    information_risks: list[str] = []
+
+    if research is not None:
+        research_summary = (
+            research.recommended_research_summary
+            or research.company_summary
+            or None
+        )
+        for signal in research.opportunity_signals:
+            if isinstance(signal.signal, str) and signal.signal.strip():
+                opportunity_signals.append(signal.signal)
+        for risk in research.information_risks:
+            if isinstance(risk, str) and risk.strip():
+                information_risks.append(risk)
+
+    return QualifierAgentInput(
+        lead=lead,
+        research_summary=research_summary,
+        opportunity_signals=opportunity_signals,
+        information_risks=information_risks,
+        run_id=_DEMO_QUALIFIER_RUN_ID,
+    )
+
+
+def _run_qualifier_for(
+    lead: LeadIn,
+    research: DemoCompanyResearch | None,
+    *,
+    service: QualifierAgentService | None = None,
+) -> QualifierAgentOutput:
+    agent = service if service is not None else QualifierAgentService()
+    return agent.run(_build_qualifier_input(lead, research))
+
+
+def build_demo_qualifier_agent_output(lead_id: str) -> QualifierAgentOutput:
+    """Run the Qualifier Agent against a single demo lead.
+
+    Raises
+    ------
+    ValueError
+        If ``lead_id`` is not present in the demo lead dataset. The
+        route layer translates this into HTTP 404.
+    """
+
+    leads = load_demo_leads()
+    matching_lead: LeadIn | None = next(
+        (lead for lead in leads if lead.lead_id == lead_id), None
+    )
+    if matching_lead is None:
+        raise ValueError(
+            f"Lead '{lead_id}' not found in the demo dataset."
+        )
+
+    research_records = load_demo_company_research()
+    matching_research = next(
+        (record for record in research_records if record.lead_id == lead_id),
+        None,
+    )
+    return _run_qualifier_for(matching_lead, matching_research)
+
+
+def build_all_demo_qualifier_agent_outputs() -> list[QualifierAgentOutput]:
+    """Run the Qualifier Agent against every demo lead.
+
+    Output ordering mirrors :func:`load_demo_leads` (CSV row order).
+    Reuses a single :class:`QualifierAgentService` instance — the
+    service holds no per-lead state, so this is purely an allocation
+    optimisation.
+    """
+
+    leads = load_demo_leads()
+    research_records = load_demo_company_research()
+    research_by_id = {record.lead_id: record for record in research_records}
+
+    service = QualifierAgentService()
+
+    outputs: list[QualifierAgentOutput] = []
+    for lead in leads:
+        outputs.append(
+            _run_qualifier_for(
+                lead, research_by_id.get(lead.lead_id), service=service
+            )
+        )
+    return outputs
+
+
 __all__ = [
     "build_demo_research_agent_output",
     "build_all_demo_research_agent_outputs",
+    "build_demo_qualifier_agent_output",
+    "build_all_demo_qualifier_agent_outputs",
 ]
