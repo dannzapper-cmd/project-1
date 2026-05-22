@@ -1,5 +1,6 @@
-# LeadForge Backend — Fase 4.1 dependencies
-# Intentionally minimal. No LLM, RAG, vector DB, or agent libraries yet.
+# LeadForge Backend — Phase 5.5B dependencies
+# Minimal by design. No RAG/vector DB/agent framework — only the official
+# provider SDK needed for the Phase 5.5B Groq foundation has been added.
 
 fastapi==0.115.6
 uvicorn[standard]==0.32.1
@@ -9,6 +10,9 @@ SQLAlchemy==2.0.36
 python-dotenv==1.0.1
 # Required by FastAPI to parse multipart/form-data (CSV file upload, Fase 4.3B.1).
 python-multipart==0.0.20
+# Official Groq Python SDK — used by GroqModelService (Phase 5.5B). Pulls in
+# httpx transitively; we never import httpx directly.
+groq==1.2.0
 
 # Dev / test
 httpx==0.28.1
