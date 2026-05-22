@@ -267,7 +267,13 @@ def test_s11_information_risks_carry_into_fit_risks_or_reduce_confidence() -> No
 
 def test_s12_unexpected_internal_failure_returns_safe_success_false() -> None:
     """S-12: an unexpected internal failure returns a safe success=False
-    output. We monkeypatch the scoring entry point to raise.
+    output. We monkeypatch the deterministic baseline entry point to
+    raise.
+
+    (Updated for Phase 5.6B: the run() path now goes through
+    ``_compute_baseline`` rather than ``_run_inner``. The failure
+    surface is unchanged — any internal exception still routes to the
+    safe ``success=False`` output — only the monkeypatch target moved.)
     """
 
     service = QualifierAgentService()
@@ -275,7 +281,7 @@ def test_s12_unexpected_internal_failure_returns_safe_success_false() -> None:
     def _boom(_input):
         raise RuntimeError("Synthetic qualifier failure for testing.")
 
-    service._run_inner = _boom  # type: ignore[assignment]
+    service._compute_baseline = _boom  # type: ignore[assignment]
     output = service.run(_input_for(_strong_lead()))
     assert output.result.success is False
     assert output.result.error is not None
@@ -366,6 +372,357 @@ def test_extra_out_of_scope_contact_role_scores_dimension_4_zero() -> None:
     assert any(
         "Dimension 4 scored 0" in risk for risk in output.fit_risks
     )
+
+
+# --------------------------------------------------------------------------- #
+# Phase 5.6B — structured-synthesis path tests                                #
+# --------------------------------------------------------------------------- #
+import json as _json  # noqa: E402  (test-local import keeps section self-contained)
+
+
+def _valid_qualifier_synthesis_json(
+    *,
+    fit_score: int = 80,
+    priority: str = "high",
+    fit_reasons: list[str] | None = None,
+    fit_risks: list[str] | None = None,
+    confidence: str = "high",
+) -> str:
+    return _json.dumps(
+        {
+            "fit_score": fit_score,
+            "priority": priority,
+            "fit_reasons": fit_reasons if fit_reasons is not None else ["llm reason"],
+            "fit_risks": fit_risks if fit_risks is not None else [],
+            "confidence": confidence,
+        }
+    )
+
+
+class _FakeGroqLikeModelService(BaseModelService):
+    """Non-simulated test double — mimics the Phase 5.5B GroqModelService
+    surface, returns a configurable content string."""
+
+    def __init__(self, content: str) -> None:
+        self.content = content
+
+    def complete(self, request):  # type: ignore[override]
+        from app.schemas.model import (
+            ModelCostEstimate,
+            ModelProvider,
+            ModelResponse,
+            ModelUsage,
+        )
+
+        return ModelResponse(
+            request_id=request.request_id,
+            provider=ModelProvider.GROQ,
+            model_name="llama-3.1-8b-instant",
+            content=self.content,
+            usage=ModelUsage(input_tokens=50, output_tokens=25, total_tokens=75),
+            cost=ModelCostEstimate(
+                input_cost=0.0,
+                output_cost=0.0,
+                total_cost=0.0,
+                display_cost="$0.0000",
+            ),
+            latency="123ms",
+            finish_reason="stop",
+            simulated=False,
+        )
+
+
+def test_b01_default_service_behaviour_unchanged() -> None:
+    """B-01: Default QualifierAgentService behaviour is unchanged."""
+
+    service = QualifierAgentService()
+    assert service.use_model_synthesis is False
+    output = service.run(
+        _input_for(
+            _strong_lead(),
+            opportunity_signals=["Hiring SDRs", "Series B"],
+        )
+    )
+    assert output.result.success is True
+    assert output.result.metadata.prompt_version == "qualifier_agent_deterministic_v1"
+    assert output.result.metadata.simulated is True
+
+
+def test_b02_flag_false_with_fake_groq_does_not_consume_content() -> None:
+    """B-02: With use_model_synthesis=False, model content is never
+    consumed even when a non-simulated service is injected."""
+
+    fake = _FakeGroqLikeModelService(
+        content=_valid_qualifier_synthesis_json(
+            fit_score=100, fit_reasons=["LLM-only reason"]
+        )
+    )
+    service = QualifierAgentService(model_service=fake, use_model_synthesis=False)
+    output = service.run(_input_for(_strong_lead()))
+    # Deterministic baseline — no LLM-only reason appears.
+    assert "LLM-only reason" not in output.fit_reasons
+    assert output.result.metadata.prompt_version == "qualifier_agent_deterministic_v1"
+
+
+def test_b03_flag_true_with_mock_does_not_consume_simulated_content() -> None:
+    """B-03: With use_model_synthesis=True but a simulated (mock) model
+    service, the response is NOT consumed — deterministic baseline runs."""
+
+    service = QualifierAgentService(
+        model_service=MockModelService(), use_model_synthesis=True
+    )
+    output = service.run(_input_for(_strong_lead(), opportunity_signals=["a"]))
+    # Mock marker never appears anywhere in fit_reasons / fit_risks.
+    blob = " ".join(output.fit_reasons + output.fit_risks)
+    assert "[MOCK MODEL RESPONSE" not in blob
+    assert output.result.metadata.prompt_version == "qualifier_agent_deterministic_v1"
+    assert output.result.metadata.simulated is True
+
+
+def test_b04_flag_true_with_groq_like_valid_json_consumes_payload() -> None:
+    """B-04: With use_model_synthesis=True and a non-simulated service
+    returning valid JSON, the response IS consumed as the output."""
+
+    # Strong-lead baseline ≈ 92; choose 90 so we're well within +15.
+    fake = _FakeGroqLikeModelService(
+        content=_valid_qualifier_synthesis_json(
+            fit_score=90,
+            priority="high",
+            fit_reasons=["LLM refined reason"],
+            fit_risks=["LLM refined risk"],
+            confidence="high",
+        )
+    )
+    service = QualifierAgentService(model_service=fake, use_model_synthesis=True)
+    output = service.run(
+        _input_for(_strong_lead(), opportunity_signals=["Hiring SDRs", "Series B"])
+    )
+    assert output.fit_score == 90
+    assert output.priority == Priority.HIGH
+    assert "LLM refined reason" in output.fit_reasons
+    assert "LLM refined risk" in output.fit_risks
+
+
+def test_b05_valid_payload_metadata_is_groq_json_v1_and_not_simulated() -> None:
+    """B-05: Valid synthesis → metadata prompt_version is
+    ``qualifier_agent_groq_json_v1`` and ``simulated`` is False."""
+
+    fake = _FakeGroqLikeModelService(
+        content=_valid_qualifier_synthesis_json(fit_score=90)
+    )
+    service = QualifierAgentService(model_service=fake, use_model_synthesis=True)
+    output = service.run(_input_for(_strong_lead()))
+    assert output.result.metadata.prompt_version == "qualifier_agent_groq_json_v1"
+    assert output.result.metadata.simulated is False  # FIX 1
+    assert output.result.metadata.model == "llama-3.1-8b-instant"
+    assert output.result.metadata.cost.startswith("$")
+
+
+def test_b06_simulated_flag_is_false_only_when_payload_used() -> None:
+    """B-06: ``metadata.simulated=False`` ONLY when the validated +
+    guardrail-approved payload is actually used. Fallback paths must
+    keep ``simulated=True``."""
+
+    # Validated path → simulated=False.
+    validated = QualifierAgentService(
+        model_service=_FakeGroqLikeModelService(
+            content=_valid_qualifier_synthesis_json(fit_score=90)
+        ),
+        use_model_synthesis=True,
+    ).run(_input_for(_strong_lead()))
+    assert validated.result.metadata.simulated is False
+
+    # Fallback path → simulated=True.
+    fallback = QualifierAgentService(
+        model_service=_FakeGroqLikeModelService(content="not json"),
+        use_model_synthesis=True,
+    ).run(_input_for(_strong_lead()))
+    assert fallback.result.metadata.simulated is True
+
+
+def test_b07_invalid_json_triggers_deterministic_fallback_with_risk() -> None:
+    """B-07: Invalid JSON → deterministic fallback + risk note + the
+    ``_fallback`` prompt_version."""
+
+    fake = _FakeGroqLikeModelService(content="garbage with no json at all")
+    output = QualifierAgentService(
+        model_service=fake, use_model_synthesis=True
+    ).run(_input_for(_strong_lead()))
+    assert output.result.success is True
+    assert (
+        output.result.metadata.prompt_version
+        == "qualifier_agent_groq_json_v1_fallback"
+    )
+    assert output.result.metadata.simulated is True
+    assert any(
+        "LLM qualification failed" in risk for risk in output.fit_risks
+    )
+
+
+def test_b08_guardrail_score_increase_over_fifteen_triggers_fallback() -> None:
+    """B-08: ``fit_score`` more than 15 above deterministic baseline →
+    fallback (guardrail step 3)."""
+
+    # Build a lead whose baseline is comfortably Medium and inject an
+    # inflated LLM score (+30).
+    medium_lead = _strong_lead(
+        industry="Legal Tech",
+        country="Mexico",
+        employee_count=20,
+        contact_role="Sales Manager",
+    )
+    baseline = QualifierAgentService().run(_input_for(medium_lead))
+    inflated = baseline.fit_score + 30
+    fake = _FakeGroqLikeModelService(
+        content=_valid_qualifier_synthesis_json(
+            fit_score=min(inflated, 100), priority="high"
+        )
+    )
+    output = QualifierAgentService(
+        model_service=fake, use_model_synthesis=True
+    ).run(_input_for(medium_lead))
+    assert (
+        output.result.metadata.prompt_version
+        == "qualifier_agent_groq_json_v1_fallback"
+    )
+    assert output.fit_score == baseline.fit_score
+    assert output.priority == baseline.priority
+
+
+def test_b09_override_cap_blocks_low_to_high_upgrade() -> None:
+    """B-09: an override cap on the baseline blocks any LLM priority
+    upgrade (LOW → HIGH must NOT take effect)."""
+
+    # B2C industry → cap LOW.
+    lead = _strong_lead(industry="Retail")
+    baseline = QualifierAgentService().run(_input_for(lead))
+    assert baseline.priority == Priority.LOW
+
+    fake = _FakeGroqLikeModelService(
+        content=_valid_qualifier_synthesis_json(
+            fit_score=baseline.fit_score, priority="high", confidence="high"
+        )
+    )
+    output = QualifierAgentService(
+        model_service=fake, use_model_synthesis=True
+    ).run(_input_for(lead))
+    assert output.priority == Priority.LOW
+    assert (
+        output.result.metadata.prompt_version
+        == "qualifier_agent_groq_json_v1_fallback"
+    )
+
+
+def test_b09b_override_cap_also_blocks_low_to_medium_upgrade() -> None:
+    """B-09b: Phase 5.6B FIX 3 — override cap blocks ANY priority
+    upgrade, not just to HIGH. LOW → MEDIUM must also be rejected."""
+
+    lead = _strong_lead(industry="Retail")
+    baseline = QualifierAgentService().run(_input_for(lead))
+    assert baseline.priority == Priority.LOW
+
+    fake = _FakeGroqLikeModelService(
+        content=_valid_qualifier_synthesis_json(
+            fit_score=baseline.fit_score, priority="medium", confidence="medium"
+        )
+    )
+    output = QualifierAgentService(
+        model_service=fake, use_model_synthesis=True
+    ).run(_input_for(lead))
+    assert output.priority == Priority.LOW
+    assert (
+        output.result.metadata.prompt_version
+        == "qualifier_agent_groq_json_v1_fallback"
+    )
+
+
+def test_b10_score_cannot_increase_more_than_fifteen() -> None:
+    """B-10: an LLM score within +15 of baseline IS accepted; a score
+    over +15 IS rejected.
+
+    For a strong lead with baseline 92, +15 lands at 100 (the schema
+    cap). For a medium lead with baseline ~57, we test the exact
+    boundary.
+    """
+
+    medium_lead = _strong_lead(
+        industry="Legal Tech",
+        country="Mexico",
+        employee_count=20,
+        contact_role="Sales Manager",
+    )
+    baseline_score = QualifierAgentService().run(_input_for(medium_lead)).fit_score
+
+    accepted_score = baseline_score + 15
+    rejected_score = min(100, baseline_score + 16)
+
+    accepted = QualifierAgentService(
+        model_service=_FakeGroqLikeModelService(
+            content=_valid_qualifier_synthesis_json(fit_score=accepted_score)
+        ),
+        use_model_synthesis=True,
+    ).run(_input_for(medium_lead))
+    assert accepted.result.metadata.prompt_version == "qualifier_agent_groq_json_v1"
+    assert accepted.fit_score == accepted_score
+
+    if rejected_score > baseline_score + 15:
+        rejected = QualifierAgentService(
+            model_service=_FakeGroqLikeModelService(
+                content=_valid_qualifier_synthesis_json(fit_score=rejected_score)
+            ),
+            use_model_synthesis=True,
+        ).run(_input_for(medium_lead))
+        assert (
+            rejected.result.metadata.prompt_version
+            == "qualifier_agent_groq_json_v1_fallback"
+        )
+
+
+def test_b11_unexpected_failure_returns_safe_success_false() -> None:
+    """B-11: an unexpected failure on the synthesis path returns
+    ``success=False`` with a safe fallback output."""
+
+    class _LeakyFailure(BaseModelService):
+        def complete(self, request):  # noqa: D401
+            raise RuntimeError("synthesis exploded")
+
+    output = QualifierAgentService(
+        model_service=_LeakyFailure(), use_model_synthesis=True
+    ).run(_input_for(_strong_lead()))
+    assert output.result.success is False
+    assert output.result.error is not None
+    assert output.result.error.code == "qualifier_agent_error"
+    assert output.fit_score == 0
+    assert output.priority == Priority.LOW
+    assert output.confidence == Confidence.LOW
+
+
+def test_b12_no_raw_model_response_leaked_in_error_or_fallback() -> None:
+    """B-12: the raw model response is never leaked through error
+    messages or fallback risk notes."""
+
+    secret_marker = "MODEL_RAW_DUMP_THAT_SHOULD_NEVER_LEAK"
+
+    # Invalid-JSON fallback path.
+    fake = _FakeGroqLikeModelService(content=f"prefix {secret_marker} suffix")
+    output = QualifierAgentService(
+        model_service=fake, use_model_synthesis=True
+    ).run(_input_for(_strong_lead()))
+    blob = " ".join(output.fit_reasons + output.fit_risks)
+    assert secret_marker not in blob
+
+    # Unexpected-failure path.
+    class _LeakyFailure(BaseModelService):
+        def complete(self, request):  # noqa: D401
+            raise RuntimeError(
+                "benign agent failure"
+            )
+
+    output2 = QualifierAgentService(
+        model_service=_LeakyFailure(), use_model_synthesis=True
+    ).run(_input_for(_strong_lead()))
+    assert output2.result.error is not None
+    assert secret_marker not in output2.result.error.message
 
 
 def test_extra_priority_medium_threshold_is_forty_five() -> None:

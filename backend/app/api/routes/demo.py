@@ -353,6 +353,102 @@ def get_agents_qualifier_for_lead(lead_id: str) -> QualifierAgentOutput:
 # --------------------------------------------------------------------------- #
 
 
+# --------------------------------------------------------------------------- #
+# Phase 5.6B — Optional Groq qualifier path for ONE lead at a time            #
+# --------------------------------------------------------------------------- #
+
+
+@router.get(
+    "/agents/qualifier-groq/{lead_id}", response_model=QualifierAgentOutput
+)
+def get_agents_qualifier_groq_for_lead(lead_id: str) -> QualifierAgentOutput:
+    """Run the Qualifier Agent against a single demo lead via GroqModelService.
+
+    Returns HTTP 503 when ``GROQ_API_KEY`` is missing, HTTP 404 when
+    ``lead_id`` is unknown. Otherwise routes the lead's demo context
+    through :class:`GroqModelService` with
+    ``QualifierAgentService(use_model_synthesis=True)``; on validation
+    or guardrail failure the agent falls back to its deterministic
+    output with an explicit risk note.
+    """
+
+    # Local imports keep FastAPI startup independent of the Groq SDK
+    # (same defensive pattern as ``/groq-check`` and ``/research-groq``).
+    from app.agents.qualifier_agent import QualifierAgentService
+    from app.schemas.agents import QualifierAgentInput
+    from app.schemas.demo import DemoCompanyResearch
+    from app.services.demo_data_loader import (
+        load_demo_company_research,
+        load_demo_leads,
+    )
+    from app.services.model_service import GroqModelService
+
+    try:
+        leads = load_demo_leads()
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+    matching_lead = next((lead for lead in leads if lead.lead_id == lead_id), None)
+    if matching_lead is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Lead '{lead_id}' not found in the demo dataset.",
+        )
+
+    try:
+        research_records = load_demo_company_research()
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+    matching_research: DemoCompanyResearch | None = next(
+        (record for record in research_records if record.lead_id == lead_id),
+        None,
+    )
+
+    research_summary: str | None = None
+    opportunity_signals: list[str] = []
+    information_risks: list[str] = []
+    if matching_research is not None:
+        research_summary = (
+            matching_research.recommended_research_summary
+            or matching_research.company_summary
+            or None
+        )
+        opportunity_signals = [
+            signal.signal
+            for signal in matching_research.opportunity_signals
+            if isinstance(signal.signal, str) and signal.signal.strip()
+        ]
+        information_risks = [
+            risk
+            for risk in matching_research.information_risks
+            if isinstance(risk, str) and risk.strip()
+        ]
+
+    try:
+        groq_service = GroqModelService(default_model="llama-3.1-8b-instant")
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        )
+
+    agent = QualifierAgentService(
+        model_service=groq_service, use_model_synthesis=True
+    )
+    return agent.run(
+        QualifierAgentInput(
+            lead=matching_lead,
+            research_summary=research_summary,
+            opportunity_signals=opportunity_signals,
+            information_risks=information_risks,
+            run_id="qualifier_agent_groq_demo_run_001",
+        )
+    )
+
+
 @router.get(
     "/agents/research-groq/{lead_id}", response_model=ResearchAgentOutput
 )
