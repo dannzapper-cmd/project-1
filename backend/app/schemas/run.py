@@ -57,6 +57,14 @@ class TraceEntry(BaseModel):
     latency: str
     tokens: int = Field(..., ge=0)
     prompt_version: str
+    # Phase 5.1 additions. Optional with defaults so existing callers and
+    # tests that build TraceEntry without these fields keep working.
+    # ``model`` records which LLM (if any) produced the step; "none" is
+    # used by the simulation layer to make it impossible to confuse a
+    # simulated trace with a real model call. ``simulated`` is the
+    # authoritative flag for downstream UIs/exports.
+    model: str = "none"
+    simulated: bool = False
 
 
 # --------------------------------------------------------------------------- #

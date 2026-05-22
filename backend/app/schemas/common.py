@@ -25,6 +25,11 @@ class LeadStatus(str, Enum):
 class RunMode(str, Enum):
     LIVE = "Live"
     REPLAY = "Replay"
+    # Phase 5.1 — Pipeline Simulation Layer. Lowercase value is intentional
+    # so that simulation-only responses are visually distinct from the
+    # existing capitalized "Live" / "Replay" modes and so that downstream
+    # callers cannot accidentally treat a simulated run as a real one.
+    SIMULATION = "simulation"
 
 
 class Confidence(str, Enum):
