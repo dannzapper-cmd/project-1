@@ -13,6 +13,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 
 from app.core.logging import get_logger
+from app.schemas.agents import ResearchAgentOutput
 from app.schemas.demo import DemoCompanyResearch, DemoSummary
 from app.schemas.evaluation import (
     LeadEvaluationReport,
@@ -30,6 +31,10 @@ from app.schemas.model import (
 )
 from app.schemas.run import ReplayRunResponse
 from app.schemas.simulation import SimulationRunResponse
+from app.services.agent_demo_service import (
+    build_all_demo_research_agent_outputs,
+    build_demo_research_agent_output,
+)
 from app.services.demo_data_loader import (
     DemoDataError,
     build_demo_summary,
@@ -246,6 +251,49 @@ def get_simulation_evaluation_for_lead(lead_id: str) -> LeadEvaluationReport:
 # and no way to feed an arbitrary prompt to a real provider through the      #
 # HTTP surface in this phase.                                                 #
 # --------------------------------------------------------------------------- #
+
+
+# --------------------------------------------------------------------------- #
+# Phase 5.5A — Research agent foundation                                      #
+#                                                                             #
+# Routes live under /api/demo/agents/ to keep them clearly separated from     #
+# /api/demo/simulation/ (Phase 5.1 / 5.3) and /api/demo/model-service/        #
+# (Phase 5.4). No POST endpoint and no arbitrary-prompt HTTP surface is       #
+# exposed: prompts are constructed server-side by ResearchAgentService.       #
+# --------------------------------------------------------------------------- #
+
+
+@router.get("/agents/research", response_model=list[ResearchAgentOutput])
+def get_agents_research() -> list[ResearchAgentOutput]:
+    """Run the Phase 5.5A Research Agent against every demo lead.
+
+    Uses :class:`MockModelService` only; no real provider, no API key,
+    no network call. Output ordering mirrors the demo CSV row order.
+    """
+
+    try:
+        return build_all_demo_research_agent_outputs()
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+
+@router.get(
+    "/agents/research/{lead_id}", response_model=ResearchAgentOutput
+)
+def get_agents_research_for_lead(lead_id: str) -> ResearchAgentOutput:
+    """Run the Phase 5.5A Research Agent against a single demo lead."""
+
+    try:
+        return build_demo_research_agent_output(lead_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        )
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
 
 
 @router.get("/model-service/mock-check", response_model=ModelResponse)
