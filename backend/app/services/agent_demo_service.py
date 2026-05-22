@@ -26,10 +26,13 @@ Public surface:
 
 from __future__ import annotations
 
+from app.agents.email_drafter_agent import EmailDrafterAgentService
 from app.agents.qualifier_agent import QualifierAgentService
 from app.agents.research_agent import ResearchAgentService
 from app.agents.strategist_agent import StrategistAgentService
 from app.schemas.agents import (
+    EmailDrafterAgentInput,
+    EmailDrafterAgentOutput,
     QualifierAgentInput,
     QualifierAgentOutput,
     ResearchAgentInput,
@@ -48,6 +51,8 @@ _DEMO_RUN_ID: str = "research_agent_demo_run_001"
 _DEMO_QUALIFIER_RUN_ID: str = "qualifier_agent_demo_run_001"
 _DEMO_STRATEGIST_RUN_ID: str = "strategist_agent_demo_run_001"
 _DEMO_STRATEGIST_GROQ_RUN_ID: str = "strategist_agent_groq_demo_run_001"
+_DEMO_EMAIL_DRAFTER_RUN_ID: str = "email_drafter_agent_demo_run_001"
+_DEMO_EMAIL_DRAFTER_GROQ_RUN_ID: str = "email_drafter_agent_groq_demo_run_001"
 
 
 def _build_available_context(
@@ -363,6 +368,130 @@ def build_demo_strategist_agent_groq_output(
     return agent.run(strategist_input)
 
 
+# --------------------------------------------------------------------------- #
+# Phase 5.8 — Email Drafter Agent demo wiring                                 #
+# --------------------------------------------------------------------------- #
+def _build_email_drafter_input(
+    lead: LeadIn,
+    research_output: ResearchAgentOutput,
+    strategist_output: StrategistAgentOutput,
+    *,
+    run_id: str,
+) -> EmailDrafterAgentInput:
+    """Combine deterministic Research + Strategist outputs into an
+    EmailDrafterAgentInput. The Phase 5.2 contract types
+    ``company_summary`` as a required ``str``; we fall back to a
+    conservative empty string when the research path produced nothing
+    usable (the email drafter's deterministic baseline detects that
+    state and emits an exploratory draft)."""
+
+    company_summary = research_output.company_summary or ""
+    return EmailDrafterAgentInput(
+        lead=lead,
+        company_summary=company_summary,
+        pain_hypothesis=strategist_output.pain_hypothesis,
+        sales_angle=strategist_output.sales_angle,
+        core_message=strategist_output.core_message,
+        personalization_notes=list(strategist_output.personalization_notes),
+        run_id=run_id,
+    )
+
+
+def build_demo_email_drafter_agent_output(
+    lead_id: str,
+) -> EmailDrafterAgentOutput:
+    """Run the deterministic Email Drafter Agent against a single demo lead.
+
+    Reuses the Phase 5.5A Research, Phase 5.6A Qualifier and Phase 5.7
+    Strategist demo functions so the email drafter sees the exact same
+    inputs an orchestration layer would. Raises ``ValueError`` on
+    unknown ``lead_id`` (route translates to HTTP 404).
+    """
+
+    research_output = build_demo_research_agent_output(lead_id)
+    # Qualifier is computed inside build_demo_strategist_agent_output;
+    # we don't need it directly here.
+    strategist_output = build_demo_strategist_agent_output(lead_id)
+
+    leads = load_demo_leads()
+    matching_lead = next(
+        (lead for lead in leads if lead.lead_id == lead_id), None
+    )
+    if matching_lead is None:  # pragma: no cover — Research already raised
+        raise ValueError(
+            f"Lead '{lead_id}' not found in the demo dataset."
+        )
+
+    email_input = _build_email_drafter_input(
+        matching_lead,
+        research_output,
+        strategist_output,
+        run_id=_DEMO_EMAIL_DRAFTER_RUN_ID,
+    )
+    return EmailDrafterAgentService().run(email_input)
+
+
+def build_all_demo_email_drafter_agent_outputs() -> list[EmailDrafterAgentOutput]:
+    """Run the deterministic Email Drafter Agent against every demo lead.
+
+    Output ordering mirrors :func:`load_demo_leads` (CSV row order).
+    """
+
+    leads = load_demo_leads()
+    service = EmailDrafterAgentService()
+    outputs: list[EmailDrafterAgentOutput] = []
+    for lead in leads:
+        research_output = build_demo_research_agent_output(lead.lead_id)
+        strategist_output = build_demo_strategist_agent_output(lead.lead_id)
+        email_input = _build_email_drafter_input(
+            lead,
+            research_output,
+            strategist_output,
+            run_id=_DEMO_EMAIL_DRAFTER_RUN_ID,
+        )
+        outputs.append(service.run(email_input))
+    return outputs
+
+
+def build_demo_email_drafter_agent_groq_output(
+    lead_id: str,
+) -> EmailDrafterAgentOutput:
+    """Run the Email Drafter Agent against a single demo lead via Groq.
+
+    Raises ``ValueError`` on unknown ``lead_id``. Raises ``ValueError``
+    (originating from :class:`GroqModelService`) when ``GROQ_API_KEY``
+    is missing — the route layer translates that into HTTP 503.
+
+    No all-leads Groq function is provided on purpose (cost control).
+    """
+
+    from app.services.model_service import GroqModelService
+
+    research_output = build_demo_research_agent_output(lead_id)
+    strategist_output = build_demo_strategist_agent_output(lead_id)
+
+    leads = load_demo_leads()
+    matching_lead = next(
+        (lead for lead in leads if lead.lead_id == lead_id), None
+    )
+    if matching_lead is None:  # pragma: no cover — Research already raised
+        raise ValueError(
+            f"Lead '{lead_id}' not found in the demo dataset."
+        )
+
+    groq_service = GroqModelService(default_model="llama-3.1-8b-instant")
+    agent = EmailDrafterAgentService(
+        model_service=groq_service, use_model_synthesis=True
+    )
+    email_input = _build_email_drafter_input(
+        matching_lead,
+        research_output,
+        strategist_output,
+        run_id=_DEMO_EMAIL_DRAFTER_GROQ_RUN_ID,
+    )
+    return agent.run(email_input)
+
+
 __all__ = [
     "build_demo_research_agent_output",
     "build_all_demo_research_agent_outputs",
@@ -371,4 +500,7 @@ __all__ = [
     "build_demo_strategist_agent_output",
     "build_all_demo_strategist_agent_outputs",
     "build_demo_strategist_agent_groq_output",
+    "build_demo_email_drafter_agent_output",
+    "build_all_demo_email_drafter_agent_outputs",
+    "build_demo_email_drafter_agent_groq_output",
 ]

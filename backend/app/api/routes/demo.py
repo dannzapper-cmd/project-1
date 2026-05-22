@@ -14,6 +14,7 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.core.logging import get_logger
 from app.schemas.agents import (
+    EmailDrafterAgentOutput,
     QualifierAgentOutput,
     ResearchAgentOutput,
     StrategistAgentOutput,
@@ -37,9 +38,12 @@ from app.schemas.model import (
 from app.schemas.run import ReplayRunResponse
 from app.schemas.simulation import SimulationRunResponse
 from app.services.agent_demo_service import (
+    build_all_demo_email_drafter_agent_outputs,
     build_all_demo_qualifier_agent_outputs,
     build_all_demo_research_agent_outputs,
     build_all_demo_strategist_agent_outputs,
+    build_demo_email_drafter_agent_groq_output,
+    build_demo_email_drafter_agent_output,
     build_demo_qualifier_agent_output,
     build_demo_research_agent_output,
     build_demo_strategist_agent_groq_output,
@@ -420,6 +424,84 @@ def get_agents_strategist_groq_for_lead(lead_id: str) -> StrategistAgentOutput:
     # does not need to introduce a new exception class.
     try:
         return build_demo_strategist_agent_groq_output(lead_id)
+    except ValueError as exc:
+        message = str(exc)
+        if "GROQ_API_KEY" in message:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=message,
+            )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=message,
+        )
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+
+# --------------------------------------------------------------------------- #
+# Phase 5.8 — Email Drafter Agent foundation + optional Groq synthesis        #
+#                                                                             #
+# Sibling routes to /api/demo/agents/research, /qualifier and /strategist.    #
+# /email-drafter[/lead_id] are deterministic (no Groq); /email-drafter-groq/  #
+# {id} is the single-lead-at-a-time Groq path (HTTP 503 when GROQ_API_KEY     #
+# is missing). No POST endpoint, no all-leads Groq endpoint, no email is      #
+# ever sent — these endpoints only return reviewable draft text.              #
+# --------------------------------------------------------------------------- #
+
+
+@router.get("/agents/email-drafter", response_model=list[EmailDrafterAgentOutput])
+def get_agents_email_drafter() -> list[EmailDrafterAgentOutput]:
+    """Run the Phase 5.8 deterministic Email Drafter Agent against every
+    demo lead. No Groq call. No email is sent."""
+
+    try:
+        return build_all_demo_email_drafter_agent_outputs()
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+
+@router.get(
+    "/agents/email-drafter/{lead_id}", response_model=EmailDrafterAgentOutput
+)
+def get_agents_email_drafter_for_lead(
+    lead_id: str,
+) -> EmailDrafterAgentOutput:
+    """Run the Phase 5.8 deterministic Email Drafter Agent against a
+    single demo lead."""
+
+    try:
+        return build_demo_email_drafter_agent_output(lead_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        )
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+
+@router.get(
+    "/agents/email-drafter-groq/{lead_id}",
+    response_model=EmailDrafterAgentOutput,
+)
+def get_agents_email_drafter_groq_for_lead(
+    lead_id: str,
+) -> EmailDrafterAgentOutput:
+    """Run the Phase 5.8 Email Drafter Agent against a single demo lead
+    via :class:`GroqModelService` with ``use_model_synthesis=True``.
+
+    Returns HTTP 503 when ``GROQ_API_KEY`` is missing, HTTP 404 when
+    ``lead_id`` is unknown. On JSON validation or guardrail failure
+    the agent falls back to the deterministic draft with an explicit
+    risk note. No email is ever sent.
+    """
+
+    try:
+        return build_demo_email_drafter_agent_groq_output(lead_id)
     except ValueError as exc:
         message = str(exc)
         if "GROQ_API_KEY" in message:
