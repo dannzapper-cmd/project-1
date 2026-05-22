@@ -27,12 +27,15 @@ Public surface:
 from __future__ import annotations
 
 from app.agents.email_drafter_agent import EmailDrafterAgentService
+from app.agents.qa_evaluator_agent import QAEvaluatorAgentService
 from app.agents.qualifier_agent import QualifierAgentService
 from app.agents.research_agent import ResearchAgentService
 from app.agents.strategist_agent import StrategistAgentService
 from app.schemas.agents import (
     EmailDrafterAgentInput,
     EmailDrafterAgentOutput,
+    QAEvaluatorAgentInput,
+    QAEvaluatorAgentOutput,
     QualifierAgentInput,
     QualifierAgentOutput,
     ResearchAgentInput,
@@ -53,6 +56,8 @@ _DEMO_STRATEGIST_RUN_ID: str = "strategist_agent_demo_run_001"
 _DEMO_STRATEGIST_GROQ_RUN_ID: str = "strategist_agent_groq_demo_run_001"
 _DEMO_EMAIL_DRAFTER_RUN_ID: str = "email_drafter_agent_demo_run_001"
 _DEMO_EMAIL_DRAFTER_GROQ_RUN_ID: str = "email_drafter_agent_groq_demo_run_001"
+_DEMO_QA_EVALUATOR_RUN_ID: str = "qa_evaluator_agent_demo_run_001"
+_DEMO_QA_EVALUATOR_GROQ_RUN_ID: str = "qa_evaluator_agent_groq_demo_run_001"
 
 
 def _build_available_context(
@@ -492,6 +497,129 @@ def build_demo_email_drafter_agent_groq_output(
     return agent.run(email_input)
 
 
+# --------------------------------------------------------------------------- #
+# Phase 5.9 — QA Evaluator Agent demo wiring                                  #
+# --------------------------------------------------------------------------- #
+def _build_qa_evaluator_input(
+    lead: LeadIn,
+    research_output: ResearchAgentOutput,
+    email_drafter_output: EmailDrafterAgentOutput,
+    *,
+    run_id: str,
+) -> QAEvaluatorAgentInput:
+    """Combine deterministic Research + Email-Drafter outputs into a
+    QAEvaluatorAgentInput.
+
+    The Phase 5.2 ``QAEvaluatorAgentInput`` contract takes
+    ``email_subject`` / ``email_body`` from the email drafter,
+    ``evidence_cards`` from the research output, and
+    ``personalization_notes`` from the email drafter (which already
+    carries the strategist's and the limited-context notes).
+    """
+
+    return QAEvaluatorAgentInput(
+        lead=lead,
+        email_subject=email_drafter_output.email_subject,
+        email_body=email_drafter_output.email_body,
+        evidence_cards=list(research_output.evidence_cards),
+        personalization_notes=list(email_drafter_output.personalization_notes),
+        run_id=run_id,
+    )
+
+
+def build_demo_qa_evaluator_agent_output(
+    lead_id: str,
+) -> QAEvaluatorAgentOutput:
+    """Run the deterministic QA Evaluator Agent against a single demo lead.
+
+    Reuses the existing Research and Email Drafter demo functions so
+    the QA evaluator sees the exact same inputs an orchestration layer
+    would. Raises ``ValueError`` on unknown ``lead_id`` (route
+    translates to HTTP 404).
+    """
+
+    research_output = build_demo_research_agent_output(lead_id)
+    email_output = build_demo_email_drafter_agent_output(lead_id)
+
+    leads = load_demo_leads()
+    matching_lead = next(
+        (lead for lead in leads if lead.lead_id == lead_id), None
+    )
+    if matching_lead is None:  # pragma: no cover — Research already raised
+        raise ValueError(
+            f"Lead '{lead_id}' not found in the demo dataset."
+        )
+
+    qa_input = _build_qa_evaluator_input(
+        matching_lead,
+        research_output,
+        email_output,
+        run_id=_DEMO_QA_EVALUATOR_RUN_ID,
+    )
+    return QAEvaluatorAgentService().run(qa_input)
+
+
+def build_all_demo_qa_evaluator_agent_outputs() -> list[QAEvaluatorAgentOutput]:
+    """Run the deterministic QA Evaluator Agent against every demo lead.
+
+    Output ordering mirrors :func:`load_demo_leads` (CSV row order).
+    """
+
+    leads = load_demo_leads()
+    service = QAEvaluatorAgentService()
+    outputs: list[QAEvaluatorAgentOutput] = []
+    for lead in leads:
+        research_output = build_demo_research_agent_output(lead.lead_id)
+        email_output = build_demo_email_drafter_agent_output(lead.lead_id)
+        qa_input = _build_qa_evaluator_input(
+            lead,
+            research_output,
+            email_output,
+            run_id=_DEMO_QA_EVALUATOR_RUN_ID,
+        )
+        outputs.append(service.run(qa_input))
+    return outputs
+
+
+def build_demo_qa_evaluator_agent_groq_output(
+    lead_id: str,
+) -> QAEvaluatorAgentOutput:
+    """Run the QA Evaluator Agent against a single demo lead via Groq.
+
+    Raises ``ValueError`` on unknown ``lead_id``. Raises ``ValueError``
+    (originating from :class:`GroqModelService`) when ``GROQ_API_KEY``
+    is missing — the route layer translates that into HTTP 503.
+
+    No all-leads Groq function is provided on purpose (cost control).
+    """
+
+    from app.services.model_service import GroqModelService
+
+    research_output = build_demo_research_agent_output(lead_id)
+    email_output = build_demo_email_drafter_agent_output(lead_id)
+
+    leads = load_demo_leads()
+    matching_lead = next(
+        (lead for lead in leads if lead.lead_id == lead_id), None
+    )
+    if matching_lead is None:  # pragma: no cover — Research already raised
+        raise ValueError(
+            f"Lead '{lead_id}' not found in the demo dataset."
+        )
+
+    groq_service = GroqModelService(default_model="llama-3.1-8b-instant")
+    agent = QAEvaluatorAgentService(
+        model_service=groq_service, use_model_synthesis=True
+    )
+    qa_input = _build_qa_evaluator_input(
+        matching_lead,
+        research_output,
+        email_output,
+        run_id=_DEMO_QA_EVALUATOR_GROQ_RUN_ID,
+    )
+    return agent.run(qa_input)
+
+
 __all__ = [
     "build_demo_research_agent_output",
     "build_all_demo_research_agent_outputs",
@@ -503,4 +631,7 @@ __all__ = [
     "build_demo_email_drafter_agent_output",
     "build_all_demo_email_drafter_agent_outputs",
     "build_demo_email_drafter_agent_groq_output",
+    "build_demo_qa_evaluator_agent_output",
+    "build_all_demo_qa_evaluator_agent_outputs",
+    "build_demo_qa_evaluator_agent_groq_output",
 ]
