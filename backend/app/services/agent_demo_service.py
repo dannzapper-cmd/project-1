@@ -28,11 +28,14 @@ from __future__ import annotations
 
 from app.agents.qualifier_agent import QualifierAgentService
 from app.agents.research_agent import ResearchAgentService
+from app.agents.strategist_agent import StrategistAgentService
 from app.schemas.agents import (
     QualifierAgentInput,
     QualifierAgentOutput,
     ResearchAgentInput,
     ResearchAgentOutput,
+    StrategistAgentInput,
+    StrategistAgentOutput,
 )
 from app.schemas.demo import DemoCompanyResearch
 from app.schemas.lead import LeadIn
@@ -43,6 +46,8 @@ from app.services.demo_data_loader import (
 
 _DEMO_RUN_ID: str = "research_agent_demo_run_001"
 _DEMO_QUALIFIER_RUN_ID: str = "qualifier_agent_demo_run_001"
+_DEMO_STRATEGIST_RUN_ID: str = "strategist_agent_demo_run_001"
+_DEMO_STRATEGIST_GROQ_RUN_ID: str = "strategist_agent_groq_demo_run_001"
 
 
 def _build_available_context(
@@ -231,9 +236,139 @@ def build_all_demo_qualifier_agent_outputs() -> list[QualifierAgentOutput]:
     return outputs
 
 
+# --------------------------------------------------------------------------- #
+# Phase 5.7 — Strategist Agent demo wiring                                    #
+# --------------------------------------------------------------------------- #
+def _build_strategist_input(
+    lead: LeadIn,
+    research_output: ResearchAgentOutput,
+    qualifier_output: QualifierAgentOutput,
+    *,
+    run_id: str,
+) -> StrategistAgentInput:
+    """Combine deterministic Research + Qualifier outputs into a
+    StrategistAgentInput. The Phase 5.2 contract types
+    ``company_summary`` as a required ``str``; we fall back to a
+    conservative empty string when the research path produced nothing
+    usable (the strategist's deterministic baseline already handles
+    empty context safely)."""
+
+    company_summary = research_output.company_summary or ""
+    return StrategistAgentInput(
+        lead=lead,
+        company_summary=company_summary,
+        opportunity_signals=list(research_output.opportunity_signals),
+        pain_hypotheses=list(research_output.pain_hypotheses),
+        fit_score=qualifier_output.fit_score,
+        priority=qualifier_output.priority,
+        run_id=run_id,
+    )
+
+
+def build_demo_strategist_agent_output(lead_id: str) -> StrategistAgentOutput:
+    """Run the deterministic Strategist Agent against a single demo lead.
+
+    Reuses the existing Phase 5.5A Research and Phase 5.6A Qualifier
+    demo functions so the strategist sees the exact same inputs an
+    orchestration layer would. Raises ``ValueError`` on unknown
+    ``lead_id`` (route translates to HTTP 404).
+    """
+
+    research_output = build_demo_research_agent_output(lead_id)
+    qualifier_output = build_demo_qualifier_agent_output(lead_id)
+
+    leads = load_demo_leads()
+    matching_lead = next(
+        (lead for lead in leads if lead.lead_id == lead_id), None
+    )
+    if matching_lead is None:  # pragma: no cover — Research already raised
+        raise ValueError(
+            f"Lead '{lead_id}' not found in the demo dataset."
+        )
+
+    strategist_input = _build_strategist_input(
+        matching_lead,
+        research_output,
+        qualifier_output,
+        run_id=_DEMO_STRATEGIST_RUN_ID,
+    )
+    return StrategistAgentService().run(strategist_input)
+
+
+def build_all_demo_strategist_agent_outputs() -> list[StrategistAgentOutput]:
+    """Run the deterministic Strategist Agent against every demo lead.
+
+    Output ordering mirrors :func:`load_demo_leads` (CSV row order).
+    Reuses a single :class:`StrategistAgentService` instance.
+    """
+
+    leads = load_demo_leads()
+    service = StrategistAgentService()
+    outputs: list[StrategistAgentOutput] = []
+    for lead in leads:
+        # Per-lead Research + Qualifier calls keep the demo path
+        # deterministic and self-contained; the qualifier itself is
+        # deterministic so per-call cost is negligible.
+        research_output = build_demo_research_agent_output(lead.lead_id)
+        qualifier_output = build_demo_qualifier_agent_output(lead.lead_id)
+        strategist_input = _build_strategist_input(
+            lead,
+            research_output,
+            qualifier_output,
+            run_id=_DEMO_STRATEGIST_RUN_ID,
+        )
+        outputs.append(service.run(strategist_input))
+    return outputs
+
+
+def build_demo_strategist_agent_groq_output(
+    lead_id: str,
+) -> StrategistAgentOutput:
+    """Run the Strategist Agent against a single demo lead via Groq.
+
+    Raises ``ValueError`` on unknown ``lead_id``. Raises ``ValueError``
+    (originating from :class:`GroqModelService`) when ``GROQ_API_KEY``
+    is missing — the route layer translates that into HTTP 503.
+
+    No all-leads Groq function is provided on purpose (cost control).
+    """
+
+    # Local import so the FastAPI startup path stays independent of the
+    # Groq SDK availability — same defensive pattern Phase 5.5C and
+    # Phase 5.6B routes use.
+    from app.services.model_service import GroqModelService
+
+    research_output = build_demo_research_agent_output(lead_id)
+    qualifier_output = build_demo_qualifier_agent_output(lead_id)
+
+    leads = load_demo_leads()
+    matching_lead = next(
+        (lead for lead in leads if lead.lead_id == lead_id), None
+    )
+    if matching_lead is None:  # pragma: no cover — Research already raised
+        raise ValueError(
+            f"Lead '{lead_id}' not found in the demo dataset."
+        )
+
+    groq_service = GroqModelService(default_model="llama-3.1-8b-instant")
+    agent = StrategistAgentService(
+        model_service=groq_service, use_model_synthesis=True
+    )
+    strategist_input = _build_strategist_input(
+        matching_lead,
+        research_output,
+        qualifier_output,
+        run_id=_DEMO_STRATEGIST_GROQ_RUN_ID,
+    )
+    return agent.run(strategist_input)
+
+
 __all__ = [
     "build_demo_research_agent_output",
     "build_all_demo_research_agent_outputs",
     "build_demo_qualifier_agent_output",
     "build_all_demo_qualifier_agent_outputs",
+    "build_demo_strategist_agent_output",
+    "build_all_demo_strategist_agent_outputs",
+    "build_demo_strategist_agent_groq_output",
 ]

@@ -13,7 +13,11 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 
 from app.core.logging import get_logger
-from app.schemas.agents import QualifierAgentOutput, ResearchAgentOutput
+from app.schemas.agents import (
+    QualifierAgentOutput,
+    ResearchAgentOutput,
+    StrategistAgentOutput,
+)
 from app.schemas.demo import DemoCompanyResearch, DemoSummary
 from app.schemas.evaluation import (
     LeadEvaluationReport,
@@ -35,8 +39,11 @@ from app.schemas.simulation import SimulationRunResponse
 from app.services.agent_demo_service import (
     build_all_demo_qualifier_agent_outputs,
     build_all_demo_research_agent_outputs,
+    build_all_demo_strategist_agent_outputs,
     build_demo_qualifier_agent_output,
     build_demo_research_agent_output,
+    build_demo_strategist_agent_groq_output,
+    build_demo_strategist_agent_output,
 )
 from app.services.demo_data_loader import (
     DemoDataError,
@@ -351,6 +358,82 @@ def get_agents_qualifier_for_lead(lead_id: str) -> QualifierAgentOutput:
 # time on purpose to control cost. No POST endpoint, no arbitrary-prompt     #
 # surface, no all-leads Groq endpoint.                                       #
 # --------------------------------------------------------------------------- #
+
+
+# --------------------------------------------------------------------------- #
+# Phase 5.7 — Strategist Agent foundation + optional Groq synthesis           #
+#                                                                             #
+# Sibling routes to /api/demo/agents/research and /api/demo/agents/qualifier. #
+# /strategist[/lead_id] are deterministic (no Groq); /strategist-groq/{id}   #
+# is the single-lead-at-a-time Groq path (HTTP 503 when GROQ_API_KEY is       #
+# missing). No POST endpoint and no all-leads Groq endpoint.                 #
+# --------------------------------------------------------------------------- #
+
+
+@router.get("/agents/strategist", response_model=list[StrategistAgentOutput])
+def get_agents_strategist() -> list[StrategistAgentOutput]:
+    """Run the Phase 5.7 deterministic Strategist Agent against every
+    demo lead. No Groq call."""
+
+    try:
+        return build_all_demo_strategist_agent_outputs()
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+
+@router.get(
+    "/agents/strategist/{lead_id}", response_model=StrategistAgentOutput
+)
+def get_agents_strategist_for_lead(lead_id: str) -> StrategistAgentOutput:
+    """Run the Phase 5.7 deterministic Strategist Agent against a single
+    demo lead."""
+
+    try:
+        return build_demo_strategist_agent_output(lead_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        )
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+
+@router.get(
+    "/agents/strategist-groq/{lead_id}", response_model=StrategistAgentOutput
+)
+def get_agents_strategist_groq_for_lead(lead_id: str) -> StrategistAgentOutput:
+    """Run the Phase 5.7 Strategist Agent against a single demo lead
+    via :class:`GroqModelService` with ``use_model_synthesis=True``.
+
+    Returns HTTP 503 when ``GROQ_API_KEY`` is missing, HTTP 404 when
+    ``lead_id`` is unknown. On JSON validation or guardrail failure
+    the agent falls back to the deterministic strategy with an
+    explicit risk note.
+    """
+
+    # Catch both flavours of ValueError raised below: "not found in the
+    # demo dataset" → 404; "GROQ_API_KEY is required..." → 503. We
+    # branch on substring rather than the exception type so the helper
+    # does not need to introduce a new exception class.
+    try:
+        return build_demo_strategist_agent_groq_output(lead_id)
+    except ValueError as exc:
+        message = str(exc)
+        if "GROQ_API_KEY" in message:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=message,
+            )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=message,
+        )
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
 
 
 # --------------------------------------------------------------------------- #
