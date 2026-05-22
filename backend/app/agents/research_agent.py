@@ -59,6 +59,7 @@ from app.schemas.research_synthesis import (
     ResearchSynthesisEvidence,
     ResearchSynthesisPayload,
 )
+from app.services.json_utils import extract_json_object
 from app.services.model_service import BaseModelService, get_model_service
 
 _AGENT_NAME: str = "research_agent"
@@ -214,58 +215,15 @@ def _confidence_from_evidence_counts(
 
 
 # --------------------------------------------------------------------------- #
-# Phase 5.5C — JSON parsing / validation helpers                              #
+# Phase 5.5C / 5.6B — JSON parsing / validation helpers                       #
+#                                                                             #
+# ``extract_json_object`` lives in ``app.services.json_utils`` (Phase 5.6B    #
+# FIX 1) so agents never import from other agents. The function is           #
+# re-exported below in ``__all__`` so the existing                            #
+# ``test_research_synthesis_validation.py`` import path                       #
+# (``from app.agents.research_agent import extract_json_object``) keeps      #
+# working without any test change.                                            #
 # --------------------------------------------------------------------------- #
-def extract_json_object(text: str) -> dict:
-    """Best-effort JSON-object extraction from an LLM response (FIX 2).
-
-    Three explicit attempts, in order, with stdlib ``json`` only — no
-    regex, no ``eval``, no ``ast.literal_eval``, no YAML, no third-party
-    parsers:
-
-    1. ``json.loads(text)`` on the stripped string.
-    2. If the string contains markdown code fences, strip them (and an
-       optional ``json`` language tag) and try again.
-    3. Take the substring from the first ``{`` to the last ``}`` and
-       try ``json.loads`` on that.
-
-    Raises
-    ------
-    ValueError
-        If none of the three attempts produces a JSON object.
-    """
-
-    text = text.strip()
-
-    # Attempt 1: parse the whole response.
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        pass
-
-    # Attempt 2: strip markdown code fences (with optional `json` tag).
-    if "```" in text:
-        start = text.find("```")
-        end = text.rfind("```")
-        if start < end:
-            inner = text[start + 3 : end].strip()
-            if inner.startswith("json"):
-                inner = inner[4:].strip()
-            try:
-                return json.loads(inner)
-            except json.JSONDecodeError:
-                pass
-
-    # Attempt 3: first { to last }.
-    start = text.find("{")
-    end = text.rfind("}")
-    if start != -1 and end != -1 and start < end:
-        try:
-            return json.loads(text[start : end + 1])
-        except json.JSONDecodeError:
-            pass
-
-    raise ValueError("No valid JSON object found in model response.")
 
 
 def validate_research_synthesis_payload(text: str) -> ResearchSynthesisPayload:
