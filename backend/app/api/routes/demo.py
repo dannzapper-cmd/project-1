@@ -15,6 +15,7 @@ from fastapi import APIRouter, HTTPException, status
 from app.core.logging import get_logger
 from app.schemas.agents import (
     EmailDrafterAgentOutput,
+    LeadPipelineContractOutput,
     QAEvaluatorAgentOutput,
     QualifierAgentOutput,
     ResearchAgentOutput,
@@ -66,6 +67,7 @@ from app.services.evaluation_service import (
     build_run_trace_report,
 )
 from app.services.model_service import GroqModelService, get_model_service
+from app.services.pipeline_service import run_pipeline_for_lead
 from app.services.run_service import build_replay_run
 from app.services.simulation_service import build_simulation_run
 
@@ -834,3 +836,26 @@ def model_service_groq_check() -> ModelResponse:
         ),
     )
     return service.complete(request)
+
+
+# --------------------------------------------------------------------------- #
+# Phase 6.1 — Plain Python Pipeline Orchestration (single demo lead)          #
+#                                                                             #
+# Deterministic in-process orchestration over the existing Research,          #
+# Qualifier, Strategist, Email Drafter and QA Evaluator agent services.       #
+# No Groq, no LangGraph, no DB writes, no email sending, no all-leads         #
+# endpoint, no arbitrary-prompt surface.                                      #
+# --------------------------------------------------------------------------- #
+
+
+@router.get("/pipeline/{lead_id}", response_model=LeadPipelineContractOutput)
+def get_pipeline_for_lead(lead_id: str) -> LeadPipelineContractOutput:
+    """Phase 6.1 — Deterministic pipeline for a single demo lead.
+    Returns 404 for unknown lead_id. No Groq, no email sending."""
+    try:
+        return run_pipeline_for_lead(lead_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
