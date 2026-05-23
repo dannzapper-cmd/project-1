@@ -1,6 +1,6 @@
 # LeadForge Backend
 
-FastAPI backend for LeadForge-Agentic Core. The portfolio demo currently ships:
+FastAPI backend for LeadForge-Agentic Core. The local demo build currently ships:
 
 - FastAPI app with CORS, lifespan, `/health`, and OpenAPI docs
 - Pydantic v2 schemas mirroring the frontend/API contracts
