@@ -99,11 +99,63 @@ See `.env.example`. Only Fase 4.1 variables are active:
 | `GROQ_API_KEY`  | (unset)                          | Optional Groq API key (not required for demo) |
 | `GROQ_DEFAULT_MODEL` | `llama-3.1-8b-instant`      | Default Groq model when key is set |
 | `GROQ_TIMEOUT_SECONDS` | `30`                      | Groq request timeout |
+| `ENABLE_LIVE_MODEL_PIPELINE` | `false`             | Block 8.3 opt-in for the live Groq single-lead pipeline |
 
 Optional Groq settings (`GROQ_API_KEY`, `GROQ_DEFAULT_MODEL`,
 `GROQ_TIMEOUT_SECONDS`) are read when set; the app runs without them.
 Other future-phase variables (cost caps, feature flags) in `.env.example`
 are documented but not read yet.
+
+## Block 8.3 — Live Groq single-lead pipeline (optional, off by default)
+
+`POST /api/demo/pipeline/live-groq/{lead_id}` runs the existing five-agent
+chain for **exactly one** demo lead with `GroqModelService` backing the
+agents that already support `use_model_synthesis=True`. It also runs (or
+re-uses) the deterministic baseline for the same lead and returns both
+results side by side so the live output can be compared with the
+deterministic one in a single response.
+
+* **Off by default.** The endpoint refuses to call Groq unless
+  `ENABLE_LIVE_MODEL_PIPELINE=true` *and* `GROQ_API_KEY` is set.
+* **One lead per request.** No batch live endpoint is exposed.
+* **No silent fallback.** When the live run fails at any stage, the
+  response carries `live_success: false`, the failed agent name, the
+  failure stage, and an error code. The deterministic baseline is still
+  returned as comparison context but never replaces a "live" outcome.
+* **Hard token budget.** A `MAX_LIVE_TOKENS_PER_RUN` constant
+  (default 8,000 tokens) caps total tokens across all agent steps in a
+  single request. The cap is not configurable from the request body.
+* **No retry.** Block 8.3 never retries a rate-limited or failed Groq
+  call. HTTP 429 surfaces as `error_code: "rate_limited"` in the
+  response.
+* **Telemetry-safe.** Only summary-level fields (run/lead/agent ids,
+  status, latency, token estimates, cost estimates, fallback flags,
+  QA score, hallucination risk) are recorded via the Block 8.2
+  telemetry foundation. Prompts, full lead payloads, generated email
+  bodies, and raw provider responses are never stored.
+
+Run it locally without exposing your API key on the command line:
+
+```bash
+# 1. Put GROQ_API_KEY in backend/.env (or export it from a sourced env
+#    file). NEVER pass it inline to curl or your shell history.
+echo 'GROQ_API_KEY=...' >> backend/.env
+echo 'ENABLE_LIVE_MODEL_PIPELINE=true' >> backend/.env
+
+# 2. Start the backend in one terminal.
+cd backend && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# 3. From another terminal, hit the endpoint for one lead.
+curl -X POST http://localhost:8000/api/demo/pipeline/live-groq/lead_001
+```
+
+This call may incur a real Groq API cost (typically a few cents per
+lead at the default `llama-3.1-8b-instant` model). The deterministic
+pipeline at `GET /api/demo/pipeline/{lead_id}` is unaffected and
+remains the safe, network-free baseline.
+
+The architecture decision to defer LangGraph for this block is recorded
+in [`docs/adr/langgraph-decision.md`](../docs/adr/langgraph-decision.md).
 
 ## Notes
 
