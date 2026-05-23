@@ -354,3 +354,43 @@ class LeadPipelineContractOutput(BaseModel):
     email: EmailDrafterAgentOutput | None = None
     qa: QAEvaluatorAgentOutput | None = None
     trace: list[TraceEntry] = Field(default_factory=list)
+
+
+# --------------------------------------------------------------------------- #
+# Phase 6.2 — Batch pipeline run contract                                     #
+#                                                                             #
+# Runtime-free aggregation of per-lead pipeline outputs. Like                 #
+# ``LeadPipelineContractOutput`` above, these models are contract             #
+# containers only — they do not orchestrate or imply execution. The           #
+# orchestration that populates them lives in                                  #
+# ``app.services.pipeline_service`` (Phase 6.1 / 6.2). The                    #
+# ``run_mode`` and ``model_mode`` fields exist so a future Groq or            #
+# LangGraph variant can be distinguished from the Phase 6.1/6.2               #
+# deterministic mock-backed pipeline without changing the response shape.     #
+# --------------------------------------------------------------------------- #
+
+
+class PipelineRunSummary(BaseModel):
+    """Aggregate counters for a batch pipeline run."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    total_leads: int
+    processed_leads: int
+    high_priority_leads: int
+    medium_priority_leads: int
+    low_priority_leads: int
+    average_qa_score: float | None
+
+
+class PipelineRunContractOutput(BaseModel):
+    """Run-level container for a batch pipeline execution."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    run_id: str
+    run_mode: str = "deterministic_pipeline"
+    model_mode: str = "mock"
+    lead_count: int
+    summary: PipelineRunSummary
+    results: list[LeadPipelineContractOutput]
