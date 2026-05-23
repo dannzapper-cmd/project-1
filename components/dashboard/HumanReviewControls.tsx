@@ -1,6 +1,12 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Check, Download } from "lucide-react";
 import type { Lead } from "@/lib/types";
 
@@ -41,8 +47,6 @@ function getStatusBadge(status: Lead["status"]) {
 }
 
 export function HumanReviewControls({ status, onStatusChange }: HumanReviewControlsProps) {
-  const hasBeenReviewed = status !== "Pending Review";
-
   return (
     <div className="bg-[--bg-elevated] border-t border-[--border-default] px-6 py-4">
       <div className="flex items-center gap-2 mb-4">
@@ -50,68 +54,100 @@ export function HumanReviewControls({ status, onStatusChange }: HumanReviewContr
         {getStatusBadge(status)}
       </div>
 
-      <div className="flex items-center gap-3">
-        <Button
-          onClick={() => onStatusChange("Approved")}
-          disabled={status === "Approved"}
-          className={`px-4 py-2 text-sm font-medium ${
-            status === "Approved"
-              ? "bg-[--color-success]/50 text-white cursor-not-allowed"
-              : "bg-[--color-success] hover:brightness-110 text-white"
-          }`}
-        >
-          {status === "Approved" ? (
-            <>
-              <Check className="h-4 w-4 mr-1" />
-              Approved
-            </>
-          ) : (
-            "Approve"
-          )}
-        </Button>
-
-        <Button
-          onClick={() => onStatusChange("Rejected")}
-          disabled={status === "Rejected"}
-          variant="outline"
-          className={`px-4 py-2 text-sm border-[--color-error] text-[--color-error] hover:bg-[--color-error-bg] ${
-            status === "Rejected" ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-        >
-          Reject
-        </Button>
-
-        <Button
-          onClick={() => onStatusChange("Needs Edit")}
-          disabled={status === "Needs Edit"}
-          variant="outline"
-          className={`px-4 py-2 text-sm border-[--color-warning] text-[--color-warning] hover:bg-[--color-warning-bg] ${
-            status === "Needs Edit" ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-        >
-          Needs Edit
-        </Button>
-
-        <Button
-          variant="outline"
-          className="px-4 py-2 text-sm border-[--border-default] text-[--text-secondary] hover:bg-[--bg-overlay]"
-        >
-          Regenerate Email
-        </Button>
-
-        {hasBeenReviewed && (
+      <TooltipProvider>
+        <div className="flex items-center gap-3">
           <Button
-            variant="outline"
-            className="px-4 py-2 text-sm border-[--accent-primary] text-[--accent-primary] hover:bg-[--accent-primary]/10 ml-auto"
+            onClick={() => onStatusChange("Approved")}
+            disabled={status === "Approved"}
+            className={`px-4 py-2 text-sm font-medium ${
+              status === "Approved"
+                ? "bg-[--color-success]/50 text-white cursor-not-allowed"
+                : "bg-[--color-success] hover:brightness-110 text-white"
+            }`}
           >
-            <Download className="h-4 w-4 mr-2" />
-            Export Lead
+            {status === "Approved" ? (
+              <>
+                <Check className="h-4 w-4 mr-1" />
+                Approved
+              </>
+            ) : (
+              "Approve"
+            )}
           </Button>
-        )}
-      </div>
+
+          <Button
+            onClick={() => onStatusChange("Rejected")}
+            disabled={status === "Rejected"}
+            variant="outline"
+            className={`px-4 py-2 text-sm border-[--color-error] text-[--color-error] hover:bg-[--color-error-bg] ${
+              status === "Rejected" ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+          >
+            Reject
+          </Button>
+
+          <Button
+            onClick={() => onStatusChange("Needs Edit")}
+            disabled={status === "Needs Edit"}
+            variant="outline"
+            className={`px-4 py-2 text-sm border-[--color-warning] text-[--color-warning] hover:bg-[--color-warning-bg] ${
+              status === "Needs Edit" ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+          >
+            Needs Edit
+          </Button>
+
+          {/*
+            Regenerate Email and Export Lead are intentionally inert
+            in this demo. The dashboard has no backend write surface
+            for email regeneration (no model is invoked from the UI)
+            and no export pipeline. We disable both buttons rather
+            than hide them so reviewers can still see the planned
+            human-in-the-loop affordances; tooltips state the demo
+            limitation explicitly.
+          */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button
+                  disabled
+                  aria-disabled="true"
+                  variant="outline"
+                  className="px-4 py-2 text-sm border-[--border-default] text-[--text-secondary] opacity-50 cursor-not-allowed"
+                >
+                  Regenerate email (coming soon)
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Regenerate — not available in demo mode. No model is called from the dashboard.</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="ml-auto">
+                <Button
+                  disabled
+                  aria-disabled="true"
+                  variant="outline"
+                  className="px-4 py-2 text-sm border-[--border-default] text-[--text-secondary] opacity-50 cursor-not-allowed"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export CSV (coming soon)
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Export CSV — not available in demo mode.</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </TooltipProvider>
 
       <p className="text-xs text-[--text-muted] mt-3">
-        Approving this lead does not send any email. It marks the lead as reviewed and ready for export.
+        Approving a lead only marks it locally for review in this demo. No email is sent,
+        no data is written to the backend, and the status is not persisted across page reloads.
       </p>
     </div>
   );
