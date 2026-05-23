@@ -96,9 +96,14 @@ See `.env.example`. Only Fase 4.1 variables are active:
 | `LOG_LEVEL`     | `INFO`                           | Root logger level             |
 | `DATABASE_URL`  | `sqlite:///./leadforge.db`       | SQLAlchemy connection URL     |
 | `CORS_ORIGINS`  | `http://localhost:3000`          | Comma-separated allowed origins |
+| `GROQ_API_KEY`  | (unset)                          | Optional Groq API key (not required for demo) |
+| `GROQ_DEFAULT_MODEL` | `llama-3.1-8b-instant`      | Default Groq model when key is set |
+| `GROQ_TIMEOUT_SECONDS` | `30`                      | Groq request timeout |
 
-Future-phase variables (model providers, cost caps, feature flags) are
-documented in `.env.example` but **intentionally not read** in Fase 4.1.
+Optional Groq settings (`GROQ_API_KEY`, `GROQ_DEFAULT_MODEL`,
+`GROQ_TIMEOUT_SECONDS`) are read when set; the app runs without them.
+Other future-phase variables (cost caps, feature flags) in `.env.example`
+are documented but not read yet.
 
 ## Notes
 

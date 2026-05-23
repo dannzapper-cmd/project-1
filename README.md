@@ -1,35 +1,75 @@
-# project-1
+# LeadForge-Agentic Core
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+LeadForge is a portfolio-grade B2B sales intelligence demo: a deterministic agentic pipeline that researches leads, qualifies fit, drafts strategy and email copy, runs QA evaluation, and surfaces everything for human review in a dashboard. AI recommends; humans decide.
 
-## Built with v0
+## Current demo status
 
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
+- Deterministic mock-first demo pipeline (default dashboard data source is mock)
+- Frontend/backend integration via `NEXT_PUBLIC_DATA_SOURCE` (`mock` or `api`)
+- Local human review in the browser (not persisted to the backend)
+- Local CSV export of reviewed leads (browser download only)
+- Agent trace and QA evaluation visible in the UI
+- No email sending, no CRM integration, no live web research
+- No backend persistence for human review decisions
+- No Smart Intake UI (server preview endpoints exist; no dashboard intake flow yet)
 
-[Continue working on v0 →](https://v0.app/chat/projects/prj_bkuikmXgMhidQZcBRXLAsWvq3iIj)
+## Local setup
 
-## Getting Started
-
-First, run the development server:
+From the repository root:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# Frontend (Next.js)
+pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). The demo dashboard is at `/demo`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Backend (optional, for API mode):
 
-## Learn More
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-To learn more, take a look at the following resources:
+To point the dashboard at the backend, set `NEXT_PUBLIC_DATA_SOURCE=api` in `.env.local` (see `.env.example`) and restart the frontend.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
+Build and test:
 
-<a href="https://v0.app/chat/api/kiro/clone/dannzapper-cmd/project-1" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
+```bash
+pnpm build
+cd backend && RUN_GROQ_LIVE_TESTS=0 python -m pytest -q
+```
+
+## Environment variables
+
+Variables below are read by the application code. Use placeholders only; never commit real API keys.
+
+### Frontend (`.env.local`, see `.env.example`)
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `NEXT_PUBLIC_DATA_SOURCE` | `mock` | `mock` uses bundled mock data; `api` calls the FastAPI backend |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | Backend base URL when `NEXT_PUBLIC_DATA_SOURCE=api` |
+
+### Backend (`backend/.env`, see `backend/.env.example`)
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `APP_NAME` | `leadforge-backend` | Reported by `/health` |
+| `APP_ENV` | `development` | Runtime environment label |
+| `APP_VERSION` | `0.1.0` | Reported by `/health` |
+| `APP_HOST` | `0.0.0.0` | Uvicorn bind host |
+| `APP_PORT` | `8000` | Uvicorn bind port |
+| `LOG_LEVEL` | `INFO` | Logging level |
+| `DATABASE_URL` | `sqlite:///./leadforge.db` | SQLAlchemy URL (schema init only; no review/pipeline writes in demo) |
+| `CORS_ORIGINS` | `http://localhost:3000` | Comma-separated allowed browser origins |
+| `GROQ_API_KEY` | (unset) | Optional. Required only for opt-in Groq smoke/live tests and `/api/demo/model-service/groq-check`. Not required for mock/demo mode. |
+| `GROQ_DEFAULT_MODEL` | `llama-3.1-8b-instant` | Default Groq model when the key is set |
+| `GROQ_TIMEOUT_SECONDS` | `30` | Groq request timeout |
+
+Backend tests set `DATABASE_URL` and `APP_ENV=test` via `backend/tests/conftest.py`; you do not need to set those for normal local development.
