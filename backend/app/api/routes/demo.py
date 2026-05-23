@@ -67,6 +67,13 @@ from app.services.evaluation_service import (
     build_run_evaluation_summary,
     build_run_trace_report,
 )
+from app.schemas.live_pipeline import LivePipelineResponse
+from app.services.live_pipeline_service import (
+    LivePipelineDisabledError,
+    LivePipelineKeyMissingError,
+    LivePipelineLeadNotFoundError,
+    run_live_groq_pipeline_for_lead,
+)
 from app.services.model_service import GroqModelService, get_model_service
 from app.services.pipeline_service import (
     run_pipeline_for_demo_leads,
@@ -876,6 +883,58 @@ def get_pipeline_for_lead(lead_id: str) -> LeadPipelineContractOutput:
         return run_pipeline_for_lead(lead_id)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+
+# --------------------------------------------------------------------------- #
+# Block 8.3 — Minimal live Groq single-lead pipeline                          #
+#                                                                             #
+# POST is used because the call incurs a real cost and is not idempotent in   #
+# a meaningful sense (the deterministic baseline is reproducible, but each    #
+# Groq call consumes provider quota). The endpoint runs the live chain for   #
+# exactly one lead, returns the deterministic baseline alongside the live    #
+# result for comparison, and never silently substitutes deterministic output #
+# for a failed live run. There is no batch live endpoint by design.          #
+# --------------------------------------------------------------------------- #
+
+
+@router.post(
+    "/pipeline/live-groq/{lead_id}",
+    response_model=LivePipelineResponse,
+)
+def post_pipeline_live_groq_for_lead(lead_id: str) -> LivePipelineResponse:
+    """Block 8.3 — Live Groq pipeline for exactly one demo lead.
+
+    Returns:
+    * HTTP 503 when ``ENABLE_LIVE_MODEL_PIPELINE`` is not enabled,
+    * HTTP 503 when ``GROQ_API_KEY`` is missing,
+    * HTTP 404 when ``lead_id`` is unknown,
+    * HTTP 200 otherwise — including when the live run itself fails
+      mid-pipeline. In the failure case the body's ``live_success``
+      is ``False``, ``failed_agent`` / ``failure_stage`` / ``error_code``
+      are set, and the deterministic baseline is preserved as
+      comparison context.
+    """
+
+    try:
+        return run_live_groq_pipeline_for_lead(lead_id)
+    except LivePipelineDisabledError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        )
+    except LivePipelineKeyMissingError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        )
+    except LivePipelineLeadNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        )
     except DemoDataError as exc:
         _raise_500(exc)
         raise  # pragma: no cover

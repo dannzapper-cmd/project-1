@@ -66,6 +66,13 @@ class Settings(BaseSettings):
     groq_default_model: str = "llama-3.1-8b-instant"
     groq_timeout_seconds: int = 30
 
+    # Block 8.3: live model pipeline opt-in. ``False`` by default; the
+    # POST /api/demo/pipeline/live-groq/{lead_id} endpoint refuses to
+    # call Groq unless this flag is explicitly enabled AND a
+    # ``GROQ_API_KEY`` is present. There is no other entry point for
+    # live model pipeline behaviour in this phase.
+    enable_live_model_pipeline: bool = False
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_cors_origins(cls, value: object) -> object:
