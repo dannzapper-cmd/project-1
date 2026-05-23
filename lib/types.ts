@@ -26,7 +26,12 @@ export interface AgentStatus {
 export interface RunMetrics {
   total_processed: number;
   high_fit_leads: number;
-  avg_qa_score: number;
+  // Phase 7.0: backend `PipelineRunSummary.average_qa_score` is
+  // `float | None` (returns `null` when no QA outputs are produced),
+  // so the view model is widened to accept null. The existing
+  // `MetricsRow` component reads this directly; Phase 7.1 will add
+  // a fallback render when null.
+  avg_qa_score: number | null;
   total_cost: string;
   run_timestamp: string;
   model_used: string;
@@ -44,7 +49,12 @@ export interface QAScores {
 
 export interface TraceEntry {
   agent: string;
-  status: 'success' | 'warning' | 'failed';
+  // Phase 7.0: widened to match the backend `AgentRunStatus` enum
+  // (`success | warning | failed | running | pending`). The Phase
+  // 6.1/6.2 deterministic pipeline only emits the first three, but
+  // the type must accept the full enum so a future live/streaming
+  // pipeline can reuse the same view model without a type error.
+  status: 'success' | 'warning' | 'failed' | 'running' | 'pending';
   input_summary: string;
   output_summary: string;
   latency: string;
