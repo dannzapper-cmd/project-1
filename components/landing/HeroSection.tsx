@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { motion } from "framer-motion"
 import {
-  Inbox,
   Search,
   BarChart2,
   Lightbulb,
@@ -13,11 +12,6 @@ import {
 } from "lucide-react"
 
 const agents = [
-  {
-    icon: Inbox,
-    name: "Intake",
-    description: "Validate & normalize",
-  },
   {
     icon: Search,
     name: "Research",

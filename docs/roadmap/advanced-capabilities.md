@@ -6,7 +6,7 @@ This document separates **implemented capabilities** from **planned future capab
 
 ## Current capabilities
 
-As of Block 8.3, LeadForge includes:
+As of Block 8.4, LeadForge includes:
 
 - **Deterministic AI pipeline:** Research → Qualifier → Strategist → Email Drafter → QA Evaluator
 - **Batch deterministic pipeline** for multiple leads in one run
@@ -19,6 +19,7 @@ As of Block 8.3, LeadForge includes:
 - **Opt-in live Groq single-lead path** from Block 8.3 (`POST /api/demo/pipeline/live-groq/{lead_id}`), disabled by default via `ENABLE_LIVE_MODEL_PIPELINE=false`; requires `GROQ_API_KEY` when enabled; bounded by `MAX_LIVE_TOKENS_PER_RUN=8000`; no retries; no frontend auto-trigger
 - **Deterministic-vs-live comparison output** when the live path is used successfully
 - **LangGraph deferred** per [`docs/adr/langgraph-decision.md`](../adr/langgraph-decision.md) — linear plain-Python orchestration today
+- **Advanced capabilities roadmap** documenting current-vs-future boundaries
 
 LeadForge does **not** today provide Smart Intake, live web research, PDF/image/Excel parsing, vertical profiles, LangGraph runtime, durable telemetry storage, backend review persistence, CRM integration, email sending, or a frontend live Groq button.
 
@@ -33,6 +34,7 @@ LeadForge does **not** today provide Smart Intake, live web research, PDF/image/
 | CSV export (local) | ✅ Implemented | Block 7 | — |
 | Telemetry foundation | ✅ Implemented | Block 8.2 | — |
 | Live Groq single-lead | ✅ Implemented (opt-in) | Block 8.3 | — |
+| Advanced capabilities roadmap | ✅ Implemented | Block 8.4 | — |
 | Smart Lead Intake | 🗺 Roadmap | — | Future |
 | Live Company Research | 🗺 Roadmap | — | Future |
 | Vertical Profiles | 🗺 Roadmap | — | Future |

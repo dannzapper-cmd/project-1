@@ -1,17 +1,20 @@
-# LeadForge Backend — Fase 4.1 (Backend Base)
+# LeadForge Backend
 
-Minimal FastAPI foundation for LeadForge-Agentic Core. This phase ships
-**only** the backend skeleton:
+FastAPI backend for LeadForge-Agentic Core. The portfolio demo currently ships:
 
-- FastAPI app with CORS + lifespan
-- Pydantic v2 schemas (Lead, Run, QA, Health) mirroring the frontend contract
-- SQLite via SQLAlchemy 2.x (`create_all` on startup)
-- `/health` endpoint with DB connectivity check
-- Centralized config via `pydantic-settings` and `.env`
-- Minimal stdlib logging
+- FastAPI app with CORS, lifespan, `/health`, and OpenAPI docs
+- Pydantic v2 schemas mirroring the frontend/API contracts
+- Deterministic demo pipeline:
+  Research → Qualifier → Strategist → Email Drafter → QA Evaluator
+- Deterministic batch pipeline for demo leads
+- Safe in-memory telemetry with read-only inspection endpoints
+- Optional live Groq single-lead path, disabled by default and guarded by
+  `ENABLE_LIVE_MODEL_PIPELINE=true` plus `GROQ_API_KEY`
+- SQLite schema initialization via SQLAlchemy 2.x (`create_all` on startup)
 
-**Not in this phase:** agents, LangGraph, RAG, Chroma, Ollama, Groq, any LLM
-calls, frontend wiring, authentication, deployment, real lead processing.
+The backend does **not** currently provide Smart Intake, live web research,
+LangGraph runtime, durable telemetry storage, backend review persistence, CRM
+integration, email sending, authentication, payments, or multi-tenancy.
 
 ## Folder layout
 
@@ -24,22 +27,20 @@ backend/
 │   │   └── logging.py       stdlib logging setup
 │   ├── api/
 │   │   ├── deps.py          shared dependencies (get_db)
-│   │   └── routes/
-│   │       └── health.py    GET /health
-│   ├── schemas/             Pydantic v2 DTOs (contract for Block 4.2+)
+│   │   └── routes/          health, demo pipeline, telemetry, intake preview
+│   ├── schemas/             Pydantic v2 DTOs for contracts
 │   │   ├── common.py
 │   │   ├── lead.py
 │   │   ├── qa.py
 │   │   ├── run.py
 │   │   └── health.py
-│   ├── services/            (empty placeholder for Block 4.2+)
+│   ├── services/            pipeline, telemetry, live pipeline, agents
 │   └── db/
 │       ├── base.py          DeclarativeBase
 │       ├── session.py       engine + SessionLocal
 │       ├── models.py        Lead / Run / AgentTrace / QAResult tables
 │       └── init_db.py       create_all()
-├── tests/
-│   └── test_health.py
+├── tests/                   backend unit and API tests
 ├── requirements.txt
 ├── .env.example
 └── .gitignore
@@ -84,7 +85,7 @@ pytest -q
 
 ## Environment variables
 
-See `.env.example`. Only Fase 4.1 variables are active:
+See `.env.example`. Variables below are read by the application code:
 
 | Variable        | Default                          | Purpose                       |
 |-----------------|----------------------------------|-------------------------------|
@@ -167,7 +168,8 @@ in [`docs/adr/langgraph-decision.md`](../docs/adr/langgraph-decision.md).
 
 - No migration tool yet. Schema is created via `Base.metadata.create_all()`
   on app startup. Alembic will be introduced in a later phase if needed.
-- ORM models exist (`Lead`, `Run`, `AgentTrace`, `QAResult`) but no
-  endpoint reads or writes them yet. They define the persistence shape for
-  Block 4.2+.
-- The frontend (`app/`, `components/`, …) is **not** touched in this phase.
+- ORM models exist (`Lead`, `Run`, `AgentTrace`, `QAResult`) and the schema is
+  initialized on startup, but review decisions and pipeline runs are not
+  durably persisted in this portfolio demo.
+- The dashboard can read deterministic backend pipeline data in API mode.
+  Human review changes and reviewed-lead export remain browser-local.

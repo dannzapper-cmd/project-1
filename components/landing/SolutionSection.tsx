@@ -7,7 +7,7 @@ const solutions = [
   {
     icon: Database,
     title: "Evidence-grounded research",
-    body: "Every lead gets a company context built from real signals, not hallucinated guesses. Evidence cards show exactly what was found and where.",
+    body: "Every lead gets company context built from deterministic demo signals and curated knowledge, not hallucinated guesses. Evidence cards show what supported the recommendation.",
   },
   {
     icon: BarChart2,

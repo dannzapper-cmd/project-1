@@ -633,7 +633,7 @@ def run_live_groq_pipeline_for_lead(
         def _default_factory() -> Any:
             from app.services.model_service import GroqModelService
 
-            return GroqModelService(default_model=live_model_used)
+            return GroqModelService(api_key=api_key, default_model=live_model_used)
 
         groq_service_factory = _default_factory
 
