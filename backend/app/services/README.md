@@ -1,7 +1,8 @@
 # services/
 
-Reserved for backend service modules (run orchestration, lead ingestion,
-QA evaluation, etc.).
+Backend service modules for deterministic orchestration, agent execution,
+telemetry, intake preview helpers, and the guarded live Groq single-lead path.
 
-**Empty in Fase 4.1 on purpose.** No agents, no LangGraph, no RAG, no LLM
-calls live here yet. Real services will be introduced in Block 4.2+.
+The current pipeline uses plain-Python orchestration. LangGraph, durable
+telemetry, live research, backend review persistence, CRM integration, and
+email sending remain roadmap items.

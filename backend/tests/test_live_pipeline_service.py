@@ -13,6 +13,8 @@ placeholder, never to a real provider key.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 import pytest
 
 from app.schemas.agents import (
@@ -76,7 +78,7 @@ class _AlwaysRaisesService:
 
 
 @pytest.fixture
-def live_mode_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
+def live_mode_enabled(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     """Enable the live pipeline opt-in flag and a synthetic API key.
 
     The synthetic key is never sent to a real provider — every test
@@ -86,6 +88,11 @@ def live_mode_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setenv("ENABLE_LIVE_MODEL_PIPELINE", "true")
     monkeypatch.setenv("GROQ_API_KEY", "test-only-not-a-real-key")
+    get_settings.cache_clear()
+    try:
+        yield
+    finally:
+        get_settings.cache_clear()
 
 
 @pytest.fixture(autouse=True)
@@ -105,9 +112,13 @@ def test_live_disabled_by_default_raises_disabled_error(
 ) -> None:
     monkeypatch.delenv("ENABLE_LIVE_MODEL_PIPELINE", raising=False)
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    get_settings.cache_clear()
 
-    with pytest.raises(LivePipelineDisabledError):
-        run_live_groq_pipeline_for_lead(_DEMO_LEAD_ID)
+    try:
+        with pytest.raises(LivePipelineDisabledError):
+            run_live_groq_pipeline_for_lead(_DEMO_LEAD_ID)
+    finally:
+        get_settings.cache_clear()
 
 
 def test_live_enabled_but_no_api_key_raises_key_missing(
@@ -115,9 +126,13 @@ def test_live_enabled_but_no_api_key_raises_key_missing(
 ) -> None:
     monkeypatch.setenv("ENABLE_LIVE_MODEL_PIPELINE", "true")
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    get_settings.cache_clear()
 
-    with pytest.raises(LivePipelineKeyMissingError):
-        run_live_groq_pipeline_for_lead(_DEMO_LEAD_ID)
+    try:
+        with pytest.raises(LivePipelineKeyMissingError):
+            run_live_groq_pipeline_for_lead(_DEMO_LEAD_ID)
+    finally:
+        get_settings.cache_clear()
 
 
 def test_unknown_lead_raises_lead_not_found(

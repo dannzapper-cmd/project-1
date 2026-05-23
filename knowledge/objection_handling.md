@@ -115,10 +115,11 @@ of data quality issues.
 
 **What is true:**
 Messy data is a real challenge. LeadForge is designed to handle
-it explicitly — the Intake Agent validates and flags incomplete
-fields, the qualification rubric accounts for data gaps through
-the Data Quality dimension, and the system produces low-confidence
-flags rather than false high scores when evidence is insufficient.
+it honestly — current demo leads are processed through a deterministic
+research and qualification pipeline, and the system produces
+low-confidence flags rather than false high scores when evidence is
+insufficient. Smart Intake and automatic data normalization remain
+roadmap capabilities.
 
 **Recommended response angle:**
 Turn the objection into a demonstration of value. The system is

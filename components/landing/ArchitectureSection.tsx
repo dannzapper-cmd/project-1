@@ -4,17 +4,15 @@ import { motion } from "framer-motion"
 import { Server, DollarSign, UserCheck } from "lucide-react"
 
 const techStack = [
-  "LangGraph",
+  "Plain-Python orchestration",
   "FastAPI",
   "Next.js",
   "TypeScript",
   "Tailwind CSS",
   "shadcn/ui",
-  "Ollama (local)",
-  "Groq (optional)",
+  "Groq (opt-in API)",
   "SQLite",
-  "Chroma",
-  "JSONL logs",
+  "In-memory telemetry",
   "Framer Motion",
 ]
 
@@ -77,7 +75,7 @@ export function ArchitectureSection() {
           transition={{ delay: 0.1 }}
           className="text-3xl md:text-4xl font-semibold tracking-tight text-[--text-primary] max-w-2xl mb-12"
         >
-          Built for production. Designed for auditability.
+          Built for auditability. Packaged for portfolio review.
         </motion.h2>
 
         {/* Two Column Layout */}

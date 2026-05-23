@@ -12,6 +12,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core.config import get_settings
 from app.main import app
 from app.schemas.live_pipeline import (
     LivePipelineComparison,
@@ -54,9 +55,13 @@ def test_live_endpoint_disabled_by_default(
 
     monkeypatch.delenv("ENABLE_LIVE_MODEL_PIPELINE", raising=False)
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    get_settings.cache_clear()
 
-    with TestClient(app) as client:
-        response = client.post(_LIVE_URL.format(lead_id=_DEMO_LEAD_ID))
+    try:
+        with TestClient(app) as client:
+            response = client.post(_LIVE_URL.format(lead_id=_DEMO_LEAD_ID))
+    finally:
+        get_settings.cache_clear()
 
     assert response.status_code == 503
     detail = response.json()["detail"]
@@ -68,9 +73,13 @@ def test_live_endpoint_returns_503_when_groq_api_key_missing(
 ) -> None:
     monkeypatch.setenv("ENABLE_LIVE_MODEL_PIPELINE", "true")
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    get_settings.cache_clear()
 
-    with TestClient(app) as client:
-        response = client.post(_LIVE_URL.format(lead_id=_DEMO_LEAD_ID))
+    try:
+        with TestClient(app) as client:
+            response = client.post(_LIVE_URL.format(lead_id=_DEMO_LEAD_ID))
+    finally:
+        get_settings.cache_clear()
 
     assert response.status_code == 503
     assert "GROQ_API_KEY" in response.json()["detail"]
@@ -81,6 +90,7 @@ def test_live_endpoint_returns_404_for_unknown_lead(
 ) -> None:
     monkeypatch.setenv("ENABLE_LIVE_MODEL_PIPELINE", "true")
     monkeypatch.setenv("GROQ_API_KEY", "test-only-not-a-real-key")
+    get_settings.cache_clear()
 
     # Patch GroqModelService construction so the real Groq client is
     # never built. The endpoint should reject the unknown lead before
@@ -94,8 +104,11 @@ def test_live_endpoint_returns_404_for_unknown_lead(
         lambda *a, **kw: _FakeService(),
     )
 
-    with TestClient(app) as client:
-        response = client.post(_LIVE_URL.format(lead_id="lead_does_not_exist"))
+    try:
+        with TestClient(app) as client:
+            response = client.post(_LIVE_URL.format(lead_id="lead_does_not_exist"))
+    finally:
+        get_settings.cache_clear()
 
     assert response.status_code == 404
     assert "lead_does_not_exist" in response.json()["detail"]
@@ -109,6 +122,7 @@ def test_live_endpoint_returns_404_for_unknown_lead(
 def _enable_live(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ENABLE_LIVE_MODEL_PIPELINE", "true")
     monkeypatch.setenv("GROQ_API_KEY", "test-only-not-a-real-key")
+    get_settings.cache_clear()
 
 
 def _patch_runner_to_failure(
@@ -160,8 +174,11 @@ def test_live_endpoint_returns_200_with_failed_shape_on_provider_error(
     _enable_live(monkeypatch)
     _patch_runner_to_failure(monkeypatch, error_code="provider_error")
 
-    with TestClient(app) as client:
-        response = client.post(_LIVE_URL.format(lead_id=_DEMO_LEAD_ID))
+    try:
+        with TestClient(app) as client:
+            response = client.post(_LIVE_URL.format(lead_id=_DEMO_LEAD_ID))
+    finally:
+        get_settings.cache_clear()
 
     assert response.status_code == 200
     body = response.json()
@@ -190,8 +207,11 @@ def test_live_endpoint_surfaces_rate_limited_error_code(
     _enable_live(monkeypatch)
     _patch_runner_to_failure(monkeypatch, error_code="rate_limited")
 
-    with TestClient(app) as client:
-        response = client.post(_LIVE_URL.format(lead_id=_DEMO_LEAD_ID))
+    try:
+        with TestClient(app) as client:
+            response = client.post(_LIVE_URL.format(lead_id=_DEMO_LEAD_ID))
+    finally:
+        get_settings.cache_clear()
 
     assert response.status_code == 200
     body = response.json()

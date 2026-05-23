@@ -16,7 +16,7 @@ interface HumanReviewControlsProps {
   /**
    * Triggers a local CSV download of the currently reviewed lead.
    * When omitted, the Export CSV button stays disabled with the
-   * "coming soon" copy from Phase 7.2 so this component remains
+   * fallback disabled copy so this component remains
    * usable in tests or other call sites that do not wire export.
    * The Block 7.4 LeadDetailDrawer always provides this handler.
    */
@@ -166,14 +166,14 @@ export function HumanReviewControls({
                   {canExport
                     ? "Export CSV"
                     : onExportLead === undefined
-                    ? "Export CSV (coming soon)"
+                    ? "Export CSV unavailable"
                     : "Export CSV"}
                 </Button>
               </span>
             </TooltipTrigger>
             <TooltipContent>
               {onExportLead === undefined ? (
-                <p>Export CSV — not available in demo mode.</p>
+                <p>Export CSV is not wired in this view.</p>
               ) : !hasBeenReviewed ? (
                 <p>Review this lead before exporting.</p>
               ) : (

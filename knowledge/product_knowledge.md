@@ -17,8 +17,8 @@ with full traceability and human control at every step.
 
 ## 2. Product Overview
 
-LeadForge takes a CSV of raw B2B leads and runs each one through a structured
-pipeline of specialized AI agents. Each agent has a single, defined responsibility.
+LeadForge takes existing B2B demo lead records and runs each one through a
+structured pipeline of specialized AI agents. Each agent has a single, defined responsibility.
 The pipeline produces a ranked list of leads with company research, fit scores,
 sales strategy, personalized email drafts, and quality evaluations — all ready
 for human review before any action is taken.
@@ -67,8 +67,7 @@ control of every final decision.
 
 ## 5. What LeadForge Does
 
-- **Validates** raw lead data and flags incomplete or low-confidence fields
-- **Researches** each company using available signals and curated knowledge context
+- **Researches** each company using deterministic demo signals and curated knowledge context
 - **Qualifies** each lead against a defined Ideal Customer Profile (ICP) with an
   explainable fit score (0–100) and priority tier (High / Medium / Low)
 - **Identifies** opportunity signals, pain hypotheses, and relevant business context
@@ -77,7 +76,7 @@ control of every final decision.
 - **Evaluates** the quality of every output before it reaches a human reviewer
 - **Presents** a ranked, review-ready lead list with full agent traces and cost
   estimates visible
-- **Exports** results in structured formats for downstream use
+- **Exports** reviewed leads as a local browser CSV download
 
 ---
 
@@ -118,7 +117,7 @@ at the point where pipeline quality is determined.
 | Evidence-grounded email drafts | Emails reference specific signals, not generic templates. |
 | QA evaluation layer | Output quality is measured before human review, not after complaints. |
 | Human-in-the-loop by design | No action is taken without explicit human approval. |
-| Cost-conscious local-first architecture | Designed to run on Ollama locally or Groq for demos. No surprise API bills. |
+| Cost-conscious architecture | Deterministic replay is the default; Groq is available only through an opt-in backend API path. No surprise API bills. |
 | Full agent trace visibility | Every step is logged, timed, and visible in the lead detail view. |
 | Replay demo mode | Full product experience available without spending API tokens. |
 
@@ -134,8 +133,8 @@ These are non-negotiable constraints built into the system design:
   synthetic and clearly labeled.
 - **No false source claims.** Agents must not invent sources. If evidence is
   insufficient, it must be explicitly flagged as low-confidence.
-- **No scraping of private or personal data.** Research is grounded in available
-  public signals and the curated knowledge base.
+- **No scraping.** Research is grounded in deterministic demo signals and the
+  curated knowledge base.
 - **No overclaiming.** Email drafts must not assert facts that are not supported
   by the research context.
 - **Demo data is clearly labeled synthetic.** Nothing in the demo should be
@@ -171,12 +170,11 @@ Nothing was sent. Nothing was committed. The human remains in control.
 LeadForge is built to deliver a full demo experience without requiring a paid
 cloud API. Design constraints:
 
-- Default model provider: Ollama (local, free to run)
-- Optional model provider: Groq (low-cost, fast, API-based)
+- Default path: deterministic replay (free, no model call)
+- Optional path: Groq single-lead backend API (low-cost, fast, opt-in)
 - Maximum leads per run: 10
-- Maximum agent steps per lead: 6
-- Maximum tokens per lead: 8,000
-- Daily demo budget cap: $1.00 USD
+- Maximum agent steps per lead: 5
+- Maximum live tokens per single-lead Groq request: 8,000
 - Live research disabled by default (uses curated knowledge base)
 - Email sending disabled permanently in this version
 

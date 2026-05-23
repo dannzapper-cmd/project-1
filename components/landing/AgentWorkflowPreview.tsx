@@ -6,41 +6,34 @@ import { CheckCircle } from "lucide-react"
 const agents = [
   {
     number: "01",
-    name: "Intake Agent",
-    description:
-      "Validates and normalizes raw lead data. Catches missing fields, unknown industries, invalid websites.",
-    output: "Clean lead object with validation flags",
-  },
-  {
-    number: "02",
     name: "Research Agent",
     description:
-      "Builds company context from the knowledge base and lead signals. Creates evidence cards — never invents sources.",
+      "Builds company context from deterministic lead signals and curated knowledge. Creates evidence cards — never invents sources.",
     output: "Evidence cards, opportunity signals, company summary",
   },
   {
-    number: "03",
+    number: "02",
     name: "Qualify Agent",
     description:
       "Assigns a fit score (0-100) and priority tier based on ICP rules. Returns reasons for every score.",
     output: "Fit score, priority tier, qualification reasons",
   },
   {
-    number: "04",
+    number: "03",
     name: "Strategize Agent",
     description:
       "Selects the best sales angle given research and qualification. Produces a pain hypothesis.",
     output: "Pain hypothesis, sales angle, core message",
   },
   {
-    number: "05",
+    number: "04",
     name: "Draft Agent",
     description:
       "Generates a personalized outreach email grounded in evidence and strategy.",
     output: "Subject line, email body, personalization notes",
   },
   {
-    number: "06",
+    number: "05",
     name: "Evaluate Agent",
     description:
       "Scores output quality across 5 dimensions. Flags hallucination risk before human review.",
@@ -49,7 +42,7 @@ const agents = [
 ]
 
 const metrics = [
-  "~45 seconds per lead in live mode",
+  "Live Groq: opt-in single-lead backend API",
   "~$0.02-$0.05 per lead",
   "Replay mode: $0 — zero model calls",
 ]
@@ -92,7 +85,7 @@ export function AgentWorkflowPreview() {
           transition={{ delay: 0.1 }}
           className="text-3xl md:text-4xl font-semibold tracking-tight text-[--text-primary] max-w-2xl mb-4"
         >
-          Six agents. One pipeline. Full traceability.
+          Five agents. One pipeline. Full traceability.
         </motion.h2>
 
         {/* Subtext */}

@@ -9,6 +9,8 @@ LeadForge is a portfolio-grade B2B sales intelligence demo: a deterministic agen
 - Local human review in the browser (not persisted to the backend)
 - Local CSV export of reviewed leads (browser download only)
 - Agent trace and QA evaluation visible in the UI
+- Safe in-memory telemetry with read-only `/api/demo/telemetry/*` endpoints
+- Opt-in live Groq single-lead API path: `POST /api/demo/pipeline/live-groq/{lead_id}` (disabled by default; no frontend trigger)
 - No email sending, no CRM integration, no live web research
 - No backend persistence for human review decisions
 - No Smart Intake UI (server preview endpoints exist; no dashboard intake flow yet)
@@ -73,5 +75,6 @@ Variables below are read by the application code. Use placeholders only; never c
 | `GROQ_API_KEY` | (unset) | Optional. Required only for opt-in Groq smoke/live tests and `/api/demo/model-service/groq-check`. Not required for mock/demo mode. |
 | `GROQ_DEFAULT_MODEL` | `llama-3.1-8b-instant` | Default Groq model when the key is set |
 | `GROQ_TIMEOUT_SECONDS` | `30` | Groq request timeout |
+| `ENABLE_LIVE_MODEL_PIPELINE` | `false` | Opt-in gate for `POST /api/demo/pipeline/live-groq/{lead_id}`; requires `GROQ_API_KEY` |
 
 Backend tests set `DATABASE_URL` and `APP_ENV=test` via `backend/tests/conftest.py`; you do not need to set those for normal local development.

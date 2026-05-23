@@ -68,8 +68,8 @@ export function FinalCTASection() {
           transition={{ delay: 0.3 }}
           className="mt-12 text-xs text-[--text-muted]"
         >
-          Portfolio Edition · Built with Next.js, LangGraph, FastAPI, and Ollama
-          · Not for production use
+          Portfolio Edition · Built with Next.js, FastAPI, TypeScript, and
+          opt-in Groq · Not for production use
         </motion.p>
       </div>
     </section>
