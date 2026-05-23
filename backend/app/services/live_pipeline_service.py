@@ -83,11 +83,34 @@ from app.services.pipeline_service import run_pipeline_for_lead
 # spend; the deterministic baseline does NOT consume this budget.
 MAX_LIVE_TOKENS_PER_RUN: int = 8_000
 
-# The single Groq model used by Block 8.3. Re-uses the value already
-# declared on Settings.groq_default_model so cluster-level overrides
-# remain in one place. Tests pin this constant explicitly when they
-# need to.
+# Fallback default Groq model name for the live pipeline. The runtime
+# value is resolved at request time from ``get_settings().groq_default_model``
+# (see :func:`_resolve_live_groq_model`). This constant is only used
+# when the setting is empty / unavailable, so cluster-level overrides
+# via the ``GROQ_DEFAULT_MODEL`` env var continue to drive the live
+# pipeline without changes here.
 LIVE_GROQ_MODEL: str = "llama-3.1-8b-instant"
+
+
+def _resolve_live_groq_model() -> str:
+    """Return the Groq model name the live pipeline should use.
+
+    Resolves ``get_settings().groq_default_model`` first so the
+    existing ``GROQ_DEFAULT_MODEL`` env var / Settings field drives
+    the live pipeline without a parallel knob. Falls back to
+    :data:`LIVE_GROQ_MODEL` when the setting is missing or blank
+    (defensive — Pydantic Settings always returns the declared
+    default, but a future Settings refactor must not silently
+    surface an empty model name).
+    """
+
+    try:
+        candidate = get_settings().groq_default_model
+    except Exception:  # noqa: BLE001 — settings access must not break live runs
+        candidate = None
+    if isinstance(candidate, str) and candidate.strip():
+        return candidate.strip()
+    return LIVE_GROQ_MODEL
 
 # Live-mode telemetry constants.
 _LIVE_RUN_MODE: str = "live_groq_pipeline"
@@ -549,7 +572,10 @@ def run_live_groq_pipeline_for_lead(
         Optional callable returning a ``BaseModelService`` instance.
         Tests inject a stub here so unit tests never touch the network.
         When ``None``, the factory builds a real
-        :class:`GroqModelService` bound to ``LIVE_GROQ_MODEL``.
+        :class:`GroqModelService` bound to the model name returned by
+        :func:`_resolve_live_groq_model` (which reads
+        ``Settings.groq_default_model`` first and falls back to
+        :data:`LIVE_GROQ_MODEL` only when the setting is empty).
 
     Raises
     ------
@@ -589,6 +615,11 @@ def run_live_groq_pipeline_for_lead(
 
     run_id = f"live_groq_pipeline_{lead.lead_id}_{uuid4().hex[:8]}"
 
+    # Resolve the actual Groq model for this request once so every
+    # subsequent response field (success or failure) reports the same
+    # value as the one passed to the provider.
+    live_model_used = _resolve_live_groq_model()
+
     # Build the deterministic baseline first; it never consumes Groq
     # tokens and is always available as comparison context, even when
     # the live path fails.
@@ -602,7 +633,7 @@ def run_live_groq_pipeline_for_lead(
         def _default_factory() -> Any:
             from app.services.model_service import GroqModelService
 
-            return GroqModelService(default_model=LIVE_GROQ_MODEL)
+            return GroqModelService(default_model=live_model_used)
 
         groq_service_factory = _default_factory
 
@@ -613,6 +644,7 @@ def run_live_groq_pipeline_for_lead(
             run_id=run_id,
             lead_id=lead.lead_id,
             deterministic_result=deterministic_result,
+            live_model_used=live_model_used,
             failure=_LiveFailure(
                 failed_agent="(none)",
                 failure_stage="provider_init",
@@ -630,6 +662,7 @@ def run_live_groq_pipeline_for_lead(
         research_record=research_record,
         deterministic_result=deterministic_result,
         groq_service=groq_service,
+        live_model_used=live_model_used,
     )
 
 
@@ -639,6 +672,7 @@ def _build_failed_response(
     lead_id: str,
     deterministic_result: LeadPipelineContractOutput | None,
     failure: _LiveFailure,
+    live_model_used: str,
 ) -> LivePipelineResponse:
     notes = (
         f"live run failed at {failure.failure_stage} "
@@ -654,7 +688,7 @@ def _build_failed_response(
         lead_id=lead_id,
         run_mode="live_failed",
         live_success=False,
-        live_model_used=LIVE_GROQ_MODEL,
+        live_model_used=live_model_used,
         fallback_used=True,
         fallback_reason=failure.fallback_reason,
         deterministic_baseline_available=deterministic_result is not None,
@@ -674,6 +708,7 @@ def _execute_live_pipeline(
     research_record: DemoCompanyResearch | None,
     deterministic_result: LeadPipelineContractOutput | None,
     groq_service: Any,
+    live_model_used: str,
 ) -> LivePipelineResponse:
     """Run the five-agent chain end-to-end with Groq-backed synthesis.
 
@@ -704,6 +739,7 @@ def _execute_live_pipeline(
             run_id=run_id,
             lead_id=lead.lead_id,
             deterministic_result=deterministic_result,
+            live_model_used=live_model_used,
             failure=_LiveFailure(
                 failed_agent=_AGENT_NAMES_BY_STAGE[_STAGE_RESEARCH],
                 failure_stage=_STAGE_RESEARCH,
@@ -727,6 +763,7 @@ def _execute_live_pipeline(
             run_id=run_id,
             lead_id=lead.lead_id,
             deterministic_result=deterministic_result,
+            live_model_used=live_model_used,
             failure=_LiveFailure(
                 failed_agent=_AGENT_NAMES_BY_STAGE[_STAGE_RESEARCH],
                 failure_stage=_STAGE_RESEARCH,
@@ -747,6 +784,7 @@ def _execute_live_pipeline(
             run_id=run_id,
             lead_id=lead.lead_id,
             deterministic_result=deterministic_result,
+            live_model_used=live_model_used,
             failure=_LiveFailure(
                 failed_agent=_AGENT_NAMES_BY_STAGE[_STAGE_RESEARCH],
                 failure_stage=_STAGE_RESEARCH,
@@ -795,6 +833,7 @@ def _execute_live_pipeline(
             run_id=run_id,
             lead_id=lead.lead_id,
             deterministic_result=deterministic_result,
+            live_model_used=live_model_used,
             failure=_LiveFailure(
                 failed_agent=_AGENT_NAMES_BY_STAGE[_STAGE_QUALIFIER],
                 failure_stage=_STAGE_QUALIFIER,
@@ -820,6 +859,7 @@ def _execute_live_pipeline(
             run_id=run_id,
             lead_id=lead.lead_id,
             deterministic_result=deterministic_result,
+            live_model_used=live_model_used,
             failure=_LiveFailure(
                 failed_agent=_AGENT_NAMES_BY_STAGE[_STAGE_QUALIFIER],
                 failure_stage=_STAGE_QUALIFIER,
@@ -840,6 +880,7 @@ def _execute_live_pipeline(
             run_id=run_id,
             lead_id=lead.lead_id,
             deterministic_result=deterministic_result,
+            live_model_used=live_model_used,
             failure=_LiveFailure(
                 failed_agent=_AGENT_NAMES_BY_STAGE[_STAGE_QUALIFIER],
                 failure_stage=_STAGE_QUALIFIER,
@@ -886,6 +927,7 @@ def _execute_live_pipeline(
             run_id=run_id,
             lead_id=lead.lead_id,
             deterministic_result=deterministic_result,
+            live_model_used=live_model_used,
             failure=_LiveFailure(
                 failed_agent=_AGENT_NAMES_BY_STAGE[_STAGE_STRATEGIST],
                 failure_stage=_STAGE_STRATEGIST,
@@ -911,6 +953,7 @@ def _execute_live_pipeline(
             run_id=run_id,
             lead_id=lead.lead_id,
             deterministic_result=deterministic_result,
+            live_model_used=live_model_used,
             failure=_LiveFailure(
                 failed_agent=_AGENT_NAMES_BY_STAGE[_STAGE_STRATEGIST],
                 failure_stage=_STAGE_STRATEGIST,
@@ -931,6 +974,7 @@ def _execute_live_pipeline(
             run_id=run_id,
             lead_id=lead.lead_id,
             deterministic_result=deterministic_result,
+            live_model_used=live_model_used,
             failure=_LiveFailure(
                 failed_agent=_AGENT_NAMES_BY_STAGE[_STAGE_STRATEGIST],
                 failure_stage=_STAGE_STRATEGIST,
@@ -974,6 +1018,7 @@ def _execute_live_pipeline(
             run_id=run_id,
             lead_id=lead.lead_id,
             deterministic_result=deterministic_result,
+            live_model_used=live_model_used,
             failure=_LiveFailure(
                 failed_agent=_AGENT_NAMES_BY_STAGE[_STAGE_EMAIL],
                 failure_stage=_STAGE_EMAIL,
@@ -997,6 +1042,7 @@ def _execute_live_pipeline(
             run_id=run_id,
             lead_id=lead.lead_id,
             deterministic_result=deterministic_result,
+            live_model_used=live_model_used,
             failure=_LiveFailure(
                 failed_agent=_AGENT_NAMES_BY_STAGE[_STAGE_EMAIL],
                 failure_stage=_STAGE_EMAIL,
@@ -1017,6 +1063,7 @@ def _execute_live_pipeline(
             run_id=run_id,
             lead_id=lead.lead_id,
             deterministic_result=deterministic_result,
+            live_model_used=live_model_used,
             failure=_LiveFailure(
                 failed_agent=_AGENT_NAMES_BY_STAGE[_STAGE_EMAIL],
                 failure_stage=_STAGE_EMAIL,
@@ -1057,6 +1104,7 @@ def _execute_live_pipeline(
             run_id=run_id,
             lead_id=lead.lead_id,
             deterministic_result=deterministic_result,
+            live_model_used=live_model_used,
             failure=_LiveFailure(
                 failed_agent=_AGENT_NAMES_BY_STAGE[_STAGE_QA],
                 failure_stage=_STAGE_QA,
@@ -1080,6 +1128,7 @@ def _execute_live_pipeline(
             run_id=run_id,
             lead_id=lead.lead_id,
             deterministic_result=deterministic_result,
+            live_model_used=live_model_used,
             failure=_LiveFailure(
                 failed_agent=_AGENT_NAMES_BY_STAGE[_STAGE_QA],
                 failure_stage=_STAGE_QA,
@@ -1100,6 +1149,7 @@ def _execute_live_pipeline(
             run_id=run_id,
             lead_id=lead.lead_id,
             deterministic_result=deterministic_result,
+            live_model_used=live_model_used,
             failure=_LiveFailure(
                 failed_agent=_AGENT_NAMES_BY_STAGE[_STAGE_QA],
                 failure_stage=_STAGE_QA,
@@ -1150,7 +1200,7 @@ def _execute_live_pipeline(
         lead_id=lead.lead_id,
         run_mode="live",
         live_success=True,
-        live_model_used=LIVE_GROQ_MODEL,
+        live_model_used=live_model_used,
         fallback_used=False,
         fallback_reason=None,
         deterministic_baseline_available=deterministic_result is not None,
@@ -1169,5 +1219,6 @@ __all__ = [
     "LivePipelineDisabledError",
     "LivePipelineKeyMissingError",
     "LivePipelineLeadNotFoundError",
+    "_resolve_live_groq_model",
     "run_live_groq_pipeline_for_lead",
 ]

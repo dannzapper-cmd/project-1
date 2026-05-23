@@ -31,6 +31,7 @@ from app.schemas.live_pipeline import (
     LivePipelineComparison,
     LivePipelineResponse,
 )
+from app.core.config import get_settings
 from app.services import telemetry_service as telemetry_module
 from app.services.live_pipeline_service import (
     LIVE_GROQ_MODEL,
@@ -38,6 +39,7 @@ from app.services.live_pipeline_service import (
     LivePipelineKeyMissingError,
     LivePipelineLeadNotFoundError,
     MAX_LIVE_TOKENS_PER_RUN,
+    _resolve_live_groq_model,
     run_live_groq_pipeline_for_lead,
 )
 
@@ -305,6 +307,68 @@ def test_live_pipeline_comparison_is_independently_constructible() -> None:
 def test_max_live_tokens_per_run_constant_is_a_positive_integer() -> None:
     assert isinstance(MAX_LIVE_TOKENS_PER_RUN, int)
     assert MAX_LIVE_TOKENS_PER_RUN >= 1000
+
+
+# --------------------------------------------------------------------------- #
+# Settings-driven model resolution                                            #
+# --------------------------------------------------------------------------- #
+
+
+def test_live_pipeline_uses_groq_default_model_from_settings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Block 8.3 fix: the live pipeline must reuse
+    ``Settings.groq_default_model`` (env: ``GROQ_DEFAULT_MODEL``)
+    instead of pinning the constant. ``LIVE_GROQ_MODEL`` is only the
+    fallback default.
+
+    ``get_settings()`` is ``@lru_cache(maxsize=1)``-wrapped, so we
+    explicitly clear the cache around this test to make the override
+    take effect and to avoid leaking the override into later tests.
+    """
+
+    custom_model = "llama-3.1-70b-versatile"
+
+    monkeypatch.setenv("ENABLE_LIVE_MODEL_PIPELINE", "true")
+    monkeypatch.setenv("GROQ_API_KEY", "test-only-not-a-real-key")
+    monkeypatch.setenv("GROQ_DEFAULT_MODEL", custom_model)
+
+    get_settings.cache_clear()
+    try:
+        # Sanity: the resolver itself returns the override.
+        assert _resolve_live_groq_model() == custom_model
+
+        response = run_live_groq_pipeline_for_lead(
+            _DEMO_LEAD_ID,
+            groq_service_factory=lambda: _AlwaysRaisesService(
+                RuntimeError("override-routing test")
+            ),
+        )
+    finally:
+        get_settings.cache_clear()
+
+    # Even on the failure path, ``live_model_used`` must reflect the
+    # actual model the live runner was configured to use.
+    assert response.live_model_used == custom_model
+    assert response.live_model_used != LIVE_GROQ_MODEL  # sanity: override differs
+    assert response.live_success is False
+    assert response.failed_agent == "research_agent"
+
+
+def test_resolve_live_groq_model_falls_back_when_setting_is_blank(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Defensive fallback: a blank ``GROQ_DEFAULT_MODEL`` must yield
+    :data:`LIVE_GROQ_MODEL` rather than an empty model name."""
+
+    monkeypatch.setenv("GROQ_DEFAULT_MODEL", "   ")
+    get_settings.cache_clear()
+    try:
+        resolved = _resolve_live_groq_model()
+    finally:
+        get_settings.cache_clear()
+
+    assert resolved == LIVE_GROQ_MODEL
 
 
 # --------------------------------------------------------------------------- #

@@ -84,12 +84,7 @@ def test_live_endpoint_returns_404_for_unknown_lead(
 
     # Patch GroqModelService construction so the real Groq client is
     # never built. The endpoint should reject the unknown lead before
-    # touching the provider.
-    monkeypatch.setattr(
-        "app.services.live_pipeline_service.LIVE_GROQ_MODEL",
-        live_module.LIVE_GROQ_MODEL,
-    )
-
+    # the model is even resolved or the provider touched.
     class _FakeService:
         def complete(self, request):  # noqa: ANN001
             raise RuntimeError("must not be called for unknown lead")

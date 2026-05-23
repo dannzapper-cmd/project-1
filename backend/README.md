@@ -128,6 +128,12 @@ deterministic one in a single response.
 * **No retry.** Block 8.3 never retries a rate-limited or failed Groq
   call. HTTP 429 surfaces as `error_code: "rate_limited"` in the
   response.
+* **Model selection.** The Groq model is resolved from
+  `Settings.groq_default_model` (env: `GROQ_DEFAULT_MODEL`, default
+  `llama-3.1-8b-instant`) at request time. Switching models is a
+  one-line env-var change; no live pipeline code edit is required.
+  The `live_model_used` field on the response always reports the
+  actual model the request was configured to call.
 * **Telemetry-safe.** Only summary-level fields (run/lead/agent ids,
   status, latency, token estimates, cost estimates, fallback flags,
   QA score, hallucination risk) are recorded via the Block 8.2
