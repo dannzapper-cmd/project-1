@@ -71,6 +71,7 @@ from app.services.demo_data_loader import (
     load_demo_company_research,
     load_demo_leads,
 )
+from app.services import telemetry_service
 
 _PIPELINE_PROMPT_VERSION_FALLBACK: str = "pipeline_v1"
 
@@ -233,6 +234,7 @@ def run_pipeline_for_lead(
         available_context=_available_context(research_record),
     )
     research_output: ResearchAgentOutput = research_service.run(research_input)
+    telemetry_service.record_pipeline_step(run_id=run_id, lead_id=lead.lead_id, agent_name="research_agent", agent_output=research_output)
 
     qualifier_signals, qualifier_risks = _qualifier_seed_signals(
         research_output, research_record
@@ -248,6 +250,7 @@ def run_pipeline_for_lead(
         run_id=run_id,
     )
     qualifier_output: QualifierAgentOutput = qualifier_service.run(qualifier_input)
+    telemetry_service.record_pipeline_step(run_id=run_id, lead_id=lead.lead_id, agent_name="qualifier_agent", agent_output=qualifier_output)
 
     strategist_service = StrategistAgentService()
     strategist_input = StrategistAgentInput(
@@ -262,6 +265,7 @@ def run_pipeline_for_lead(
     strategist_output: StrategistAgentOutput = strategist_service.run(
         strategist_input
     )
+    telemetry_service.record_pipeline_step(run_id=run_id, lead_id=lead.lead_id, agent_name="strategist_agent", agent_output=strategist_output)
 
     email_service = EmailDrafterAgentService()
     email_input = EmailDrafterAgentInput(
@@ -274,6 +278,7 @@ def run_pipeline_for_lead(
         run_id=run_id,
     )
     email_output: EmailDrafterAgentOutput = email_service.run(email_input)
+    telemetry_service.record_pipeline_step(run_id=run_id, lead_id=lead.lead_id, agent_name="email_drafter_agent", agent_output=email_output)
 
     qa_service = QAEvaluatorAgentService()
     qa_input = QAEvaluatorAgentInput(
@@ -285,6 +290,7 @@ def run_pipeline_for_lead(
         run_id=run_id,
     )
     qa_output: QAEvaluatorAgentOutput = qa_service.run(qa_input)
+    telemetry_service.record_pipeline_step(run_id=run_id, lead_id=lead.lead_id, agent_name="qa_evaluator_agent", agent_output=qa_output)
 
     trace: list[TraceEntry] = [
         _trace_entry(
