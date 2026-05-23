@@ -1,0 +1,112 @@
+[
+  {
+    "lead_id": "lead_001",
+    "company_name": "Veltrix Systems",
+    "website": "veltrixsystems.io",
+    "industry": "B2B SaaS",
+    "country": "United States",
+    "employee_count": 140,
+    "contact_name": "Sarah Whitmore",
+    "contact_role": "VP Revenue Operations",
+    "notes": "Recently closed Series B. Actively hiring 3 SDR roles. Expanding into mid-market segment. HubSpot user. Pipeline quality mentioned in job postings."
+  },
+  {
+    "lead_id": "lead_002",
+    "company_name": "Clearpath Security",
+    "website": "clearpathsecurity.co.uk",
+    "industry": "Cybersecurity",
+    "country": "United Kingdom",
+    "employee_count": 210,
+    "contact_name": "James Calloway",
+    "contact_role": "Head of Sales",
+    "notes": "Launching new enterprise product line Q3. Recruiting dedicated BDR team. Entering North American market. Multiple open sales roles posted simultaneously."
+  },
+  {
+    "lead_id": "lead_003",
+    "company_name": "Havenlog GmbH",
+    "website": "havenlog.de",
+    "industry": "Logistics",
+    "country": "Germany",
+    "employee_count": 320,
+    "contact_name": "Markus Brandt",
+    "contact_role": "Revenue Operations Manager",
+    "notes": "Expanding freight routes into Southern Europe. Three open sales roles. Salesforce CRM implemented last year. Company blog mentions outbound prospecting challenges."
+  },
+  {
+    "lead_id": "lead_004",
+    "company_name": "Meraki Workforce",
+    "website": "merakiworkforce.ca",
+    "industry": "HR Tech",
+    "country": "Canada",
+    "employee_count": 88,
+    "contact_name": "Priya Nair",
+    "contact_role": "Sales Director",
+    "notes": "Growing SMB client base in healthcare and retail sectors. Two open sales roles. Limited public signals beyond hiring activity. No recent funding announced."
+  },
+  {
+    "lead_id": "lead_005",
+    "company_name": "Pagalink",
+    "website": "pagalink.mx",
+    "industry": "Fintech",
+    "country": "Mexico",
+    "employee_count": 175,
+    "contact_name": "Carlos Mendoza",
+    "contact_role": "Business Development Manager",
+    "notes": "B2B payments platform targeting regional SMBs. Recent press mentions cross-border expansion. Contact role may not be primary budget decision-maker. CRM stack unknown."
+  },
+  {
+    "lead_id": "lead_006",
+    "company_name": "Ironcast Industries",
+    "website": "ironcastindustries.es",
+    "industry": "Manufacturing",
+    "country": "Spain",
+    "employee_count": 460,
+    "contact_name": "Elena Vidal",
+    "contact_role": "Sales Manager",
+    "notes": "Industrial equipment manufacturer. B2B sales team of 6 reps. No recent public signals or announcements. Traditional relationship-based sales motion. Long sales cycles typical."
+  },
+  {
+    "lead_id": "lead_007",
+    "company_name": "Parcelbridge Inc.",
+    "website": "parcelbridge.com",
+    "industry": "E-commerce Operations",
+    "country": "United States",
+    "employee_count": 95,
+    "contact_name": "Derek Fontaine",
+    "contact_role": "VP Marketing",
+    "notes": "B2B fulfillment services for direct-to-consumer brands. Marketing-led growth model. Outbound sales motion is unclear. Contact is marketing leadership not sales or revenue ops."
+  },
+  {
+    "lead_id": "lead_008",
+    "company_name": "Tanaka Retail Group",
+    "website": "tanakaretail.co.jp",
+    "industry": "Retail",
+    "country": "Japan",
+    "employee_count": 1800,
+    "contact_name": "Yuki Hasegawa",
+    "contact_role": "HR Director",
+    "notes": "Consumer electronics retail chain. No visible B2B sales function. Contact is HR leadership. Company revenue is primarily B2C. No outbound sales motion identified."
+  },
+  {
+    "lead_id": "lead_009",
+    "company_name": "Asesoria Prospera",
+    "website": "asesoriapros.mx",
+    "industry": "Professional Services",
+    "country": "Mexico",
+    "employee_count": 18,
+    "contact_name": "Roberto Alcantara",
+    "contact_role": "CEO",
+    "notes": "Boutique tax and legal consulting firm. Founder handles all client acquisition. No dedicated sales team. Business development is referral-based. Very limited outbound motion."
+  },
+  {
+    "lead_id": "lead_010",
+    "company_name": "Orbis Solutions",
+    "website": null,
+    "industry": null,
+    "country": null,
+    "employee_count": null,
+    "contact_name": "Manager",
+    "contact_role": "Company website and industry not provided by lead source. Employee count unknown. Contact role description is vague. Minimal context available for qualification.",
+    "notes": null
+  }
+]
