@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import {
   Table,
@@ -13,7 +13,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { mockLeads } from "@/lib/mock-data";
 import { LeadDetailDrawer } from "./LeadDetailDrawer";
-import type { Lead } from "@/lib/types";
+import type { Lead, LeadDetail } from "@/lib/types";
+
+interface LeadTableProps {
+  /**
+   * Optional list of leads to render. When omitted, the table
+   * falls back to `mockLeads` so legacy mock-only consumers
+   * keep working without code changes.
+   */
+  leads?: Lead[];
+  /**
+   * Resolver that returns a full `LeadDetail` for a given lead id.
+   * In API mode this reads from the already-loaded enriched batch
+   * (no extra fetch). When omitted, the drawer uses its built-in
+   * mock fallback path.
+   */
+  getLeadDetail?: (leadId: string) => LeadDetail | null;
+}
 
 type PriorityFilter = "All" | "High" | "Medium" | "Low";
 type StatusFilter = "All" | "Pending" | "Approved" | "Rejected";
@@ -49,13 +65,33 @@ function getStatusStyles(status: Lead["status"]) {
   }
 }
 
-export function LeadTable() {
-  const [leads, setLeads] = useState<Lead[]>(mockLeads);
+export function LeadTable({
+  leads: leadsProp,
+  getLeadDetail,
+}: LeadTableProps = {}) {
+  const initialLeads = leadsProp ?? mockLeads;
+  const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("All");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedDetail, setSelectedDetail] = useState<LeadDetail | null>(null);
+
+  // Keep local state in sync when the prop changes (e.g. after a
+  // mock → api swap or a refresh in API mode). Filters / search /
+  // human-review status edits are intentionally preserved across
+  // these updates by re-applying overrides keyed on lead id.
+  useEffect(() => {
+    if (leadsProp === undefined) return;
+    setLeads((prev) => {
+      const overrides = new Map(prev.map((l) => [l.id, l.status] as const));
+      return leadsProp.map((l) => ({
+        ...l,
+        status: overrides.get(l.id) ?? l.status,
+      }));
+    });
+  }, [leadsProp]);
 
   const filteredLeads = useMemo(() => {
     return leads
@@ -76,6 +112,7 @@ export function LeadTable() {
 
   const handleRowClick = (lead: Lead) => {
     setSelectedLead(lead);
+    setSelectedDetail(getLeadDetail ? getLeadDetail(lead.id) : null);
     setIsDrawerOpen(true);
   };
 
@@ -217,6 +254,7 @@ export function LeadTable() {
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         lead={selectedLead}
+        detail={selectedDetail}
         onStatusChange={handleStatusChange}
       />
     </div>

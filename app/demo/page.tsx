@@ -2,9 +2,7 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { ReplayModeBanner } from "@/components/dashboard/ReplayModeBanner";
 import { RunControls } from "@/components/dashboard/RunControls";
-import { MetricsRow } from "@/components/dashboard/MetricsRow";
-import { AgentStatusRow } from "@/components/dashboard/AgentStatusRow";
-import { LeadTable } from "@/components/dashboard/LeadTable";
+import { DemoDashboardClient } from "@/components/dashboard/DemoDashboardClient";
 
 export const metadata = {
   title: "Demo Dashboard | LeadForge",
@@ -49,14 +47,11 @@ export default function DemoPage() {
         {/* Run Controls */}
         <RunControls />
 
-        {/* Metrics Row */}
-        <MetricsRow />
-
-        {/* Agent Status Row */}
-        <AgentStatusRow />
-
-        {/* Lead Table */}
-        <LeadTable />
+        {/* Data-driven dashboard sections.
+            Reads `DATA_SOURCE` (the only point in the app where it
+            is consulted) and renders the metrics row, agent status
+            row, and lead table from the normalized view model. */}
+        <DemoDashboardClient />
       </main>
     </div>
   );
