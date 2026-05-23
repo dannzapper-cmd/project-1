@@ -16,6 +16,7 @@ from app.core.logging import get_logger
 from app.schemas.agents import (
     EmailDrafterAgentOutput,
     LeadPipelineContractOutput,
+    PipelineRunContractOutput,
     QAEvaluatorAgentOutput,
     QualifierAgentOutput,
     ResearchAgentOutput,
@@ -67,7 +68,10 @@ from app.services.evaluation_service import (
     build_run_trace_report,
 )
 from app.services.model_service import GroqModelService, get_model_service
-from app.services.pipeline_service import run_pipeline_for_lead
+from app.services.pipeline_service import (
+    run_pipeline_for_demo_leads,
+    run_pipeline_for_lead,
+)
 from app.services.run_service import build_replay_run
 from app.services.simulation_service import build_simulation_run
 
@@ -845,7 +849,23 @@ def model_service_groq_check() -> ModelResponse:
 # Qualifier, Strategist, Email Drafter and QA Evaluator agent services.       #
 # No Groq, no LangGraph, no DB writes, no email sending, no all-leads         #
 # endpoint, no arbitrary-prompt surface.                                      #
+#                                                                             #
+# Phase 6.2 adds GET /pipeline/batch *before* GET /pipeline/{lead_id} so      #
+# FastAPI's path matcher cannot interpret "batch" as a lead_id (same          #
+# ordering rule already applied to /simulation/trace and                      #
+# /simulation/evaluation in Phase 5.3).                                       #
 # --------------------------------------------------------------------------- #
+
+
+@router.get("/pipeline/batch", response_model=PipelineRunContractOutput)
+def get_pipeline_batch() -> PipelineRunContractOutput:
+    """Phase 6.2 — Deterministic batch pipeline for demo leads.
+    Processes up to 10 demo leads. No Groq, no email sending."""
+    try:
+        return run_pipeline_for_demo_leads()
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
 
 
 @router.get("/pipeline/{lead_id}", response_model=LeadPipelineContractOutput)

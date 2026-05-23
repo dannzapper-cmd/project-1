@@ -52,6 +52,8 @@ from app.schemas.agents import (
     EmailDrafterAgentInput,
     EmailDrafterAgentOutput,
     LeadPipelineContractOutput,
+    PipelineRunContractOutput,
+    PipelineRunSummary,
     QAEvaluatorAgentInput,
     QAEvaluatorAgentOutput,
     QualifierAgentInput,
@@ -61,7 +63,7 @@ from app.schemas.agents import (
     StrategistAgentInput,
     StrategistAgentOutput,
 )
-from app.schemas.common import AgentRunStatus
+from app.schemas.common import AgentRunStatus, Priority
 from app.schemas.demo import DemoCompanyResearch
 from app.schemas.lead import LeadIn
 from app.schemas.run import TraceEntry
@@ -184,13 +186,25 @@ def _research_summary_for_qualifier(
     )
 
 
-def run_pipeline_for_lead(lead_id: str) -> LeadPipelineContractOutput:
-    """Run the deterministic Phase 6.1 pipeline for a single demo lead.
+def run_pipeline_for_lead(
+    lead_id: str,
+    run_id: str | None = None,
+) -> LeadPipelineContractOutput:
+    """Run the deterministic pipeline for a single demo lead.
 
     Parameters
     ----------
     lead_id:
         The ``lead_id`` of a lead present in the demo dataset.
+    run_id:
+        Optional explicit ``run_id`` to use for the returned
+        ``LeadPipelineContractOutput`` and for the ``run_id`` field
+        passed to every agent input. When ``None`` (the Phase 6.1
+        default), the run_id is generated as
+        ``f"pipeline_{lead_id}_{uuid4().hex[:8]}"``. Phase 6.2 passes
+        a shared batch-level run_id here so every per-lead container
+        produced by ``run_pipeline_for_demo_leads`` shares the same
+        run_id without changing single-lead behaviour.
 
     Returns
     -------
@@ -209,7 +223,8 @@ def run_pipeline_for_lead(lead_id: str) -> LeadPipelineContractOutput:
     lead = _find_lead(lead_id)
     research_record = _find_research_record(lead_id)
 
-    run_id = f"pipeline_{lead_id}_{uuid4().hex[:8]}"
+    if run_id is None:
+        run_id = f"pipeline_{lead_id}_{uuid4().hex[:8]}"
 
     research_service = ResearchAgentService()
     research_input = ResearchAgentInput(
@@ -346,4 +361,123 @@ def run_pipeline_for_lead(lead_id: str) -> LeadPipelineContractOutput:
     )
 
 
-__all__ = ["run_pipeline_for_lead"]
+# --------------------------------------------------------------------------- #
+# Phase 6.2 — Batch pipeline over demo leads                                  #
+# --------------------------------------------------------------------------- #
+
+_BATCH_MIN_LEADS: int = 1
+_BATCH_MAX_LEADS: int = 10
+
+
+def _clamp_max_leads(max_leads: int) -> int:
+    """Clamp ``max_leads`` to the inclusive range ``[1, 10]``.
+
+    Phase 6.2 deliberately fixes the upper bound at 10 to keep the
+    deterministic batch pipeline cheap and predictable. The clamp is
+    internal — the HTTP surface does not expose a query parameter.
+    """
+
+    if max_leads < _BATCH_MIN_LEADS:
+        return _BATCH_MIN_LEADS
+    if max_leads > _BATCH_MAX_LEADS:
+        return _BATCH_MAX_LEADS
+    return max_leads
+
+
+def _summarize_batch(
+    total_leads: int,
+    results: list[LeadPipelineContractOutput],
+) -> PipelineRunSummary:
+    """Build the run-level summary from the per-lead pipeline outputs.
+
+    ``average_qa_score`` uses the QA Evaluator's ``qa_score`` field
+    (Phase 5.2 contract — bounded 0..100 integer). ``None`` is
+    returned when no lead produced a QA output, to keep the average
+    well-defined.
+    """
+
+    high = 0
+    medium = 0
+    low = 0
+    qa_scores: list[int] = []
+
+    for result in results:
+        if result.qualification is not None:
+            priority = result.qualification.priority
+            if priority == Priority.HIGH:
+                high += 1
+            elif priority == Priority.MEDIUM:
+                medium += 1
+            elif priority == Priority.LOW:
+                low += 1
+        if result.qa is not None:
+            qa_scores.append(result.qa.qa_score)
+
+    average_qa_score: float | None
+    if qa_scores:
+        average_qa_score = sum(qa_scores) / len(qa_scores)
+    else:
+        average_qa_score = None
+
+    return PipelineRunSummary(
+        total_leads=total_leads,
+        processed_leads=len(results),
+        high_priority_leads=high,
+        medium_priority_leads=medium,
+        low_priority_leads=low,
+        average_qa_score=average_qa_score,
+    )
+
+
+def run_pipeline_for_demo_leads(
+    max_leads: int = _BATCH_MAX_LEADS,
+) -> PipelineRunContractOutput:
+    """Run the deterministic pipeline against the demo dataset.
+
+    Parameters
+    ----------
+    max_leads:
+        Upper bound on the number of demo leads to process. Clamped
+        internally to ``[1, 10]``. The Phase 6.2 HTTP surface does
+        not expose this knob; it exists only so unit tests can
+        exercise the clamp.
+
+    Returns
+    -------
+    PipelineRunContractOutput
+        Run-level container with a shared ``run_id``,
+        ``run_mode="deterministic_pipeline"``, ``model_mode="mock"``,
+        ``lead_count`` equal to the number of leads processed, a
+        ``PipelineRunSummary``, and the ordered list of per-lead
+        pipeline outputs.
+    """
+
+    clamped = _clamp_max_leads(max_leads)
+    all_leads = load_demo_leads()
+    selected = all_leads[: min(clamped, len(all_leads))]
+
+    run_id = f"pipeline_batch_{uuid4().hex[:8]}"
+
+    results: list[LeadPipelineContractOutput] = []
+    for lead in selected:
+        # run_id is shared across all leads in the batch; each agent
+        # is still invoked exactly once per lead inside
+        # run_pipeline_for_lead.
+        results.append(run_pipeline_for_lead(lead.lead_id, run_id=run_id))
+
+    summary = _summarize_batch(total_leads=len(all_leads), results=results)
+
+    return PipelineRunContractOutput(
+        run_id=run_id,
+        run_mode="deterministic_pipeline",
+        model_mode="mock",
+        lead_count=len(results),
+        summary=summary,
+        results=results,
+    )
+
+
+__all__ = [
+    "run_pipeline_for_lead",
+    "run_pipeline_for_demo_leads",
+]
