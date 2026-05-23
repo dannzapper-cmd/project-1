@@ -1,7 +1,25 @@
 import { mockRunMetrics } from "@/lib/mock-data";
+import type { RunMetrics } from "@/lib/types";
 
-export function MetricsRow() {
-  const metrics = mockRunMetrics;
+interface MetricsRowProps {
+  /**
+   * The run-level metrics to render. When omitted (e.g. during a
+   * Phase 7.0-style mock-only render path) the component falls
+   * back to `mockRunMetrics` so existing call sites keep working
+   * without changes.
+   */
+  metrics?: RunMetrics | null;
+}
+
+function formatAverage(score: number | null): string {
+  if (score === null || score === undefined || Number.isNaN(score)) {
+    return "—";
+  }
+  return Number.isInteger(score) ? String(score) : score.toFixed(1);
+}
+
+export function MetricsRow({ metrics: metricsProp }: MetricsRowProps = {}) {
+  const metrics: RunMetrics = metricsProp ?? mockRunMetrics;
 
   return (
     <div className="grid grid-cols-4 gap-4">
@@ -33,7 +51,7 @@ export function MetricsRow() {
           Avg QA Score
         </p>
         <p className="text-3xl font-semibold text-[--accent-primary]">
-          {metrics.avg_qa_score}
+          {formatAverage(metrics.avg_qa_score)}
         </p>
         <p className="text-xs text-[--text-muted] mt-1">across {metrics.total_processed} leads</p>
       </div>

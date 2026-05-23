@@ -19,6 +19,16 @@ interface LeadDetailDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   lead: Lead | null;
+  /**
+   * Optional pre-resolved detail for `lead`. When provided, the
+   * drawer renders it directly. When `null`/`undefined`, the
+   * drawer falls back to `mockLeadDetail` merged with the
+   * selected `lead` — the original Phase 6.x mock-only behavior.
+   * Phase 7.1 supplies this from
+   * `useDashboardData().getLeadDetail(leadId)` so the drawer does
+   * NOT issue a second backend fetch when DATA_SOURCE === "api".
+   */
+  detail?: LeadDetail | null;
   onStatusChange: (leadId: string, status: Lead["status"]) => void;
 }
 
@@ -58,16 +68,30 @@ function getConfidenceColor(confidence: EvidenceCard["confidence"]) {
   }
 }
 
-export function LeadDetailDrawer({ isOpen, onClose, lead, onStatusChange }: LeadDetailDrawerProps) {
+export function LeadDetailDrawer({
+  isOpen,
+  onClose,
+  lead,
+  detail: detailProp,
+  onStatusChange,
+}: LeadDetailDrawerProps) {
   const [showPersonalizationNotes, setShowPersonalizationNotes] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-  
-  // Use mock detail data for the selected lead
-  const detail: LeadDetail = lead ? { ...mockLeadDetail, ...lead } : mockLeadDetail;
+
+  // Resolution order:
+  //   1. Caller-provided `detailProp` (Phase 7.1 API mode, or any
+  //      consumer that has already resolved the full LeadDetail).
+  //   2. Mock fallback: shallow-merge `mockLeadDetail` with the
+  //      selected `lead` (the original Phase 6.x behavior).
+  // The mock fallback preserves the drawer's visual output when
+  // DATA_SOURCE === "mock" or when a consumer does not pass
+  // `detail` at all.
+  const detail: LeadDetail =
+    detailProp ?? (lead ? { ...mockLeadDetail, ...lead } : mockLeadDetail);
   const fitStyles = getFitScoreStyles(detail.fit_score);
 
   const handleStatusChange = (status: Lead["status"]) => {

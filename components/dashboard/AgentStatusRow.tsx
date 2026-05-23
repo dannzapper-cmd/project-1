@@ -1,6 +1,15 @@
 import { mockAgentStatus } from "@/lib/mock-data";
 import type { AgentStatus } from "@/lib/types";
 
+interface AgentStatusRowProps {
+  /**
+   * Optional pre-computed list of agent rows. When omitted, the
+   * component falls back to `mockAgentStatus` so existing call
+   * sites continue to render identically.
+   */
+  agents?: AgentStatus[];
+}
+
 function getStatusStyles(status: AgentStatus["status"]) {
   switch (status) {
     case "success":
@@ -42,10 +51,17 @@ function getStatusStyles(status: AgentStatus["status"]) {
   }
 }
 
-export function AgentStatusRow() {
+export function AgentStatusRow({ agents }: AgentStatusRowProps = {}) {
+  const rows = agents ?? mockAgentStatus;
+  // Use a 5-column layout when only five agents are present (API
+  // mode in Phase 6.1/6.2 has no Intake), and the original 6-column
+  // layout when the mock six-agent fallback is in use. This keeps
+  // tiles a consistent width across both modes.
+  const gridColsClass = rows.length === 5 ? "grid-cols-5" : "grid-cols-6";
+
   return (
-    <div className="grid grid-cols-6 gap-3">
-      {mockAgentStatus.map((agent) => {
+    <div className={`grid ${gridColsClass} gap-3`}>
+      {rows.map((agent) => {
         const styles = getStatusStyles(agent.status);
         return (
           <div
