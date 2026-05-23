@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { QAEvaluationPanel } from "./QAEvaluationPanel";
 import { TraceTimeline } from "./TraceTimeline";
 import { HumanReviewControls } from "./HumanReviewControls";
+import { downloadLeadCsv } from "@/lib/export/lead-export";
 import { mockLeadDetail } from "@/lib/mock-data";
 import type { Lead, LeadDetail, EvidenceCard } from "@/lib/types";
 
@@ -98,6 +99,16 @@ export function LeadDetailDrawer({
     if (lead) {
       onStatusChange(lead.id, status);
     }
+  };
+
+  // Block 7.4: trigger a local CSV download for the currently
+  // reviewed lead. The button in HumanReviewControls only invokes
+  // this when status !== "Pending Review", but we also guard here
+  // so a misbehaving caller cannot export an unreviewed lead.
+  const handleExportLead = () => {
+    if (!lead) return;
+    if (lead.status === "Pending Review") return;
+    downloadLeadCsv(detail, lead.status);
   };
 
   return (
@@ -384,6 +395,7 @@ export function LeadDetailDrawer({
         <HumanReviewControls
           status={lead?.status || detail.status}
           onStatusChange={handleStatusChange}
+          onExportLead={handleExportLead}
         />
       </SheetContent>
     </Sheet>
