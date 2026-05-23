@@ -13,6 +13,8 @@ LeadForge is a portfolio-grade B2B sales intelligence demo: a deterministic agen
 - No backend persistence for human review decisions
 - No Smart Intake UI (server preview endpoints exist; no dashboard intake flow yet)
 
+For planned advanced capabilities (intake, live research, vertical profiles, durable telemetry, LangGraph, frontend live controls), see [`docs/roadmap/advanced-capabilities.md`](docs/roadmap/advanced-capabilities.md).
+
 ## Local setup
 
 From the repository root:
