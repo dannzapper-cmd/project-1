@@ -1,6 +1,6 @@
 # LeadForge Backend
 
-FastAPI backend for LeadForge-Agentic Core. The portfolio demo currently ships:
+FastAPI backend for LeadForge-Agentic Core. The local demo build currently ships:
 
 - FastAPI app with CORS, lifespan, `/health`, and OpenAPI docs
 - Pydantic v2 schemas mirroring the frontend/API contracts
@@ -170,6 +170,6 @@ in [`docs/adr/langgraph-decision.md`](../docs/adr/langgraph-decision.md).
   on app startup. Alembic will be introduced in a later phase if needed.
 - ORM models exist (`Lead`, `Run`, `AgentTrace`, `QAResult`) and the schema is
   initialized on startup, but review decisions and pipeline runs are not
-  durably persisted in this portfolio demo.
+  durably persisted in this local demo build.
 - The dashboard can read deterministic backend pipeline data in API mode.
   Human review changes and reviewed-lead export remain browser-local.
