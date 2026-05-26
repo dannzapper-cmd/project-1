@@ -36,8 +36,11 @@ export function computeRunQualitySummary(opts: {
   leads?: Lead[];
   lowEvidenceCount?: number;
   userBatchActive?: boolean;
+  /** Profile-pack override for the batch low-evidence banner. */
+  lowEvidenceWarning?: string;
 }): RunQualitySummary {
-  const { metrics, dataSource, lowEvidenceCount, userBatchActive } = opts;
+  const { metrics, dataSource, lowEvidenceCount, userBatchActive, lowEvidenceWarning } =
+    opts;
   const costUsd = parseCostUsd(metrics.total_cost);
   const costPerLeadLabel =
     costUsd !== null && metrics.total_processed > 0
@@ -49,7 +52,10 @@ export function computeRunQualitySummary(opts: {
 
   let lowEvidenceNote: string | null = null;
   if (lowEvidenceCount !== undefined && lowEvidenceCount > 0) {
-    lowEvidenceNote = `${lowEvidenceCount} lead${lowEvidenceCount === 1 ? "" : "s"} flagged with low evidence or missing context — review carefully before approving.`;
+    const countPrefix = `${lowEvidenceCount} lead${lowEvidenceCount === 1 ? "" : "s"} flagged: `;
+    lowEvidenceNote = lowEvidenceWarning
+      ? `${countPrefix}${lowEvidenceWarning}`
+      : `${lowEvidenceCount} lead${lowEvidenceCount === 1 ? "" : "s"} flagged with low evidence or missing context — review carefully before approving.`;
   }
 
   const dataSourceLabel =

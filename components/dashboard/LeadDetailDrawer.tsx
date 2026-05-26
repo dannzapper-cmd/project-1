@@ -12,7 +12,9 @@ import { Separator } from "@/components/ui/separator";
 import { QAEvaluationPanel } from "./QAEvaluationPanel";
 import { TraceTimeline } from "./TraceTimeline";
 import { HumanReviewControls } from "./HumanReviewControls";
+import { ProfileSalesAnglesCard } from "./ProfileSalesAnglesCard";
 import { downloadLeadCsv } from "@/lib/export/lead-export";
+import type { B2BProfilePack } from "@/lib/b2b-profile-packs";
 import { mockLeadDetail } from "@/lib/mock-data";
 import type { Lead, LeadDetail, EvidenceCard } from "@/lib/types";
 
@@ -31,6 +33,7 @@ interface LeadDetailDrawerProps {
    */
   detail?: LeadDetail | null;
   onStatusChange: (leadId: string, status: Lead["status"]) => void;
+  profilePack?: B2BProfilePack;
 }
 
 function getFitScoreStyles(score: number) {
@@ -75,6 +78,7 @@ export function LeadDetailDrawer({
   lead,
   detail: detailProp,
   onStatusChange,
+  profilePack,
 }: LeadDetailDrawerProps) {
   const [showPersonalizationNotes, setShowPersonalizationNotes] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -218,6 +222,27 @@ export function LeadDetailDrawer({
                     ))}
                   </ul>
                 </section>
+                <Separator className="bg-[--border-subtle]" />
+              </>
+            )}
+
+            {detail.low_evidence && profilePack && (
+              <>
+                <section className="bg-[--color-warning-bg]/30 border border-[--color-warning]/30 rounded-lg p-4">
+                  <h3 className="text-xs uppercase tracking-widest text-[--color-warning] font-mono mb-2">
+                    Low evidence
+                  </h3>
+                  <p className="text-xs text-[--text-secondary]">
+                    {profilePack.lowEvidenceWarning}
+                  </p>
+                </section>
+                <Separator className="bg-[--border-subtle]" />
+              </>
+            )}
+
+            {profilePack && (
+              <>
+                <ProfileSalesAnglesCard pack={profilePack} />
                 <Separator className="bg-[--border-subtle]" />
               </>
             )}

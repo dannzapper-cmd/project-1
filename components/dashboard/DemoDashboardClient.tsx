@@ -19,6 +19,10 @@
 
 import { useMemo, useState } from "react";
 
+import {
+  B2BProfilePackPanel,
+  DEFAULT_PROFILE_PACK_ID,
+} from "./B2BProfilePackPanel";
 import { AgentStatusRow } from "./AgentStatusRow";
 import { BusinessValueSection } from "./BusinessValueSection";
 import { DemoNextSteps } from "./DemoNextSteps";
@@ -39,6 +43,7 @@ import type {
   PipelineRunContractOutput,
 } from "@/lib/api/types";
 import type { LeadDetail } from "@/lib/types";
+import { getProfilePack, type B2BProfilePackId } from "@/lib/b2b-profile-packs";
 import { useDashboardData } from "@/lib/api/useDashboardData";
 
 function DashboardSkeleton() {
@@ -117,6 +122,12 @@ function DashboardEmpty() {
 
 export function DemoDashboardClient() {
   const [userBatch, setUserBatch] = useState<EnrichedBatch | null>(null);
+  const [profilePackId, setProfilePackId] =
+    useState<B2BProfilePackId>(DEFAULT_PROFILE_PACK_ID);
+  const profilePack = useMemo(
+    () => getProfilePack(profilePackId),
+    [profilePackId],
+  );
   const {
     metrics,
     leads,
@@ -164,6 +175,11 @@ export function DemoDashboardClient() {
     ).length;
   }, [displayLeads, displayGetLeadDetail, displayMetrics]);
 
+  const batchIndustries = useMemo(
+    () => displayLeads.map((lead) => lead.industry),
+    [displayLeads],
+  );
+
   if (loading) {
     return (
       <>
@@ -194,22 +210,35 @@ export function DemoDashboardClient() {
   return (
     <>
       <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
+      <B2BProfilePackPanel
+        selectedId={profilePackId}
+        onSelect={setProfilePackId}
+        batchIndustries={batchIndustries}
+      />
       {displayMetrics && (
         <>
-          <MetricsRow metrics={displayMetrics} />
+          <MetricsRow
+            metrics={displayMetrics}
+            metricCopyOverride={profilePack.metricCopyOverride}
+          />
           <RunQualityPanel
             metrics={displayMetrics}
             dataSource={dataSource}
             leads={displayLeads}
             lowEvidenceCount={lowEvidenceCount}
             userBatchActive={userBatchActive}
+            lowEvidenceWarning={profilePack.lowEvidenceWarning}
           />
           <BusinessValueSection metrics={displayMetrics} leads={displayLeads} />
           <DemoNextSteps leads={displayLeads} />
         </>
       )}
       <AgentStatusRow agents={displayAgentStatuses} />
-      <LeadTable leads={displayLeads} getLeadDetail={displayGetLeadDetail} />
+      <LeadTable
+        leads={displayLeads}
+        getLeadDetail={displayGetLeadDetail}
+        profilePack={profilePack}
+      />
     </>
   );
 }
