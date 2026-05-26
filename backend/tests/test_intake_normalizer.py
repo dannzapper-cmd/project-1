@@ -180,8 +180,8 @@ def test_07_row_missing_company_name_produces_error_issue_and_none_confidence() 
     assert missing[0].severity == "error"
 
 
-def test_08_row_missing_industry_is_warning_not_failure() -> None:
-    """Test 8: missing industry → warning, not a failed row."""
+def test_08_row_missing_industry_is_required_field_error() -> None:
+    """Test 8: missing industry -> error and invalid row."""
 
     records = [{"company_name": "Acme Corp", "website": "acme.com"}]
     response = build_preview(
@@ -189,12 +189,13 @@ def test_08_row_missing_industry_is_warning_not_failure() -> None:
     )
 
     row = response.normalized_leads[0]
-    assert row.lead is not None
-    warnings = _issues_with_code(row, "missing_industry")
-    assert len(warnings) == 1
-    assert warnings[0].severity == "warning"
-    assert response.failed_rows == 0
-    assert response.rows_with_warnings == 1
+    assert row.lead is None
+    assert row.status == "invalid"
+    errors = _issues_with_code(row, "missing_industry")
+    assert len(errors) == 1
+    assert errors[0].severity == "error"
+    assert row.missing_required_fields == ["industry"]
+    assert response.failed_rows == 1
 
 
 def test_09_employee_count_with_comma_parses_to_int() -> None:

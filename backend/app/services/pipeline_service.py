@@ -49,8 +49,10 @@ from app.agents.research_agent import ResearchAgentService
 from app.agents.strategist_agent import StrategistAgentService
 from app.schemas.agents import (
     AgentContractResult,
+    AgentExecutionMetadata,
     EmailDrafterAgentInput,
     EmailDrafterAgentOutput,
+    IntakeAgentOutput,
     LeadPipelineContractOutput,
     PipelineRunContractOutput,
     PipelineRunSummary,
@@ -63,7 +65,7 @@ from app.schemas.agents import (
     StrategistAgentInput,
     StrategistAgentOutput,
 )
-from app.schemas.common import AgentRunStatus, Priority
+from app.schemas.common import AgentRunStatus, Confidence, Priority, RunMode
 from app.schemas.demo import DemoCompanyResearch
 from app.schemas.lead import LeadIn
 from app.schemas.run import TraceEntry
@@ -186,6 +188,214 @@ def _research_summary_for_qualifier(
         or None
     )
 
+
+
+
+def _is_blank(value: str | None) -> bool:
+    return value is None or (isinstance(value, str) and value.strip() == "")
+
+
+def _intake_flags_for_user_lead(
+    lead: LeadIn,
+    research_record: DemoCompanyResearch | None,
+) -> list[str]:
+    flags: list[str] = []
+    if research_record is None:
+        flags.append(
+            "low_evidence: no curated company_research context matched this lead; "
+            "pipeline used only user-provided lead fields and product knowledge."
+        )
+    for field_name, value, note in (
+        ("website", lead.website, "missing website; research confidence is reduced."),
+        ("country", lead.country, "missing country; geography scoring is weaker."),
+        (
+            "contact_role",
+            lead.contact_role,
+            "missing contact_role; contact fit and personalization are weaker.",
+        ),
+        ("notes", lead.notes, "missing notes; fewer user-provided sales signals are available."),
+    ):
+        if _is_blank(value):
+            flags.append(f"{field_name}: {note}")
+    if lead.employee_count is None:
+        flags.append(
+            "employee_count: missing employee_count; company size confidence is reduced."
+        )
+    return flags
+
+
+def _intake_output_for_user_lead(
+    lead: LeadIn,
+    research_record: DemoCompanyResearch | None,
+) -> IntakeAgentOutput:
+    flags = _intake_flags_for_user_lead(lead, research_record)
+    confidence = Confidence.LOW if flags else Confidence.HIGH
+    if flags and research_record is not None:
+        confidence = Confidence.MEDIUM
+    return IntakeAgentOutput(
+        result=AgentContractResult(
+            success=True,
+            metadata=AgentExecutionMetadata(
+                agent_name="intake_agent",
+                run_mode=RunMode.SIMULATION,
+                model="none",
+                prompt_version="intake_preview_confirmed_v1",
+                latency="0ms",
+                tokens=0,
+                cost="$0.00",
+                simulated=True,
+            ),
+            error=None,
+        ),
+        normalized_lead=lead,
+        validation_flags=flags,
+        confidence=confidence,
+    )
+
+
+def _run_pipeline_for_lead_input(
+    *,
+    lead: LeadIn,
+    research_record: DemoCompanyResearch | None,
+    run_id: str,
+    intake_output: IntakeAgentOutput | None,
+) -> LeadPipelineContractOutput:
+    research_service = ResearchAgentService()
+    research_input = ResearchAgentInput(
+        lead=lead,
+        run_id=run_id,
+        available_context=_available_context(research_record),
+    )
+    research_output: ResearchAgentOutput = research_service.run(research_input)
+    telemetry_service.record_pipeline_step(run_id=run_id, lead_id=lead.lead_id, agent_name="research_agent", agent_output=research_output)
+
+    qualifier_signals, qualifier_risks = _qualifier_seed_signals(
+        research_output, research_record
+    )
+    qualifier_service = QualifierAgentService()
+    qualifier_input = QualifierAgentInput(
+        lead=lead,
+        research_summary=_research_summary_for_qualifier(
+            research_output, research_record
+        ),
+        opportunity_signals=qualifier_signals,
+        information_risks=qualifier_risks,
+        run_id=run_id,
+    )
+    qualifier_output: QualifierAgentOutput = qualifier_service.run(qualifier_input)
+    telemetry_service.record_pipeline_step(run_id=run_id, lead_id=lead.lead_id, agent_name="qualifier_agent", agent_output=qualifier_output)
+
+    strategist_service = StrategistAgentService()
+    strategist_input = StrategistAgentInput(
+        lead=lead,
+        company_summary=research_output.company_summary or "",
+        opportunity_signals=list(research_output.opportunity_signals),
+        pain_hypotheses=list(research_output.pain_hypotheses),
+        fit_score=qualifier_output.fit_score,
+        priority=qualifier_output.priority,
+        run_id=run_id,
+    )
+    strategist_output: StrategistAgentOutput = strategist_service.run(strategist_input)
+    telemetry_service.record_pipeline_step(run_id=run_id, lead_id=lead.lead_id, agent_name="strategist_agent", agent_output=strategist_output)
+
+    email_service = EmailDrafterAgentService()
+    email_input = EmailDrafterAgentInput(
+        lead=lead,
+        company_summary=research_output.company_summary or "",
+        pain_hypothesis=strategist_output.pain_hypothesis,
+        sales_angle=strategist_output.sales_angle,
+        core_message=strategist_output.core_message,
+        personalization_notes=list(strategist_output.personalization_notes),
+        run_id=run_id,
+    )
+    email_output: EmailDrafterAgentOutput = email_service.run(email_input)
+    telemetry_service.record_pipeline_step(run_id=run_id, lead_id=lead.lead_id, agent_name="email_drafter_agent", agent_output=email_output)
+
+    qa_service = QAEvaluatorAgentService()
+    qa_input = QAEvaluatorAgentInput(
+        lead=lead,
+        email_subject=email_output.email_subject,
+        email_body=email_output.email_body,
+        evidence_cards=list(research_output.evidence_cards),
+        personalization_notes=list(email_output.personalization_notes),
+        run_id=run_id,
+    )
+    qa_output: QAEvaluatorAgentOutput = qa_service.run(qa_input)
+    telemetry_service.record_pipeline_step(run_id=run_id, lead_id=lead.lead_id, agent_name="qa_evaluator_agent", agent_output=qa_output)
+
+    context_keys = sorted((_available_context(research_record) or {}).keys())
+    trace: list[TraceEntry] = [
+        _trace_entry(
+            "research_agent",
+            research_output.result,
+            input_summary=f"lead={lead.lead_id}; available_context_keys={context_keys}",
+            output_summary=(
+                f"company_summary_len={len(research_output.company_summary)}; "
+                f"signals={len(research_output.opportunity_signals)}; "
+                f"evidence={len(research_output.evidence_cards)}"
+            ),
+        ),
+        _trace_entry(
+            "qualifier_agent",
+            qualifier_output.result,
+            input_summary=(
+                f"lead={lead.lead_id}; signals={len(qualifier_signals)}; "
+                f"risks={len(qualifier_risks)}"
+            ),
+            output_summary=(
+                f"fit_score={qualifier_output.fit_score}; "
+                f"priority={qualifier_output.priority.value}"
+            ),
+        ),
+        _trace_entry(
+            "strategist_agent",
+            strategist_output.result,
+            input_summary=(
+                f"lead={lead.lead_id}; fit_score={qualifier_output.fit_score}; "
+                f"priority={qualifier_output.priority.value}"
+            ),
+            output_summary=(
+                f"sales_angle_len={len(strategist_output.sales_angle)}; "
+                f"pain_hypothesis_len={len(strategist_output.pain_hypothesis)}"
+            ),
+        ),
+        _trace_entry(
+            "email_drafter_agent",
+            email_output.result,
+            input_summary=(
+                f"lead={lead.lead_id}; "
+                f"core_message_len={len(strategist_output.core_message)}"
+            ),
+            output_summary=(
+                f"subject_len={len(email_output.email_subject)}; "
+                f"body_len={len(email_output.email_body)}"
+            ),
+        ),
+        _trace_entry(
+            "qa_evaluator_agent",
+            qa_output.result,
+            input_summary=(
+                f"lead={lead.lead_id}; "
+                f"evidence_cards={len(research_output.evidence_cards)}"
+            ),
+            output_summary=(
+                f"qa_score={qa_output.qa_score}; "
+                f"recommendation={qa_output.recommendation.value}"
+            ),
+        ),
+    ]
+
+    return LeadPipelineContractOutput(
+        run_id=run_id,
+        lead_id=lead.lead_id,
+        intake=intake_output,
+        research=research_output,
+        qualification=qualifier_output,
+        strategy=strategist_output,
+        email=email_output,
+        qa=qa_output,
+        trace=trace,
+    )
 
 def run_pipeline_for_lead(
     lead_id: str,
