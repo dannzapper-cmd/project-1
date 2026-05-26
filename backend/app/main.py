@@ -26,6 +26,7 @@ from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routes import assistant as assistant_routes
 from app.api.routes import demo as demo_routes
 from app.api.routes import health as health_routes
 from app.api.routes import intake as intake_routes
@@ -79,6 +80,7 @@ def create_app() -> FastAPI:
     app.include_router(demo_routes.router)
     app.include_router(intake_routes.router)
     app.include_router(research_routes.router)
+    app.include_router(assistant_routes.router)
     app.include_router(telemetry_routes.router)
 
     return app

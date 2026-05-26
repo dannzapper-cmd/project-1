@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -94,6 +94,28 @@ class Settings(BaseSettings):
     # Uploads are processed from FastAPI UploadFile in memory only and are
     # rejected after one byte beyond this cap is read.
     intake_max_upload_mb: int = Field(default=2, ge=1, le=10)
+
+    # Block 10G — Contextual LLM Lead Assistant.
+    #
+    # OFF by default. When enabled, the assistant calls the existing
+    # backend Groq provider with grounded lead context only. The Groq
+    # model and API key are reused from the ``GROQ_*`` settings above —
+    # there is intentionally no parallel ``LLM_ASSISTANT_*`` API-key
+    # variable. ``llm_assistant_model`` is the pinned Groq model name;
+    # leave it equal to ``groq_default_model`` to reuse the live pipeline
+    # model. The daily/per-IP/length/timeout caps are enforced by
+    # in-process counters in ``app.services.assistant_service`` — no
+    # Redis, no DB.
+    enable_llm_assistant: bool = False
+    llm_assistant_provider: Literal["groq"] = "groq"
+    llm_assistant_model: str = "llama-3.1-8b-instant"
+    llm_assistant_max_question_chars: int = Field(default=300, ge=20, le=2_000)
+    llm_assistant_timeout_seconds: float = Field(default=12.0, gt=0.0, le=60.0)
+    llm_assistant_daily_limit: int = Field(default=30, ge=1, le=10_000)
+    llm_assistant_per_ip_limit: int = Field(default=5, ge=1, le=100)
+    llm_assistant_per_ip_window_seconds: int = Field(
+        default=600, ge=10, le=86_400
+    )
 
     @field_validator("cors_origins", mode="before")
     @classmethod
