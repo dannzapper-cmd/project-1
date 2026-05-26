@@ -1,10 +1,57 @@
 "use client";
 
+/**
+ * Block 10D + Block 10G — Contextual Lead Review Assistant.
+ *
+ * Two coexisting modes inside one panel:
+ *
+ * - Deterministic mode (Block 10D, always available): the predefined
+ *   question buttons synthesize an answer locally from the lead's
+ *   already-loaded context. No network calls, no model. Works even
+ *   when the live LLM assistant is disabled.
+ *
+ * - Live LLM mode (Block 10G, opt-in): an optional text input lets
+ *   the reviewer ask a free-form question. Submitting POSTs the
+ *   small lead-context payload to `/api/assistant/lead-question`.
+ *   The backend returns a structured response (`status: ok |
+ *   disabled | unavailable | rate_limited | insufficient_context |
+ *   timeout | provider_error | invalid_question`). The component
+ *   renders the matching state from the response shape — it never
+ *   throws on a non-`ok` status.
+ *
+ * Hard rules baked into the UI:
+ *   - The live assistant never fires on mount.
+ *   - The live assistant never fires while the user is typing.
+ *   - No chat history is persisted (no localStorage, no DB).
+ *   - The live answer is shown alongside grounding metadata and a
+ *     short "used context fields" list so the reviewer can see what
+ *     the model was given.
+ *   - The deterministic buttons always remain functional even when
+ *     the live mode is disabled / unavailable / rate limited.
+ */
+
 import { useMemo, useState } from "react";
+import { Loader2, Send, Sparkles } from "lucide-react";
+
+import {
+  ApiError,
+  postAssistantLeadQuestion,
+} from "@/lib/api/client";
+import type {
+  AssistantLeadContextIn,
+  AssistantLiveResearchSnippetIn,
+  AssistantRequest,
+  AssistantResponse,
+} from "@/lib/api/types";
 import type { LeadDetail } from "@/lib/types";
 
 interface ReviewAssistantPanelProps {
   detail: LeadDetail;
+  /**
+   * Optional injection point for tests. Production callers leave
+   * undefined and the component uses the default API client.
+   */
+  postAssistantQuestion?: typeof postAssistantLeadQuestion;
 }
 
 type QuestionId =
@@ -46,6 +93,11 @@ const QUESTIONS: Question[] = [
     label: "What does the QA score mean for this lead?",
   },
 ];
+
+// Mirrors LLM_ASSISTANT_MAX_QUESTION_CHARS default on the backend.
+// The backend re-enforces this independently — this is purely a UX
+// guardrail.
+const QUESTION_CHAR_LIMIT = 300;
 
 const FALLBACK = "Not enough evidence in this run to answer that confidently.";
 
@@ -224,60 +276,355 @@ function buildAnswer(questionId: QuestionId, detail: LeadDetail): string {
   }
 }
 
-export function ReviewAssistantPanel({ detail }: ReviewAssistantPanelProps) {
+// --------------------------------------------------------------------------- //
+// Live LLM context builder                                                    //
+// --------------------------------------------------------------------------- //
+
+function buildLeadContext(detail: LeadDetail): AssistantLeadContextIn {
+  const missing = missingLeadFields(detail);
+  const qa = qaAvailable(detail)
+    ? {
+        qa_score: Number.isFinite(detail.qa_score) ? detail.qa_score : null,
+        hallucination_risk: detail.qa_scores.hallucination_risk,
+        recommendation: detail.qa_scores.recommendation,
+        notes: [] as string[],
+      }
+    : null;
+
+  return {
+    company_name: detail.company || null,
+    industry: detail.industry || null,
+    country: detail.country || null,
+    website: detail.website || null,
+    employees: detail.employees || null,
+    contact_role: detail.contact_role || null,
+
+    fit_score: Number.isFinite(detail.fit_score) ? detail.fit_score : null,
+    priority: detail.priority || null,
+    fit_reasons: detail.fit_reasons ?? [],
+    fit_risks: detail.fit_risks ?? [],
+
+    company_summary: detail.company_summary || null,
+    pain_hypothesis: detail.pain_hypothesis || null,
+    pain_confidence: detail.pain_confidence || null,
+    sales_angle: detail.sales_angle || null,
+    core_message: detail.core_message || null,
+    likely_objection: detail.likely_objection || null,
+
+    email_subject: detail.email_subject || null,
+    email_body: detail.email_body || null,
+
+    intake_warnings: detail.intake_warnings ?? [],
+    low_evidence: detail.low_evidence ?? null,
+    missing_fields: missing,
+
+    evidence_cards: (detail.evidence_cards ?? []).map((card) => ({
+      headline: card.headline,
+      description: card.description,
+      confidence: card.confidence,
+      source_type: card.source_type,
+    })),
+
+    qa,
+  };
+}
+
+// --------------------------------------------------------------------------- //
+// Live-mode banner styling                                                    //
+// --------------------------------------------------------------------------- //
+
+function liveStatusTone(status: AssistantResponse["status"]): string {
+  if (status === "ok") {
+    return "border-[--color-success]/30 bg-[--color-success-bg]/20 text-[--color-success]";
+  }
+  if (status === "rate_limited" || status === "timeout") {
+    return "border-[--color-warning]/30 bg-[--color-warning-bg]/30 text-[--color-warning]";
+  }
+  if (status === "provider_error") {
+    return "border-[--color-error]/30 bg-[--color-error-bg]/30 text-[--color-error]";
+  }
+  return "border-[--border-default] bg-[--bg-overlay] text-[--text-secondary]";
+}
+
+function modeLabel(response: AssistantResponse): string {
+  switch (response.mode) {
+    case "live_llm":
+      return "Live assistant";
+    case "deterministic":
+      return "Deterministic fallback";
+    case "off":
+    default:
+      return "Live assistant off";
+  }
+}
+
+// --------------------------------------------------------------------------- //
+// Component                                                                   //
+// --------------------------------------------------------------------------- //
+
+export function ReviewAssistantPanel({
+  detail,
+  postAssistantQuestion = postAssistantLeadQuestion,
+}: ReviewAssistantPanelProps) {
   const [selectedQuestion, setSelectedQuestion] = useState<QuestionId>("priority");
   const selected = QUESTIONS.find((question) => question.id === selectedQuestion) ?? QUESTIONS[0];
-  const answer = useMemo(
+  const deterministicAnswer = useMemo(
     () => buildAnswer(selectedQuestion, detail),
     [selectedQuestion, detail],
   );
 
+  // Live LLM state.
+  const [question, setQuestion] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [response, setResponse] = useState<AssistantResponse | null>(null);
+  const [transportError, setTransportError] = useState<string | null>(null);
+
+  const trimmed = question.trim();
+  const overLimit = trimmed.length > QUESTION_CHAR_LIMIT;
+  const submitDisabled = isLoading || trimmed.length === 0 || overLimit;
+
+  const handleAsk = async () => {
+    if (submitDisabled) return;
+    setIsLoading(true);
+    setTransportError(null);
+    try {
+      const payload: AssistantRequest = {
+        question: trimmed,
+        lead: buildLeadContext(detail),
+        live_research: [] as AssistantLiveResearchSnippetIn[],
+        run_mode: detail.run_mode || null,
+      };
+      const result = await postAssistantQuestion(payload);
+      setResponse(result);
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? `Assistant request failed (HTTP ${err.status}). The backend may be unavailable or warming up — try again in a moment.`
+          : err instanceof Error
+            ? err.message
+            : "Unexpected error contacting the assistant.";
+      setTransportError(message);
+      setResponse(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <section className="bg-[--bg-surface] border border-[--border-subtle] rounded-lg p-4">
+    <section
+      className="bg-[--bg-surface] border border-[--border-subtle] rounded-lg p-4"
+      aria-labelledby="contextual-assistant-heading"
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-[--text-primary]">
-            Review assistant
+          <h3
+            id="contextual-assistant-heading"
+            className="text-sm font-semibold text-[--text-primary]"
+          >
+            Contextual lead assistant
           </h3>
           <p className="text-xs text-[--text-muted] mt-1">
             Ask about this lead
           </p>
         </div>
         <span className="rounded-full border border-[--border-subtle] bg-[--bg-overlay] px-2 py-0.5 text-[10px] font-medium text-[--text-muted]">
-          Grounded in this run&apos;s available context
+          Grounded in this lead context
         </span>
       </div>
 
       <p className="text-xs text-[--text-muted] mt-3">
-        Answers are based on available context from this run only. They are not
-        live research or guaranteed recommendations.
+        Answers are grounded in this lead&apos;s available context. The
+        assistant does not browse the web, send email, or update CRM.
+        Live assistant is off by default.
       </p>
 
       <div className="grid grid-cols-1 gap-2 mt-4">
-        {QUESTIONS.map((question) => (
+        {QUESTIONS.map((q) => (
           <button
-            key={question.id}
+            key={q.id}
             type="button"
-            onClick={() => setSelectedQuestion(question.id)}
+            onClick={() => setSelectedQuestion(q.id)}
             className={`rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
-              selectedQuestion === question.id
+              selectedQuestion === q.id
                 ? "border-[--accent-primary] bg-[--accent-primary]/10 text-[--text-primary]"
                 : "border-[--border-subtle] bg-[--bg-elevated] text-[--text-secondary] hover:text-[--text-primary]"
             }`}
           >
-            {question.label}
+            {q.label}
           </button>
         ))}
       </div>
 
       <div className="mt-4 rounded-lg border border-[--border-subtle] bg-[--bg-elevated] p-3">
-        <p className="text-xs font-medium text-[--text-primary]">
-          {selected.label}
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-medium text-[--text-primary]">
+            {selected.label}
+          </p>
+          <span className="rounded-full border border-[--border-subtle] bg-[--bg-overlay] px-2 py-0.5 text-[10px] font-medium text-[--text-muted]">
+            Deterministic
+          </span>
+        </div>
         <p className="text-sm text-[--text-secondary] leading-relaxed mt-2">
-          {answer}
+          {deterministicAnswer}
         </p>
       </div>
+
+      {/* --- Block 10G: optional free-form question ---------------------- */}
+      <div className="mt-5">
+        <label
+          htmlFor="contextual-assistant-input"
+          className="flex items-center gap-2 text-xs font-medium text-[--text-primary]"
+        >
+          <Sparkles className="h-3 w-3" />
+          Ask the assistant a custom question
+        </label>
+        <p className="mt-1 text-[10px] text-[--text-muted]">
+          Optional. The assistant only sees this lead&apos;s loaded
+          context — no web browsing, email sending, or CRM updates.
+        </p>
+        <textarea
+          id="contextual-assistant-input"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder="e.g. Is the email draft strong enough for this priority?"
+          rows={2}
+          maxLength={QUESTION_CHAR_LIMIT + 50}
+          className="mt-2 w-full resize-y rounded-md border border-[--border-subtle] bg-[--bg-elevated] px-3 py-2 text-xs text-[--text-primary] placeholder:text-[--text-muted] focus:outline-none focus:ring-1 focus:ring-[--accent-primary]"
+        />
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <span
+            className={`text-[10px] ${
+              overLimit ? "text-[--color-error]" : "text-[--text-muted]"
+            }`}
+          >
+            {trimmed.length}/{QUESTION_CHAR_LIMIT}
+            {overLimit ? " — too long" : ""}
+          </span>
+          <button
+            type="button"
+            onClick={handleAsk}
+            disabled={submitDisabled}
+            className="inline-flex items-center gap-2 rounded-md border border-[--accent-primary]/40 bg-[--accent-primary]/10 px-3 py-1.5 text-xs font-medium text-[--accent-primary] hover:bg-[--accent-primary]/20 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Asking…
+              </>
+            ) : (
+              <>
+                <Send className="h-3 w-3" />
+                Ask assistant
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {transportError && (
+        <div
+          className="mt-3 rounded-lg border border-[--color-error]/30 bg-[--color-error-bg]/30 px-3 py-2 text-xs text-[--color-error]"
+          role="alert"
+        >
+          {transportError}
+        </div>
+      )}
+
+      {response && (
+        <div className="mt-3 space-y-2">
+          <div
+            className={`rounded-lg border px-3 py-2 text-xs ${liveStatusTone(response.status)}`}
+            role="status"
+          >
+            <span className="font-medium">{modeLabel(response)}: </span>
+            {response.user_message}
+          </div>
+
+          {response.status === "ok" && response.answer && (
+            <div className="rounded-lg border border-[--border-subtle] bg-[--bg-elevated] p-3">
+              <p className="text-sm text-[--text-primary] whitespace-pre-line leading-relaxed">
+                {response.answer}
+              </p>
+              {response.grounding_summary && (
+                <p className="mt-2 text-[10px] text-[--text-muted] italic">
+                  {response.grounding_summary}
+                </p>
+              )}
+            </div>
+          )}
+
+          {response.status !== "ok" && response.answer && (
+            <div className="rounded-lg border border-[--border-subtle] bg-[--bg-elevated] p-3">
+              <p className="text-sm text-[--text-secondary] whitespace-pre-line leading-relaxed">
+                {response.answer}
+              </p>
+            </div>
+          )}
+
+          {response.used_context_fields.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-[10px] uppercase tracking-widest text-[--text-muted] font-mono mr-1">
+                Used context
+              </span>
+              {response.used_context_fields.slice(0, 10).map((field) => (
+                <span
+                  key={field}
+                  className="rounded-full border border-[--border-subtle] bg-[--bg-overlay] px-2 py-0.5 text-[10px] font-mono text-[--text-muted]"
+                >
+                  {field}
+                </span>
+              ))}
+              {response.used_context_fields.length > 10 && (
+                <span className="text-[10px] text-[--text-muted]">
+                  +{response.used_context_fields.length - 10} more
+                </span>
+              )}
+            </div>
+          )}
+
+          {response.context_truncated && (
+            <p className="text-[10px] text-[--text-muted] italic">
+              Lead context was long — some sections were shortened before
+              sending to the assistant.
+            </p>
+          )}
+
+          {response.warnings.length > 0 && (
+            <ul className="space-y-1">
+              {response.warnings.map((warning) => (
+                <li key={warning} className="text-[10px] text-[--text-muted]">
+                  · {warning}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="flex flex-wrap items-center gap-3 text-[10px] text-[--text-muted]">
+            <span>
+              Mode: <span className="font-mono">{response.mode}</span>
+            </span>
+            {response.provider && (
+              <span>
+                Provider:{" "}
+                <span className="font-mono">{response.provider}</span>
+              </span>
+            )}
+            {response.model && (
+              <span>
+                Model: <span className="font-mono">{response.model}</span>
+              </span>
+            )}
+            {response.estimated_tokens !== null && (
+              <span>
+                Est. tokens:{" "}
+                <span className="font-mono">
+                  {response.estimated_tokens}
+                </span>
+              </span>
+            )}
+          </div>
+        </div>
+      )}
     </section>
   );
 }

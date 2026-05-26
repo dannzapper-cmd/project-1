@@ -10,6 +10,8 @@
 
 import { API_BASE_URL } from "./config.ts";
 import type {
+  AssistantRequest,
+  AssistantResponse,
   EnrichedBatch,
   EnrichedLeadResult,
   IntakePreviewRequest,
@@ -206,6 +208,25 @@ export function postLiveCompanyResearch(
 ): Promise<LiveResearchResponse> {
   return postJson<LiveResearchResponse>(
     "/api/research/live-company",
+    request,
+    opts,
+  );
+}
+
+/**
+ * Block 10G — manual single-lead contextual assistant.
+ *
+ * The endpoint always returns HTTP 200 with a structured
+ * {@link AssistantResponse}. Callers must render the matching UI
+ * from `status` and `user_message` rather than treating any non-`ok`
+ * status as a hard error.
+ */
+export function postAssistantLeadQuestion(
+  request: AssistantRequest,
+  opts: ApiClientOptions = {},
+): Promise<AssistantResponse> {
+  return postJson<AssistantResponse>(
+    "/api/assistant/lead-question",
     request,
     opts,
   );
