@@ -67,9 +67,16 @@ export function B2BProfilePackPanel({
             >
               <SelectValue placeholder="Select profile" />
             </SelectTrigger>
-            <SelectContent className="bg-[--bg-elevated] border-[--border-default]">
+            <SelectContent
+              position="popper"
+              className="z-[200] !bg-[#18181f] text-[--text-primary] border border-[--border-default] shadow-[0_16px_48px_rgba(0,0,0,0.92)] backdrop-blur-none"
+            >
               {B2B_PROFILE_PACKS.map((p) => (
-                <SelectItem key={p.id} value={p.id} className="text-[--text-primary]">
+                <SelectItem
+                  key={p.id}
+                  value={p.id}
+                  className="text-[--text-primary] cursor-pointer focus:bg-[--bg-overlay] focus:text-[--text-primary] data-[highlighted]:bg-[--bg-overlay] data-[highlighted]:text-[--text-primary] data-[state=checked]:text-[--accent-secondary]"
+                >
                   {p.displayName}
                 </SelectItem>
               ))}
