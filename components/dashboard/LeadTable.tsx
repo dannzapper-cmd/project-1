@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { mockLeads } from "@/lib/mock-data";
 import { LeadDetailDrawer } from "./LeadDetailDrawer";
+import type { B2BProfilePack } from "@/lib/b2b-profile-packs";
 import type { Lead, LeadDetail } from "@/lib/types";
 
 interface LeadTableProps {
@@ -29,6 +30,7 @@ interface LeadTableProps {
    * mock fallback path.
    */
   getLeadDetail?: (leadId: string) => LeadDetail | null;
+  profilePack?: B2BProfilePack;
 }
 
 type PriorityFilter = "All" | "High" | "Medium" | "Low";
@@ -68,6 +70,7 @@ function getStatusStyles(status: Lead["status"]) {
 export function LeadTable({
   leads: leadsProp,
   getLeadDetail,
+  profilePack,
 }: LeadTableProps = {}) {
   const initialLeads = leadsProp ?? mockLeads;
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
@@ -256,6 +259,7 @@ export function LeadTable({
         lead={selectedLead}
         detail={selectedDetail}
         onStatusChange={handleStatusChange}
+        profilePack={profilePack}
       />
     </div>
   );

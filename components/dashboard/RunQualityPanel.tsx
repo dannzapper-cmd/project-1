@@ -12,6 +12,7 @@ interface RunQualityPanelProps {
   leads?: Lead[];
   lowEvidenceCount?: number;
   userBatchActive?: boolean;
+  lowEvidenceWarning?: string;
 }
 
 export function RunQualityPanel({
@@ -20,6 +21,7 @@ export function RunQualityPanel({
   leads,
   lowEvidenceCount,
   userBatchActive,
+  lowEvidenceWarning,
 }: RunQualityPanelProps) {
   const quality = useMemo(
     () =>
@@ -29,8 +31,9 @@ export function RunQualityPanel({
         leads,
         lowEvidenceCount,
         userBatchActive,
+        lowEvidenceWarning,
       }),
-    [metrics, dataSource, leads, lowEvidenceCount, userBatchActive],
+    [metrics, dataSource, leads, lowEvidenceCount, userBatchActive, lowEvidenceWarning],
   );
 
   if (quality.leadsProcessed === 0) {

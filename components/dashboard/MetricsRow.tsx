@@ -1,4 +1,5 @@
 import { mockRunMetrics } from "@/lib/mock-data";
+import type { MetricCopyKey } from "@/lib/b2b-profile-packs";
 import type { RunMetrics } from "@/lib/types";
 
 interface MetricsRowProps {
@@ -9,7 +10,16 @@ interface MetricsRowProps {
    * without changes.
    */
   metrics?: RunMetrics | null;
+  /** Optional helper text overrides from the active B2B profile pack. */
+  metricCopyOverride?: Partial<Record<MetricCopyKey, string>>;
 }
+
+const DEFAULT_METRIC_COPY: Record<MetricCopyKey, string> = {
+  totalProcessed: "leads in this run",
+  highFitLeads: "score >= 70",
+  avgQaScore: "across {count} leads",
+  totalRunCost: "{model} · {mode}",
+};
 
 function formatAverage(score: number | null): string {
   if (score === null || score === undefined || Number.isNaN(score)) {
@@ -18,8 +28,27 @@ function formatAverage(score: number | null): string {
   return Number.isInteger(score) ? String(score) : score.toFixed(1);
 }
 
-export function MetricsRow({ metrics: metricsProp }: MetricsRowProps = {}) {
+export function MetricsRow({
+  metrics: metricsProp,
+  metricCopyOverride,
+}: MetricsRowProps = {}) {
   const metrics: RunMetrics = metricsProp ?? mockRunMetrics;
+
+  const copy = (key: MetricCopyKey, fallback: string) =>
+    metricCopyOverride?.[key] ?? DEFAULT_METRIC_COPY[key] ?? fallback;
+
+  const avgQaSub =
+    metricCopyOverride?.avgQaScore ??
+    DEFAULT_METRIC_COPY.avgQaScore.replace(
+      "{count}",
+      String(metrics.total_processed),
+    );
+
+  const costSub =
+    metricCopyOverride?.totalRunCost ??
+    DEFAULT_METRIC_COPY.totalRunCost
+      .replace("{model}", metrics.model_used)
+      .replace("{mode}", metrics.run_mode);
 
   return (
     <div className="grid grid-cols-4 gap-4">
@@ -31,7 +60,9 @@ export function MetricsRow({ metrics: metricsProp }: MetricsRowProps = {}) {
         <p className="text-3xl font-semibold text-[--text-primary]">
           {metrics.total_processed}
         </p>
-        <p className="text-xs text-[--text-muted] mt-1">leads in this run</p>
+        <p className="text-xs text-[--text-muted] mt-1">
+          {copy("totalProcessed", "leads in this run")}
+        </p>
       </div>
 
       {/* High Fit Leads */}
@@ -42,7 +73,9 @@ export function MetricsRow({ metrics: metricsProp }: MetricsRowProps = {}) {
         <p className="text-3xl font-semibold text-[--color-success]">
           {metrics.high_fit_leads}
         </p>
-        <p className="text-xs text-[--text-muted] mt-1">{"score >= 70"}</p>
+        <p className="text-xs text-[--text-muted] mt-1">
+          {copy("highFitLeads", "score >= 70")}
+        </p>
       </div>
 
       {/* Avg QA Score */}
@@ -53,7 +86,7 @@ export function MetricsRow({ metrics: metricsProp }: MetricsRowProps = {}) {
         <p className="text-3xl font-semibold text-[--accent-primary]">
           {formatAverage(metrics.avg_qa_score)}
         </p>
-        <p className="text-xs text-[--text-muted] mt-1">across {metrics.total_processed} leads</p>
+        <p className="text-xs text-[--text-muted] mt-1">{avgQaSub}</p>
       </div>
 
       {/* Total Run Cost */}
@@ -64,9 +97,7 @@ export function MetricsRow({ metrics: metricsProp }: MetricsRowProps = {}) {
         <p className="text-3xl font-semibold font-mono text-[--text-primary]">
           {metrics.total_cost}
         </p>
-        <p className="text-xs text-[--text-muted] mt-1">
-          {metrics.model_used} · {metrics.run_mode}
-        </p>
+        <p className="text-xs text-[--text-muted] mt-1">{costSub}</p>
       </div>
     </div>
   );
