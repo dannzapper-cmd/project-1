@@ -151,6 +151,65 @@ export interface IntakeAgentOutput {
 }
 
 // --------------------------------------------------------------------------- //
+// Block 10A — intake preview contracts                                         //
+// --------------------------------------------------------------------------- //
+
+export type IntakeInputType = "csv_text" | "pasted_table" | "records_json" | "raw_text";
+export type IntakeSeverity = "info" | "warning" | "error";
+export type IntakeRowStatus = "valid" | "warning" | "invalid";
+export type IntakeConfidence = "high" | "medium" | "low";
+
+export interface IntakeIssue {
+  severity: IntakeSeverity;
+  code: string;
+  message: string;
+  row_number: number | null;
+  field: string | null;
+}
+
+export interface NormalizedLeadRow {
+  row_number: number;
+  status: IntakeRowStatus;
+  normalized_fields: Record<string, unknown>;
+  lead: LeadIn | null;
+  confidence: IntakeConfidence | null;
+  missing_required_fields: string[];
+  low_confidence_fields: string[];
+  issues: IntakeIssue[];
+}
+
+export interface IntakePreviewRequest {
+  input_type: IntakeInputType;
+  source_name?: string | null;
+  content?: string | null;
+  records?: Array<Record<string, unknown>> | null;
+  options?: {
+    has_header?: true;
+    delimiter?: "auto" | "," | "\t";
+    generate_missing_lead_ids?: boolean;
+  };
+}
+
+export interface IntakePreviewResponse {
+  status: "preview_ready" | "preview_with_warnings" | "preview_blocked";
+  input_type: string;
+  source_name: string | null;
+  total_rows: number;
+  valid_rows: number;
+  rows_with_warnings: number;
+  failed_rows: number;
+  max_leads_per_run: number;
+  mapped_columns: Record<string, string>;
+  unmapped_columns: string[];
+  normalized_leads: NormalizedLeadRow[];
+  global_issues: IntakeIssue[];
+  capabilities: {
+    implemented_now: string[];
+    future_adapters: string[];
+  };
+}
+
+// --------------------------------------------------------------------------- //
 // Trace entry (run.py schema)                                                 //
 // --------------------------------------------------------------------------- //
 

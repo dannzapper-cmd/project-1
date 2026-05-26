@@ -483,7 +483,48 @@ def run_pipeline_for_demo_leads(
     )
 
 
+def run_pipeline_for_user_leads(
+    leads: list[LeadIn],
+    max_leads: int = _BATCH_MAX_LEADS,
+) -> PipelineRunContractOutput:
+    """Run the deterministic batch pipeline for preview-confirmed user leads.
+
+    This is the same five-agent orchestration used for demo leads. It does
+    not look up missing companies on the web and does not fabricate demo
+    research; unmatched leads receive an Intake warning and flow through the
+    agents with ``available_context=None``.
+    """
+
+    clamped = _clamp_max_leads(max_leads)
+    selected = leads[: min(clamped, len(leads))]
+    run_id = f"pipeline_user_batch_{uuid4().hex[:8]}"
+
+    results: list[LeadPipelineContractOutput] = []
+    for lead in selected:
+        research_record = _find_research_record(lead.lead_id)
+        results.append(
+            _run_pipeline_for_lead_input(
+                lead=lead,
+                research_record=research_record,
+                run_id=run_id,
+                intake_output=_intake_output_for_user_lead(lead, research_record),
+            )
+        )
+
+    summary = _summarize_batch(total_leads=len(leads), results=results)
+
+    return PipelineRunContractOutput(
+        run_id=run_id,
+        run_mode="deterministic_pipeline",
+        model_mode="mock",
+        lead_count=len(results),
+        summary=summary,
+        results=results,
+    )
+
+
 __all__ = [
     "run_pipeline_for_lead",
     "run_pipeline_for_demo_leads",
+    "run_pipeline_for_user_leads",
 ]

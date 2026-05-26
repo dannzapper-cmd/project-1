@@ -12,6 +12,8 @@ import { API_BASE_URL } from "./config.ts";
 import type {
   EnrichedBatch,
   EnrichedLeadResult,
+  IntakePreviewRequest,
+  IntakePreviewResponse,
   LeadIn,
   LeadPipelineContractOutput,
   PipelineRunContractOutput,
@@ -71,6 +73,65 @@ async function getJson<T>(path: string, opts: ApiClientOptions = {}): Promise<T>
   return (await response.json()) as T;
 }
 
+async function postJson<T>(
+  path: string,
+  body: unknown,
+  opts: ApiClientOptions = {},
+): Promise<T> {
+  const baseUrl = opts.baseUrl ?? API_BASE_URL;
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  const url = joinUrl(baseUrl, path);
+
+  const response = await fetchImpl(url, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    signal: opts.signal,
+    credentials: "omit",
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new ApiError(
+      `POST ${path} failed with HTTP ${response.status}`,
+      { status: response.status, url, body: text.slice(0, 500) },
+    );
+  }
+
+  return (await response.json()) as T;
+}
+
+async function postForm<T>(
+  path: string,
+  body: FormData,
+  opts: ApiClientOptions = {},
+): Promise<T> {
+  const baseUrl = opts.baseUrl ?? API_BASE_URL;
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  const url = joinUrl(baseUrl, path);
+
+  const response = await fetchImpl(url, {
+    method: "POST",
+    headers: { Accept: "application/json" },
+    body,
+    signal: opts.signal,
+    credentials: "omit",
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new ApiError(
+      `POST ${path} failed with HTTP ${response.status}`,
+      { status: response.status, url, body: text.slice(0, 500) },
+    );
+  }
+
+  return (await response.json()) as T;
+}
+
 // --------------------------------------------------------------------------- //
 // Low-level endpoint wrappers                                                 //
 // --------------------------------------------------------------------------- //
@@ -93,6 +154,30 @@ export function getPipelineForLead(
 
 export function getDemoLeads(opts: ApiClientOptions = {}): Promise<LeadIn[]> {
   return getJson<LeadIn[]>("/api/demo/leads", opts);
+}
+
+export function postIntakePreview(
+  request: IntakePreviewRequest,
+  opts: ApiClientOptions = {},
+): Promise<IntakePreviewResponse> {
+  return postJson<IntakePreviewResponse>("/api/intake/preview", request, opts);
+}
+
+export function postCsvIntakePreview(
+  file: File,
+  opts: ApiClientOptions = {},
+): Promise<IntakePreviewResponse> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("generate_missing_lead_ids", "true");
+  return postForm<IntakePreviewResponse>("/api/intake/preview-file/csv", form, opts);
+}
+
+export function postPipelineBatch(
+  leads: LeadIn[],
+  opts: ApiClientOptions = {},
+): Promise<PipelineRunContractOutput> {
+  return postJson<PipelineRunContractOutput>("/api/demo/pipeline/batch", { leads }, opts);
 }
 
 // --------------------------------------------------------------------------- //

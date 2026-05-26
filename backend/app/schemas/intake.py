@@ -62,8 +62,12 @@ class NormalizedLeadRow(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     row_number: int
+    status: Literal["valid", "warning", "invalid"]
+    normalized_fields: dict[str, Any] = Field(default_factory=dict)
     lead: LeadIn | None = None
     confidence: Literal["high", "medium", "low"] | None = None
+    missing_required_fields: list[str] = Field(default_factory=list)
+    low_confidence_fields: list[str] = Field(default_factory=list)
     issues: list[IntakeIssue] = Field(default_factory=list)
 
 
@@ -88,6 +92,7 @@ class IntakePreviewResponse(BaseModel):
     valid_rows: int
     rows_with_warnings: int
     failed_rows: int
+    max_leads_per_run: int
     mapped_columns: dict[str, str]
     unmapped_columns: list[str]
     normalized_leads: list[NormalizedLeadRow]

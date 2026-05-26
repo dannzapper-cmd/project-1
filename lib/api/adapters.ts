@@ -203,6 +203,7 @@ export function toLeadDetail(enriched: EnrichedLeadResult): LeadDetail {
   const strategy = result.strategy;
   const email = result.email;
   const qa = result.qa;
+  const intakeWarnings = result.intake?.validation_flags ?? [];
 
   const evidenceCards: ViewEvidenceCard[] =
     research?.evidence_cards.map((card, idx) =>
@@ -216,6 +217,10 @@ export function toLeadDetail(enriched: EnrichedLeadResult): LeadDetail {
 
   return {
     ...base,
+    intake_warnings: intakeWarnings,
+    low_evidence: intakeWarnings.some((flag) =>
+      flag.toLowerCase().includes("low_evidence"),
+    ),
     company_summary: research?.company_summary ?? "",
     opportunity_signals: research?.opportunity_signals ?? [],
     evidence_cards: evidenceCards,

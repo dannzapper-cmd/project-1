@@ -21,7 +21,9 @@ from app.services.demo_data_loader import load_demo_leads
 from app.services.pipeline_service import (
     run_pipeline_for_demo_leads,
     run_pipeline_for_lead,
+    run_pipeline_for_user_leads,
 )
+from app.schemas.lead import LeadIn
 
 
 @pytest.fixture(scope="module")
@@ -185,3 +187,51 @@ def test_batch_max_leads_clamp() -> None:
     # An intermediate value passes through unchanged.
     three = run_pipeline_for_demo_leads(max_leads=3)
     assert three.lead_count == min(3, total_leads)
+
+
+def test_user_provided_lead_without_company_research_is_low_evidence() -> None:
+    lead = LeadIn(
+        lead_id="user_001",
+        company_name="User Provided Co",
+        industry="B2B SaaS",
+        website=None,
+        country=None,
+        employee_count=None,
+        contact_name=None,
+        contact_role=None,
+        notes=None,
+    )
+
+    output = run_pipeline_for_user_leads([lead])
+
+    result = output.results[0]
+    assert result.intake is not None
+    assert any("low_evidence" in flag for flag in result.intake.validation_flags)
+    assert result.research is not None
+    assert result.research.evidence_cards == []
+    assert result.research.confidence.value == "Low"
+    assert "Insufficient context" in result.research.company_summary
+    assert result.qualification is not None
+    assert any("Website missing" in risk for risk in result.qualification.fit_risks)
+    assert result.qa is not None
+    assert any("Lead context is degraded" in note for note in result.qa.qa_notes)
+
+
+def test_user_batch_processes_valid_rows_despite_other_preview_rows_invalid() -> None:
+    valid = LeadIn(
+        lead_id="user_valid",
+        company_name="Valid Co",
+        industry="Logistics",
+        website="valid.example",
+        country="Germany",
+        employee_count=120,
+        contact_name="Ava Lane",
+        contact_role="VP Sales",
+        notes="Exploring outbound operations.",
+    )
+
+    output = run_pipeline_for_user_leads([valid])
+
+    assert output.lead_count == 1
+    assert output.summary.total_leads == 1
+    assert output.results[0].lead_id == "user_valid"

@@ -303,7 +303,7 @@ def _map_columns(
                 IntakeIssue(
                     severity="info",
                     code="unmapped_column",
-                    message=f"Column '{header}' could not be mapped to a LeadIn field.",
+                    message=f"Column '{header}' could not be mapped to an internal Lead field.",
                     row_number=None,
                     field=header,
                 )
@@ -640,8 +640,8 @@ def build_preview(request: IntakePreviewRequest) -> IntakePreviewResponse:
             generated_index += 1
 
     total_rows = len(rows)
-    valid_rows = sum(1 for row in rows if row.lead is not None)
-    failed_rows = sum(1 for row in rows if row.lead is None)
+    valid_rows = sum(1 for row in rows if row.status != "invalid")
+    failed_rows = sum(1 for row in rows if row.status == "invalid")
     rows_with_warnings = sum(
         1
         for row in rows
@@ -664,6 +664,7 @@ def build_preview(request: IntakePreviewRequest) -> IntakePreviewResponse:
         valid_rows=valid_rows,
         rows_with_warnings=rows_with_warnings,
         failed_rows=failed_rows,
+        max_leads_per_run=MAX_LEADS_PER_RUN,
         mapped_columns=mapped_columns,
         unmapped_columns=unmapped_columns,
         normalized_leads=rows,

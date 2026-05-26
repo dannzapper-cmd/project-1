@@ -29,7 +29,7 @@ from app.schemas.evaluation import (
     RunEvaluationSummary,
     RunTraceReport,
 )
-from app.schemas.lead import LeadIn
+from app.schemas.lead import LeadBatchProcessRequest, LeadIn
 from app.schemas.model import (
     ModelConfig,
     ModelMessage,
@@ -78,6 +78,7 @@ from app.services.model_service import GroqModelService, get_model_service
 from app.services.pipeline_service import (
     run_pipeline_for_demo_leads,
     run_pipeline_for_lead,
+    run_pipeline_for_user_leads,
 )
 from app.services.run_service import build_replay_run
 from app.services.simulation_service import build_simulation_run
@@ -870,6 +871,24 @@ def get_pipeline_batch() -> PipelineRunContractOutput:
     Processes up to 10 demo leads. No Groq, no email sending."""
     try:
         return run_pipeline_for_demo_leads()
+    except DemoDataError as exc:
+        _raise_500(exc)
+        raise  # pragma: no cover
+
+
+@router.post("/pipeline/batch", response_model=PipelineRunContractOutput)
+def post_pipeline_batch(
+    request: LeadBatchProcessRequest,
+) -> PipelineRunContractOutput:
+    """Block 10A — deterministic batch pipeline for user-provided leads.
+
+    Leads must already be normalized and preview-confirmed by the intake UI/API.
+    This reuses the existing deterministic five-agent pipeline, never calls
+    Groq, never performs live research, and processes at most 10 leads.
+    """
+
+    try:
+        return run_pipeline_for_user_leads(request.leads)
     except DemoDataError as exc:
         _raise_500(exc)
         raise  # pragma: no cover

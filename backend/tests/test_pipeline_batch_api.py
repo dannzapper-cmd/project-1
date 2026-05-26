@@ -85,6 +85,56 @@ def test_get_batch_pipeline_each_result_has_five_trace_entries() -> None:
         assert result.get("intake") is None
 
 
+def test_post_batch_pipeline_accepts_user_provided_leads() -> None:
+    payload = {
+        "leads": [
+            {
+                "lead_id": "user_001",
+                "company_name": "User Provided Co",
+                "industry": "B2B SaaS",
+                "website": None,
+                "country": None,
+                "employee_count": None,
+                "contact_name": None,
+                "contact_role": None,
+                "notes": None,
+            }
+        ]
+    }
+
+    with TestClient(app) as client:
+        response = client.post("/api/demo/pipeline/batch", json=payload)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["lead_count"] == 1
+    assert body["results"][0]["lead_id"] == "user_001"
+    assert body["results"][0]["intake"] is not None
+    assert any(
+        "low_evidence" in flag
+        for flag in body["results"][0]["intake"]["validation_flags"]
+    )
+    assert body["results"][0]["research"]["evidence_cards"] == []
+
+
+def test_post_batch_pipeline_rejects_more_than_ten_user_leads() -> None:
+    payload = {
+        "leads": [
+            {
+                "lead_id": f"user_{idx:03d}",
+                "company_name": f"User Co {idx}",
+                "industry": "B2B SaaS",
+            }
+            for idx in range(11)
+        ]
+    }
+
+    with TestClient(app) as client:
+        response = client.post("/api/demo/pipeline/batch", json=payload)
+
+    assert response.status_code == 422
+
+
 def test_single_lead_pipeline_endpoint_still_returns_200() -> None:
     # Regression: the Phase 6.1 endpoint must keep working and must
     # not be shadowed by the new /pipeline/batch route.

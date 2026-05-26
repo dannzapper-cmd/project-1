@@ -7,14 +7,16 @@ FastAPI backend for LeadForge-Agentic Core. The local demo build currently ships
 - Deterministic demo pipeline:
   Research → Qualifier → Strategist → Email Drafter → QA Evaluator
 - Deterministic batch pipeline for demo leads
+- CSV/pasted-table intake preview plus deterministic user-lead batch processing
 - Safe in-memory telemetry with read-only inspection endpoints
 - Optional live Groq single-lead path, disabled by default and guarded by
   `ENABLE_LIVE_MODEL_PIPELINE=true` plus `GROQ_API_KEY`
 - SQLite schema initialization via SQLAlchemy 2.x (`create_all` on startup)
 
-The backend does **not** currently provide Smart Intake, live web research,
-LangGraph runtime, durable telemetry storage, backend review persistence, CRM
-integration, email sending, authentication, payments, or multi-tenancy.
+The backend does **not** currently provide PDF/image/Excel intake, live web
+research, LangGraph runtime, durable telemetry storage, backend review
+persistence, CRM integration, email sending, authentication, payments, or
+multi-tenancy.
 
 ## Folder layout
 
@@ -163,6 +165,52 @@ remains the safe, network-free baseline.
 
 The architecture decision to defer LangGraph for this block is recorded
 in [`docs/adr/langgraph-decision.md`](../docs/adr/langgraph-decision.md).
+
+## Block 10A — Real intake preview and user-lead batch processing
+
+Preview endpoints:
+
+- `POST /api/intake/preview` for `csv_text`, `pasted_table`,
+  `records_json`, or `raw_text`.
+- `POST /api/intake/preview-file/csv` for a single UTF-8 `.csv` upload up to
+  1 MB.
+
+Required normalized fields are `company_name` and `industry`. Missing
+recommended fields (`website`, `country`, `contact_role`) and missing optional
+context (`employee_count`, `notes`) produce warnings but do not block processing
+when required fields are present. Unknown extra columns are reported as
+unmapped and skipped.
+
+Processing endpoint:
+
+- `POST /api/demo/pipeline/batch`
+
+The request body is:
+
+```json
+{
+  "leads": [
+    {
+      "lead_id": "preview_001",
+      "company_name": "Example Co",
+      "industry": "B2B SaaS",
+      "website": "example.com",
+      "country": "US",
+      "employee_count": 120,
+      "contact_name": "Avery Lane",
+      "contact_role": "VP Sales",
+      "notes": "Exploring outbound operations."
+    }
+  ]
+}
+```
+
+The endpoint reuses the deterministic five-agent pipeline, processes at most
+10 normalized leads, does not call Groq, does not perform live research, and
+does not write CRM/email/database side effects. If a user-provided lead does
+not match curated `company_research`, the response carries intake
+`validation_flags` such as `low_evidence` and the research output remains
+cautious with no fabricated evidence cards.
 
 ## Notes
 

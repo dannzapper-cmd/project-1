@@ -17,9 +17,25 @@
  * not here.
  */
 
+import { useMemo, useState } from "react";
+
 import { AgentStatusRow } from "./AgentStatusRow";
+import { LeadIntakePanel } from "./LeadIntakePanel";
 import { LeadTable } from "./LeadTable";
 import { MetricsRow } from "./MetricsRow";
+import { joinBatchWithLeads } from "@/lib/api/client";
+import {
+  toAgentStatuses,
+  toLeadDetail,
+  toLeads,
+  toRunMetrics,
+} from "@/lib/api/adapters";
+import type {
+  EnrichedBatch,
+  LeadIn,
+  PipelineRunContractOutput,
+} from "@/lib/api/types";
+import type { LeadDetail } from "@/lib/types";
 import { useDashboardData } from "@/lib/api/useDashboardData";
 
 function DashboardSkeleton() {
@@ -97,6 +113,7 @@ function DashboardEmpty() {
 }
 
 export function DemoDashboardClient() {
+  const [userBatch, setUserBatch] = useState<EnrichedBatch | null>(null);
   const {
     metrics,
     leads,
@@ -107,23 +124,67 @@ export function DemoDashboardClient() {
     refresh,
   } = useDashboardData();
 
+  const processedDashboard = useMemo(() => {
+    if (!userBatch) return null;
+    const detailById = new Map<string, LeadDetail>();
+    for (const enriched of userBatch.results) {
+      const detail = toLeadDetail(enriched);
+      detailById.set(detail.id, detail);
+    }
+    return {
+      metrics: toRunMetrics(userBatch),
+      leads: toLeads(userBatch),
+      agentStatuses: toAgentStatuses(userBatch),
+      getLeadDetail: (leadId: string): LeadDetail | null =>
+        detailById.get(leadId) ?? null,
+    };
+  }, [userBatch]);
+
+  const handleBatchProcessed = (
+    batch: PipelineRunContractOutput,
+    sourceLeads: LeadIn[],
+  ) => {
+    setUserBatch(joinBatchWithLeads(batch, sourceLeads));
+  };
+
   if (loading) {
-    return <DashboardSkeleton />;
+    return (
+      <>
+        <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
+        <DashboardSkeleton />
+      </>
+    );
   }
 
   if (error) {
-    return <DashboardError message={error} onRetry={refresh} />;
+    return (
+      <>
+        <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
+        <DashboardError message={error} onRetry={refresh} />
+      </>
+    );
   }
 
-  if (leads.length === 0) {
-    return <DashboardEmpty />;
+  const displayMetrics = processedDashboard?.metrics ?? metrics;
+  const displayLeads = processedDashboard?.leads ?? leads;
+  const displayAgentStatuses = processedDashboard?.agentStatuses ?? agentStatuses;
+  const displayGetLeadDetail = processedDashboard?.getLeadDetail ?? getLeadDetail;
+
+  if (displayLeads.length === 0) {
+    return (
+      <>
+        <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
+        <DashboardEmpty />
+      </>
+    );
   }
 
   return (
     <>
-      <MetricsRow metrics={metrics} />
-      <AgentStatusRow agents={agentStatuses} />
-      <LeadTable leads={leads} getLeadDetail={getLeadDetail} />
+      <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
+      <MetricsRow metrics={displayMetrics} />
+      <AgentStatusRow agents={displayAgentStatuses} />
+      <LeadTable leads={displayLeads} getLeadDetail={displayGetLeadDetail} />
     </>
   );
 }

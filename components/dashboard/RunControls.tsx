@@ -10,6 +10,13 @@ import {
 } from "@/components/ui/tooltip";
 
 export function RunControls() {
+  const scrollToIntake = () => {
+    document.getElementById("lead-intake")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
   return (
     <div className="bg-[--bg-surface] border border-[--border-default] rounded-lg p-5">
       <div className="flex items-center justify-between">
@@ -59,11 +66,11 @@ export function RunControls() {
 
           <Button
             variant="outline"
-            disabled
-            className="border-[--border-default] text-[--text-secondary] opacity-50 cursor-not-allowed"
+            onClick={scrollToIntake}
+            className="border-[--border-default] text-[--text-secondary]"
           >
             <Upload className="h-4 w-4 mr-2" />
-            Upload CSV (roadmap)
+            Add Leads
           </Button>
         </div>
       </div>

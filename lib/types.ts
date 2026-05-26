@@ -63,6 +63,8 @@ export interface TraceEntry {
 }
 
 export interface LeadDetail extends Lead {
+  intake_warnings?: string[];
+  low_evidence?: boolean;
   company_summary: string;
   opportunity_signals: string[];
   evidence_cards: EvidenceCard[];
