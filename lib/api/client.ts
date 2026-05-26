@@ -16,6 +16,8 @@ import type {
   IntakePreviewResponse,
   LeadIn,
   LeadPipelineContractOutput,
+  LiveResearchRequest,
+  LiveResearchResponse,
   PipelineRunContractOutput,
 } from "./types.ts";
 
@@ -178,6 +180,25 @@ export function postPipelineBatch(
   opts: ApiClientOptions = {},
 ): Promise<PipelineRunContractOutput> {
   return postJson<PipelineRunContractOutput>("/api/demo/pipeline/batch", { leads }, opts);
+}
+
+/**
+ * Block 10E — manual single-lead live web research.
+ *
+ * The endpoint always returns HTTP 200 with a structured
+ * {@link LiveResearchResponse}. Callers must render the matching
+ * UI from `status` and `user_message` rather than treating any
+ * non-`ok` status as a hard error.
+ */
+export function postLiveCompanyResearch(
+  request: LiveResearchRequest,
+  opts: ApiClientOptions = {},
+): Promise<LiveResearchResponse> {
+  return postJson<LiveResearchResponse>(
+    "/api/research/live-company",
+    request,
+    opts,
+  );
 }
 
 // --------------------------------------------------------------------------- //

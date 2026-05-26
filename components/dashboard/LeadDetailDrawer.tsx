@@ -14,6 +14,7 @@ import { TraceTimeline } from "./TraceTimeline";
 import { HumanReviewControls } from "./HumanReviewControls";
 import { ProfileSalesAnglesCard } from "./ProfileSalesAnglesCard";
 import { LeadAgentActivityPanel } from "./LeadAgentActivityPanel";
+import { LiveResearchPanel } from "./LiveResearchPanel";
 import { ReviewAssistantPanel } from "./ReviewAssistantPanel";
 import { downloadLeadCsv } from "@/lib/export/lead-export";
 import type { B2BProfilePack } from "@/lib/b2b-profile-packs";
@@ -402,6 +403,10 @@ export function LeadDetailDrawer({
             <Separator className="bg-[--border-subtle]" />
 
             <ReviewAssistantPanel detail={detail} />
+
+            <Separator className="bg-[--border-subtle]" />
+
+            <LiveResearchPanel lead={detail} />
 
             <Separator className="bg-[--border-subtle]" />
 
