@@ -319,6 +319,16 @@ storage belongs to a later backend deployment block.
 - Live web research (Block 10E, Exa) is OFF by default. When enabled it is
   manual, single-lead-only, backend-keyed, daily-limited via an in-process
   counter, and never routed through Groq or any LLM.
+- Contextual LLM lead assistant (Block 10G) is OFF by default. When enabled
+  it is manual-trigger only, single-selected-lead only, backend-keyed
+  (reuses `GROQ_API_KEY` and `GROQ_DEFAULT_MODEL` — no parallel assistant
+  API key), and bounded by an in-process daily counter
+  (`LLM_ASSISTANT_DAILY_LIMIT`, default 30) plus a per-IP sliding window
+  (`LLM_ASSISTANT_PER_IP_LIMIT`, default 5 per 10 minutes). The assistant
+  never browses the web, sends email, writes to a CRM, or triggers live
+  research. Question length is capped by
+  `LLM_ASSISTANT_MAX_QUESTION_CHARS` (default 300). The system prompt is
+  constructed backend-side and is never exposed in any response field.
 - No auth, payments, Redis, queue workers, or other paid search APIs
   are introduced by this deployment path.
 - No request logging middleware is added for user IP, user agent, or
