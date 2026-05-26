@@ -40,7 +40,7 @@ POST /api/demo/pipeline/live-groq/{lead_id}
 - **Dashboard:** `/demo` — lead table, lead detail drawer, agent outputs, traces, QA, human review, local CSV export.  
 - **Data source:** `NEXT_PUBLIC_DATA_SOURCE` — `mock` (bundled demo data) or `api` (FastAPI at `NEXT_PUBLIC_API_URL`).  
 - **Human review:** State stored in the browser only; not persisted to the backend.  
-- **Not implemented on frontend:** Live Groq button, Smart Intake UI, auth, payments, multi-tenancy.
+- **Not implemented on frontend:** Live Groq button, Excel/PDF/image intake, auth, payments, multi-tenancy.
 
 ---
 
@@ -196,7 +196,7 @@ LeadForge-Agentic Core is an engineering demo product, not a production SaaS. No
 | Telemetry | In-memory summaries | No durable DB, JSONL sink, or external APM |
 | Outreach | Drafts only | No SMTP, no CRM write |
 | Research | Demo/fixture context | No live web research or scraping |
-| Intake | Preview API only | No Smart Intake in dashboard; no PDF/Excel/OCR |
+| Intake | CSV/paste preview and max-10 deterministic processing | No PDF/Excel/OCR |
 | Live model | API-only Groq | No frontend live button |
 | Orchestration | Linear Python | LangGraph deferred per ADR |
 | Data | Synthetic demo leads | Not real-time company intelligence |

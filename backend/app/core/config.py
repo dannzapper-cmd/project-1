@@ -23,9 +23,10 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Annotated
 
-from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, field_validator, model_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 def _default_repo_root() -> Path:
@@ -50,7 +51,9 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///./leadforge.db"
 
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    cors_origins: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["http://localhost:3000"]
+    )
 
     # Fase 4.2: filesystem anchors for demo data and knowledge files.
     # Default to the repository root so the backend can be run from any CWD.
@@ -77,8 +80,24 @@ class Settings(BaseSettings):
     @classmethod
     def _split_cors_origins(cls, value: object) -> object:
         if isinstance(value, str):
-            return [item.strip() for item in value.split(",") if item.strip()]
+            return [item.strip().rstrip("/") for item in value.split(",") if item.strip()]
+        if isinstance(value, list):
+            return [
+                item.strip().rstrip("/")
+                for item in value
+                if isinstance(item, str) and item.strip()
+            ]
         return value
+
+    @model_validator(mode="after")
+    def _validate_public_cors(self) -> "Settings":
+        if self.app_env.strip().lower() in {"production", "prod"}:
+            if "*" in self.cors_origins:
+                raise ValueError(
+                    "CORS_ORIGINS must list explicit origins in production; "
+                    "wildcard '*' is not allowed."
+                )
+        return self
 
     @field_validator("repo_root", mode="before")
     @classmethod

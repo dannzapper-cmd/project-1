@@ -56,8 +56,8 @@ export function RunControls() {
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>
-                    Live Groq runs through the backend only. Configure the API in
-                    Block 11; this demo view stays on replay.
+                    Live Groq is backend-only and opt-in. This demo view stays
+                    on replay unless backend API mode is configured separately.
                   </p>
                 </TooltipContent>
               </Tooltip>

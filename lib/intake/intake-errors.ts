@@ -8,7 +8,7 @@
 import { ApiError } from "../api/client.ts";
 
 const BACKEND_UNAVAILABLE_MESSAGE =
-  "Could not reach the LeadForge backend. The public Vercel preview can still show replay demo results, but Add Leads requires a running FastAPI backend or configured NEXT_PUBLIC_API_URL. This will be enabled in the controlled deployment block.";
+  "Could not reach the LeadForge backend. The public Vercel preview can still show replay demo results, but Add Leads requires a running FastAPI backend and NEXT_PUBLIC_API_URL set to that backend base URL.";
 
 const BACKEND_UNAVAILABLE_STATUSES = new Set([0, 502, 503, 504]);
 
