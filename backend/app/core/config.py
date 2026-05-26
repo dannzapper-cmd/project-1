@@ -23,9 +23,10 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Annotated
 
 from pydantic import Field, field_validator, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 def _default_repo_root() -> Path:
@@ -50,7 +51,9 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///./leadforge.db"
 
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    cors_origins: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["http://localhost:3000"]
+    )
 
     # Fase 4.2: filesystem anchors for demo data and knowledge files.
     # Default to the repository root so the backend can be run from any CWD.
