@@ -360,3 +360,102 @@ export interface LiveResearchResponse {
   estimated_request_count: number;
   user_message: string;
 }
+
+// --------------------------------------------------------------------------- //
+// Block 10G — Contextual LLM Lead Assistant                                  //
+//                                                                            //
+// Mirrors `app/schemas/assistant.py`. The endpoint always returns HTTP 200;  //
+// the component renders disabled / unavailable / rate-limited / timeout /   //
+// insufficient-context / provider-error / invalid-question states from      //
+// `status` and `user_message`.                                              //
+// --------------------------------------------------------------------------- //
+
+export type AssistantStatus =
+  | "ok"
+  | "deterministic_fallback"
+  | "disabled"
+  | "unavailable"
+  | "rate_limited"
+  | "insufficient_context"
+  | "timeout"
+  | "provider_error"
+  | "invalid_question";
+
+export type AssistantMode = "deterministic" | "live_llm" | "off";
+
+export interface AssistantEvidenceCardIn {
+  headline: string;
+  description?: string | null;
+  confidence?: string | null;
+  source_type?: string | null;
+}
+
+export interface AssistantLiveResearchSnippetIn {
+  title?: string | null;
+  source_domain?: string | null;
+  snippet?: string | null;
+}
+
+export interface AssistantQAContextIn {
+  qa_score?: number | null;
+  hallucination_risk?: string | null;
+  recommendation?: string | null;
+  notes?: string[];
+}
+
+export interface AssistantLeadContextIn {
+  company_name?: string | null;
+  industry?: string | null;
+  country?: string | null;
+  website?: string | null;
+  employees?: string | null;
+  contact_role?: string | null;
+
+  fit_score?: number | null;
+  priority?: string | null;
+  fit_reasons?: string[];
+  fit_risks?: string[];
+
+  company_summary?: string | null;
+  pain_hypothesis?: string | null;
+  pain_confidence?: string | null;
+  sales_angle?: string | null;
+  core_message?: string | null;
+  likely_objection?: string | null;
+
+  email_subject?: string | null;
+  email_body?: string | null;
+
+  intake_warnings?: string[];
+  low_evidence?: boolean | null;
+  missing_fields?: string[];
+
+  evidence_cards?: AssistantEvidenceCardIn[];
+  qa?: AssistantQAContextIn | null;
+
+  profile_pack_name?: string | null;
+  profile_pack_focus?: string | null;
+}
+
+export interface AssistantRequest {
+  question: string;
+  lead: AssistantLeadContextIn;
+  live_research?: AssistantLiveResearchSnippetIn[];
+  run_mode?: string | null;
+}
+
+export interface AssistantResponse {
+  status: AssistantStatus;
+  mode: AssistantMode;
+  answer: string;
+  grounding_summary: string;
+  used_context_fields: string[];
+  unsupported_claims_blocked: boolean;
+  context_truncated: boolean;
+  warnings: string[];
+  provider: string | null;
+  model: string | null;
+  estimated_tokens: number | null;
+  estimated_cost_usd: number | null;
+  user_message: string;
+}
