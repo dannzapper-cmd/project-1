@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
+import { DemoOnboarding } from "@/components/dashboard/DemoOnboarding";
 import { ReplayModeBanner } from "@/components/dashboard/ReplayModeBanner";
 import { RunControls } from "@/components/dashboard/RunControls";
 import { DemoDashboardClient } from "@/components/dashboard/DemoDashboardClient";
@@ -44,6 +45,8 @@ export default function DemoPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        <DemoOnboarding />
+
         {/* Run Controls */}
         <RunControls />
 

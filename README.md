@@ -32,6 +32,8 @@ B2B outreach fails when teams cannot see *why* an AI recommended a message, whet
 | Batch deterministic pipeline | Up to 10 demo leads per batch run |
 | Next.js dashboard | `/demo` — lead table, lead detail drawer |
 | Smart lead intake foundation | CSV upload and pasted table preview/validation in `/demo`; max 10 processed leads per run |
+| Demo onboarding + business-value panel | `/demo` explains replay vs Add Leads; illustrative ROI-style metrics from run data |
+| Backend-unavailable UX for Add Leads | Clear message when preview cannot reach the API (public Vercel without backend) |
 | Research, Qualifier, Strategist, Email Drafter, QA Evaluator agents | Contract-tested services |
 | Agent traces | Per-step input/output summaries in API and UI |
 | QA evaluations | Scores and recommendations visible in UI |
@@ -79,6 +81,16 @@ Do not expect the following in the current product:
 9. *(Optional)* Inspect telemetry via read-only API endpoints.
 
 Full timed scripts: [`docs/demo-script.md`](docs/demo-script.md).
+
+### Public preview vs local backend
+
+| Mode | What works | Notes |
+|------|------------|--------|
+| **Replay demo** (default `NEXT_PUBLIC_DATA_SOURCE=mock`) | Sample dashboard, traces, human review, local CSV export | Safe on Vercel — no model calls, zero API cost |
+| **Add Leads** (paste / CSV preview + process) | Requires a reachable FastAPI backend and `NEXT_PUBLIC_API_URL` | On public Vercel without backend config, preview shows a clear “backend unavailable” message instead of a generic fetch error |
+| **Business metrics** on `/demo` | Derived in the browser from run data | Illustrative estimates (e.g. 30–45 min manual research per lead); not guaranteed ROI |
+
+**Block 11** will cover controlled public backend deployment and env setup. This repo does not send emails or write to a CRM in any mode.
 
 ---
 

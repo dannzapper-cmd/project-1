@@ -20,9 +20,12 @@
 import { useMemo, useState } from "react";
 
 import { AgentStatusRow } from "./AgentStatusRow";
+import { BusinessValueSection } from "./BusinessValueSection";
+import { DemoNextSteps } from "./DemoNextSteps";
 import { LeadIntakePanel } from "./LeadIntakePanel";
 import { LeadTable } from "./LeadTable";
 import { MetricsRow } from "./MetricsRow";
+import { RunQualityPanel } from "./RunQualityPanel";
 import { joinBatchWithLeads } from "@/lib/api/client";
 import {
   toAgentStatuses,
@@ -122,6 +125,7 @@ export function DemoDashboardClient() {
     loading,
     error,
     refresh,
+    dataSource,
   } = useDashboardData();
 
   const processedDashboard = useMemo(() => {
@@ -147,6 +151,19 @@ export function DemoDashboardClient() {
     setUserBatch(joinBatchWithLeads(batch, sourceLeads));
   };
 
+  const displayMetrics = processedDashboard?.metrics ?? metrics;
+  const displayLeads = processedDashboard?.leads ?? leads;
+  const displayAgentStatuses = processedDashboard?.agentStatuses ?? agentStatuses;
+  const displayGetLeadDetail = processedDashboard?.getLeadDetail ?? getLeadDetail;
+  const userBatchActive = userBatch !== null;
+
+  const lowEvidenceCount = useMemo(() => {
+    if (!displayMetrics || displayLeads.length === 0) return 0;
+    return displayLeads.filter(
+      (lead) => displayGetLeadDetail(lead.id)?.low_evidence === true,
+    ).length;
+  }, [displayLeads, displayGetLeadDetail, displayMetrics]);
+
   if (loading) {
     return (
       <>
@@ -165,11 +182,6 @@ export function DemoDashboardClient() {
     );
   }
 
-  const displayMetrics = processedDashboard?.metrics ?? metrics;
-  const displayLeads = processedDashboard?.leads ?? leads;
-  const displayAgentStatuses = processedDashboard?.agentStatuses ?? agentStatuses;
-  const displayGetLeadDetail = processedDashboard?.getLeadDetail ?? getLeadDetail;
-
   if (displayLeads.length === 0) {
     return (
       <>
@@ -182,7 +194,20 @@ export function DemoDashboardClient() {
   return (
     <>
       <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
-      <MetricsRow metrics={displayMetrics} />
+      {displayMetrics && (
+        <>
+          <MetricsRow metrics={displayMetrics} />
+          <RunQualityPanel
+            metrics={displayMetrics}
+            dataSource={dataSource}
+            leads={displayLeads}
+            lowEvidenceCount={lowEvidenceCount}
+            userBatchActive={userBatchActive}
+          />
+          <BusinessValueSection metrics={displayMetrics} leads={displayLeads} />
+          <DemoNextSteps leads={displayLeads} />
+        </>
+      )}
       <AgentStatusRow agents={displayAgentStatuses} />
       <LeadTable leads={displayLeads} getLeadDetail={displayGetLeadDetail} />
     </>
