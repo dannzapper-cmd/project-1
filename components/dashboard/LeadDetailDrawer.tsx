@@ -13,6 +13,8 @@ import { QAEvaluationPanel } from "./QAEvaluationPanel";
 import { TraceTimeline } from "./TraceTimeline";
 import { HumanReviewControls } from "./HumanReviewControls";
 import { ProfileSalesAnglesCard } from "./ProfileSalesAnglesCard";
+import { LeadAgentActivityPanel } from "./LeadAgentActivityPanel";
+import { ReviewAssistantPanel } from "./ReviewAssistantPanel";
 import { downloadLeadCsv } from "@/lib/export/lead-export";
 import type { B2BProfilePack } from "@/lib/b2b-profile-packs";
 import { mockLeadDetail } from "@/lib/mock-data";
@@ -399,6 +401,10 @@ export function LeadDetailDrawer({
 
             <Separator className="bg-[--border-subtle]" />
 
+            <ReviewAssistantPanel detail={detail} />
+
+            <Separator className="bg-[--border-subtle]" />
+
             {/* Run Details */}
             <section>
               <h3 className="text-xs uppercase tracking-widest text-[--text-muted] font-mono mb-4">Run Details</h3>
@@ -429,6 +435,10 @@ export function LeadDetailDrawer({
                 </div>
               </div>
             </section>
+
+            <Separator className="bg-[--border-subtle]" />
+
+            <LeadAgentActivityPanel detail={detail} />
 
             <Separator className="bg-[--border-subtle]" />
 

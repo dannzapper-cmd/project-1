@@ -58,14 +58,24 @@ import type {
 export const AGENT_LABELS: Readonly<Record<string, string>> = Object.freeze({
   intake_agent: "Intake",
   research_agent: "Research",
-  qualifier_agent: "Qualify",
-  strategist_agent: "Strategize",
-  email_drafter_agent: "Draft",
-  qa_evaluator_agent: "Evaluate",
+  qualifier_agent: "Qualifier",
+  strategist_agent: "Strategist",
+  email_drafter_agent: "Email Drafter",
+  qa_evaluator_agent: "QA Evaluator",
+});
+
+const AGENT_DESCRIPTIONS: Readonly<Record<string, string>> = Object.freeze({
+  intake_agent: "Normalize submitted lead rows and flag missing context.",
+  research_agent: "Collect company context, opportunity signals, and evidence.",
+  qualifier_agent: "Score ICP fit and assign lead priority.",
+  strategist_agent: "Turn fit and evidence into a sales angle.",
+  email_drafter_agent: "Draft review-ready outreach from the available context.",
+  qa_evaluator_agent: "Check draft quality, evidence coverage, and hallucination risk.",
 });
 
 /** Order used when synthesising per-agent status from the trace. */
 const AGENT_DISPLAY_ORDER: readonly string[] = [
+  "intake_agent",
   "research_agent",
   "qualifier_agent",
   "strategist_agent",
@@ -283,63 +293,164 @@ export function toRunMetrics(batch: EnrichedBatch): RunMetrics {
   };
 }
 
-/**
- * Synthesise an `AgentStatus[]` row from the per-lead traces.
- * Phase 7.0 decision: omit Intake (intake is `null` in 6.1/6.2).
- * The result therefore has exactly 5 entries.
- */
+/** Synthesise an `AgentStatus[]` row from per-lead outputs and traces. */
 export function toAgentStatuses(batch: EnrichedBatch): AgentStatus[] {
   const totalLeads = batch.results.length;
 
   return AGENT_DISPLAY_ORDER.map((agentKey) => {
-    let successes = 0;
-    let totalLatencyMs = 0;
-    let leadsWithLatency = 0;
-    let aggregateStatus: AgentStatus["status"] = "success";
-
-    for (const { result } of batch.results) {
-      const entry = result.trace.find((t) => t.agent === agentKey);
-      if (!entry) continue;
-
-      if (entry.status === "success") {
-        successes += 1;
-      } else if (
-        entry.status === "warning" &&
-        aggregateStatus === "success"
-      ) {
-        aggregateStatus = "warning";
-      } else if (entry.status === "failed") {
-        aggregateStatus = "failed";
-      } else if (
-        entry.status === "running" &&
-        aggregateStatus !== "failed"
-      ) {
-        aggregateStatus = "running";
-      } else if (
-        entry.status === "pending" &&
-        aggregateStatus === "success"
-      ) {
-        aggregateStatus = "pending";
-      }
-
-      const latencyMs = parseLatencyMs(entry.latency);
-      if (latencyMs !== null) {
-        totalLatencyMs += latencyMs;
-        leadsWithLatency += 1;
-      }
-    }
-
-    const avgLatency = leadsWithLatency
-      ? `${(totalLatencyMs / leadsWithLatency).toFixed(0)}ms`
-      : "0ms";
+    const stage = summarizeStage(batch, agentKey);
 
     return {
       name: toAgentLabel(agentKey),
-      status: aggregateStatus,
-      success_rate: `${successes}/${totalLeads}`,
-      avg_latency: avgLatency,
+      status: stage.status,
+      success_rate: `${stage.successes}/${totalLeads}`,
+      avg_latency: stage.avgLatency,
+      description: AGENT_DESCRIPTIONS[agentKey],
+      output_summary: stage.outputSummary,
     };
   });
+}
+
+function summarizeStage(
+  batch: EnrichedBatch,
+  agentKey: string,
+): {
+  status: AgentStatus["status"];
+  successes: number;
+  avgLatency: string;
+  outputSummary: string;
+} {
+  if (agentKey === "intake_agent") {
+    const present = batch.results.filter(({ result }) => result.intake !== null);
+    const warningCount = present.reduce(
+      (sum, { result }) => sum + (result.intake?.validation_flags.length ?? 0),
+      0,
+    );
+    if (present.length === 0) {
+      return {
+        status: "warning",
+        successes: 0,
+        avgLatency: "0ms",
+        outputSummary:
+          "No intake output is attached to this replay; using source lead rows.",
+      };
+    }
+    return {
+      status: warningCount > 0 ? "warning" : "success",
+      successes: present.filter(({ result }) => result.intake?.result.success).length,
+      avgLatency: averageMetadataLatency(
+        present.map(({ result }) => result.intake?.result.metadata.latency),
+      ),
+      outputSummary:
+        warningCount > 0
+          ? `${present.length} leads normalized with ${warningCount} intake warning${warningCount === 1 ? "" : "s"}.`
+          : `${present.length} leads normalized with no intake warnings.`,
+    };
+  }
+
+  const traces = batch.results
+    .map(({ result }) => result.trace.find((t) => t.agent === agentKey))
+    .filter((entry): entry is WireTraceEntry => entry !== undefined);
+
+  const outputCount = batch.results.filter(({ result }) =>
+    hasStageOutput(result, agentKey),
+  ).length;
+
+  const status = aggregateTraceStatus(traces, outputCount, batch.results.length);
+  const successes = traces.filter((entry) => entry.status === "success").length;
+
+  return {
+    status,
+    successes,
+    avgLatency: averageMetadataLatency(traces.map((entry) => entry.latency)),
+    outputSummary: stageOutputSummary(batch, agentKey, outputCount),
+  };
+}
+
+function hasStageOutput(
+  result: LeadPipelineContractOutput,
+  agentKey: string,
+): boolean {
+  switch (agentKey) {
+    case "research_agent":
+      return result.research !== null;
+    case "qualifier_agent":
+      return result.qualification !== null;
+    case "strategist_agent":
+      return result.strategy !== null;
+    case "email_drafter_agent":
+      return result.email !== null;
+    case "qa_evaluator_agent":
+      return result.qa !== null;
+    default:
+      return false;
+  }
+}
+
+function stageOutputSummary(
+  batch: EnrichedBatch,
+  agentKey: string,
+  outputCount: number,
+): string {
+  const total = batch.results.length;
+  switch (agentKey) {
+    case "research_agent": {
+      const evidenceCount = batch.results.reduce(
+        (sum, { result }) => sum + (result.research?.evidence_cards.length ?? 0),
+        0,
+      );
+      return `${outputCount}/${total} leads have research output; ${evidenceCount} evidence cards available.`;
+    }
+    case "qualifier_agent":
+      return `${outputCount}/${total} leads scored; ${batch.summary.high_priority_leads} high, ${batch.summary.medium_priority_leads} medium, ${batch.summary.low_priority_leads} low priority.`;
+    case "strategist_agent":
+      return `${outputCount}/${total} leads have sales angles and pain hypotheses.`;
+    case "email_drafter_agent":
+      return `${outputCount}/${total} leads have email subjects and draft bodies.`;
+    case "qa_evaluator_agent":
+      return `${outputCount}/${total} leads have QA scores; average QA is ${formatAverageQa(batch.summary.average_qa_score)}.`;
+    default:
+      return outputCount > 0
+        ? `${outputCount}/${total} leads have output.`
+        : "No output is available for this stage.";
+  }
+}
+
+function aggregateTraceStatus(
+  traces: WireTraceEntry[],
+  outputCount: number,
+  totalLeads: number,
+): AgentStatus["status"] {
+  if (totalLeads === 0) return "pending";
+  if (traces.some((entry) => entry.status === "failed")) return "failed";
+  if (traces.some((entry) => entry.status === "running")) return "running";
+  if (traces.some((entry) => entry.status === "warning")) return "warning";
+  if (traces.some((entry) => entry.status === "pending")) return "pending";
+  if (traces.length === 0 || outputCount === 0) return "warning";
+  if (outputCount < totalLeads || traces.length < totalLeads) return "warning";
+  return "success";
+}
+
+function averageMetadataLatency(latencies: Array<string | undefined>): string {
+  let totalLatencyMs = 0;
+  let leadsWithLatency = 0;
+  for (const latency of latencies) {
+    if (!latency) continue;
+    const latencyMs = parseLatencyMs(latency);
+    if (latencyMs !== null) {
+      totalLatencyMs += latencyMs;
+      leadsWithLatency += 1;
+    }
+  }
+
+  return leadsWithLatency
+    ? `${(totalLatencyMs / leadsWithLatency).toFixed(0)}ms`
+    : "0ms";
+}
+
+function formatAverageQa(score: number | null): string {
+  if (score === null || Number.isNaN(score)) return "not available";
+  return Number.isInteger(score) ? String(score) : score.toFixed(1);
 }
 
 function parseLatencyMs(latency: string): number | null {
