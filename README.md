@@ -90,7 +90,7 @@ Full timed scripts: [`docs/demo-script.md`](docs/demo-script.md).
 | **Add Leads** (paste / CSV preview + process) | Requires a reachable FastAPI backend and `NEXT_PUBLIC_API_URL` | On public Vercel without backend config, preview shows a clear “backend unavailable” message instead of a generic fetch error |
 | **Business metrics** on `/demo` | Derived in the browser from run data | Illustrative estimates (e.g. 30–45 min manual research per lead); not guaranteed ROI |
 
-**Block 11** will cover controlled public backend deployment and env setup. This repo does not send emails or write to a CRM in any mode.
+Controlled backend deployment steps are documented in [`docs/deployment.md`](docs/deployment.md). This repo does not send emails or write to a CRM in any mode.
 
 ---
 
@@ -292,7 +292,7 @@ Use placeholders in docs and commits — **never commit real API keys**.
 | `APP_HOST` / `APP_PORT` | `0.0.0.0` / `8000` | Uvicorn bind |
 | `LOG_LEVEL` | `INFO` | Logging |
 | `DATABASE_URL` | `sqlite:///./leadforge.db` | Schema initialization (no review/pipeline durable writes in demo) |
-| `CORS_ORIGINS` | `http://localhost:3000` | Allowed browser origins |
+| `CORS_ORIGINS` | `http://localhost:3000` | Allowed browser origins; production must use explicit origins, not `*` |
 | `GROQ_API_KEY` | *(unset)* | Required only when enabling live Groq path or live smoke tests |
 | `GROQ_DEFAULT_MODEL` | `llama-3.1-8b-instant` | Groq model id |
 | `GROQ_TIMEOUT_SECONDS` | `30` | Request timeout |
@@ -321,6 +321,22 @@ pytest -q
 ```
 
 Groq live smoke tests are opt-in (`RUN_GROQ_LIVE_TESTS` / key present); default CI-style runs use mocks. Backend tests set `DATABASE_URL` and `APP_ENV=test` via `backend/tests/conftest.py`.
+
+---
+
+## Deployment
+
+Use [`docs/deployment.md`](docs/deployment.md) for the controlled public setup:
+
+- Render Web Service for the FastAPI backend.
+- Vercel for the Next.js frontend.
+- Vercel variable: `NEXT_PUBLIC_API_URL=<public backend base URL>`.
+- Render variable: `CORS_ORIGINS=<vercel origin>,http://localhost:3000,http://127.0.0.1:3000`.
+
+Render Free is acceptable for a controlled preview, but it sleeps after about
+15 minutes of inactivity and can cold-start for about 50 seconds to one minute.
+The cheapest paid Render web service instance is the optional upgrade for
+smoother live demos.
 
 ---
 
@@ -441,6 +457,7 @@ Post-v1 items are **design intent** until shipped and reflected in the capabilit
 |----------|-------------|
 | [Architecture overview](docs/architecture-overview.md) | System design, diagrams, production gaps |
 | [Demo script](docs/demo-script.md) | 60s / 90s / 3min walkthroughs |
+| [Deployment guide](docs/deployment.md) | Render backend deployment and Vercel wiring |
 | [Screenshots checklist](docs/screenshots-checklist.md) | Capture guide and safety rules |
 | [ADR-001: LangGraph](docs/adr/langgraph-decision.md) | Why graph runtime is deferred |
 | [Advanced capabilities roadmap](docs/roadmap/advanced-capabilities.md) | Implemented vs future capability table |

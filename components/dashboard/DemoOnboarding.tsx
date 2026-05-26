@@ -75,7 +75,7 @@ export function DemoOnboarding() {
             On public Vercel previews without a configured backend, scroll to the
             sample results below. Add Leads needs{" "}
             <code className="font-mono text-[--text-secondary]">NEXT_PUBLIC_API_URL</code>{" "}
-            — planned for the controlled deployment block.
+            pointing at the deployed FastAPI backend.
           </p>
         </div>
       )}

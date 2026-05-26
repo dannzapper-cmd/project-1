@@ -98,7 +98,7 @@ See `.env.example`. Variables below are read by the application code:
 | `APP_PORT`      | `8000`                           | Bind port (for `uvicorn`)     |
 | `LOG_LEVEL`     | `INFO`                           | Root logger level             |
 | `DATABASE_URL`  | `sqlite:///./leadforge.db`       | SQLAlchemy connection URL     |
-| `CORS_ORIGINS`  | `http://localhost:3000`          | Comma-separated allowed origins |
+| `CORS_ORIGINS`  | `http://localhost:3000`          | Comma-separated allowed origins; production rejects `*` |
 | `GROQ_API_KEY`  | (unset)                          | Optional Groq API key (not required for demo) |
 | `GROQ_DEFAULT_MODEL` | `llama-3.1-8b-instant`      | Default Groq model when key is set |
 | `GROQ_TIMEOUT_SECONDS` | `30`                      | Groq request timeout |
@@ -108,6 +108,31 @@ Optional Groq settings (`GROQ_API_KEY`, `GROQ_DEFAULT_MODEL`,
 `GROQ_TIMEOUT_SECONDS`) are read when set; the app runs without them.
 Other future-phase variables (cost caps, feature flags) in `.env.example`
 are documented but not read yet.
+
+## Public backend deployment
+
+Recommended Block 11A target: Render Web Service.
+
+From the repository root, the Render service should use:
+
+```text
+Build Command: pip install -r backend/requirements.txt
+Start Command: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+Health Check Path: /health
+```
+
+Required public env:
+
+```text
+APP_ENV=production
+ENABLE_LIVE_MODEL_PIPELINE=false
+CORS_ORIGINS=https://YOUR_VERCEL_PROJECT_DOMAIN,http://localhost:3000,http://127.0.0.1:3000
+```
+
+Set Vercel `NEXT_PUBLIC_API_URL` to the Render backend base URL and redeploy
+Vercel after changing the env var. Full step-by-step deployment instructions,
+including Render Free cold-start limitations and SQLite filesystem warnings,
+are in [`../docs/deployment.md`](../docs/deployment.md).
 
 ## Block 8.3 — Live Groq single-lead pipeline (optional, off by default)
 
