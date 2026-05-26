@@ -8,11 +8,70 @@ test list (NN = 1..15).
 
 from __future__ import annotations
 
+from io import BytesIO
+
 from fastapi.testclient import TestClient
+from openpyxl import Workbook
 
 from app.main import app
 
 _CSV_UPLOAD_URL = "/api/intake/preview-file/csv"
+_EXTRACT_FILE_URL = "/api/intake/extract-file"
+
+
+def _xlsx_bytes(rows: list[list[str]]) -> bytes:
+    workbook = Workbook()
+    worksheet = workbook.active
+    for row in rows:
+        worksheet.append(row)
+    output = BytesIO()
+    workbook.save(output)
+    return output.getvalue()
+
+
+def _pdf_bytes(text: str) -> bytes:
+    stream = "BT /F1 12 Tf 72 720 Td 14 TL "
+    for idx, line in enumerate(text.split("\n")):
+        escaped = line.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+        if idx == 0:
+            stream += f"({escaped}) Tj "
+        else:
+            stream += f"T* ({escaped}) Tj "
+    stream += "ET"
+    stream_bytes = stream.encode("latin-1")
+    objects = [
+        b"1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n",
+        b"2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n",
+        (
+            b"3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+            b"/Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj\n"
+        ),
+        b"4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n",
+        (
+            b"5 0 obj << /Length "
+            + str(len(stream_bytes)).encode("ascii")
+            + b" >> stream\n"
+            + stream_bytes
+            + b"\nendstream endobj\n"
+        ),
+    ]
+    output = BytesIO()
+    output.write(b"%PDF-1.4\n")
+    offsets: list[int] = []
+    for obj in objects:
+        offsets.append(output.tell())
+        output.write(obj)
+    xref_offset = output.tell()
+    output.write(f"xref\n0 {len(objects) + 1}\n0000000000 65535 f \n".encode("ascii"))
+    for offset in offsets:
+        output.write(f"{offset:010d} 00000 n \n".encode("ascii"))
+    output.write(
+        (
+            f"trailer << /Size {len(objects) + 1} /Root 1 0 R >>\n"
+            f"startxref\n{xref_offset}\n%%EOF\n"
+        ).encode("ascii")
+    )
+    return output.getvalue()
 
 
 def test_13_post_intake_preview_records_json_returns_200_and_expected_keys() -> None:
@@ -364,3 +423,147 @@ def test_csv_15_existing_health_still_returns_200() -> None:
         response = client.get("/health")
 
     assert response.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# Block 10F-A — multi-format file extraction tests
+# ---------------------------------------------------------------------------
+
+
+def test_extract_xlsx_valid_first_sheet_uses_existing_preview_shape() -> None:
+    xlsx_bytes = _xlsx_bytes(
+        [
+            ["company_name", "industry", "website", "contact_role"],
+            ["Acme Corp", "SaaS", "acme.example", "CTO"],
+            ["Globex", "Finance", "globex.example", "CFO"],
+        ]
+    )
+    files = {
+        "file": (
+            "leads.xlsx",
+            xlsx_bytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+    }
+
+    with TestClient(app) as client:
+        response = client.post(_EXTRACT_FILE_URL, files=files)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["input_type"] == "excel_file"
+    assert body["total_rows"] == 2
+    assert body["mapped_columns"]["company_name"] == "company_name"
+    assert body["mapped_columns"]["industry"] == "industry"
+    assert body["normalized_leads"][0]["lead"]["company_name"] == "Acme Corp"
+
+
+def test_extract_xlsx_empty_first_sheet_returns_clear_422() -> None:
+    xlsx_bytes = _xlsx_bytes([["company_name", "industry"]])
+    files = {
+        "file": (
+            "empty.xlsx",
+            xlsx_bytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+    }
+
+    with TestClient(app) as client:
+        response = client.post(_EXTRACT_FILE_URL, files=files)
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == (
+        "The first sheet appears empty. Check that your lead table is on the first sheet."
+    )
+
+
+def test_extract_xlsx_over_limit_previews_first_max_rows_with_warning() -> None:
+    rows = [["company_name", "industry"]]
+    rows.extend([f"Company {idx}", "SaaS"] for idx in range(12))
+    xlsx_bytes = _xlsx_bytes(rows)
+    files = {
+        "file": (
+            "many.xlsx",
+            xlsx_bytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+    }
+
+    with TestClient(app) as client:
+        response = client.post(_EXTRACT_FILE_URL, files=files)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total_rows"] == 10
+    assert body["max_leads_per_run"] == 10
+    assert any(
+        "found 12 rows; previewing the first 10 rows" in issue["message"]
+        for issue in body["global_issues"]
+    )
+
+
+def test_extract_pdf_text_table_returns_preview_rows() -> None:
+    pdf_bytes = _pdf_bytes(
+        "company_name,industry,website\n"
+        "Acme Corp,SaaS,acme.example\n"
+        "Globex,Finance,globex.example"
+    )
+    files = {"file": ("leads.pdf", pdf_bytes, "application/pdf")}
+
+    with TestClient(app) as client:
+        response = client.post(_EXTRACT_FILE_URL, files=files)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["input_type"] == "pdf_file"
+    assert body["total_rows"] == 2
+    assert body["normalized_leads"][0]["lead"]["company_name"] == "Acme Corp"
+
+
+def test_extract_pdf_image_only_returns_ocr_needed_message() -> None:
+    files = {"file": ("scan.pdf", _pdf_bytes(""), "application/pdf")}
+
+    with TestClient(app) as client:
+        response = client.post(_EXTRACT_FILE_URL, files=files)
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == (
+        "This PDF appears to require OCR. Image/OCR intake is planned for the next block."
+    )
+
+
+def test_extract_file_rejects_unsupported_extension() -> None:
+    files = {"file": ("leads.txt", b"company_name,industry\nAcme,SaaS\n", "text/plain")}
+
+    with TestClient(app) as client:
+        response = client.post(_EXTRACT_FILE_URL, files=files)
+
+    assert response.status_code == 415
+
+
+def test_extract_file_rejects_legacy_xls_extension() -> None:
+    files = {"file": ("leads.xls", b"not really excel", "application/vnd.ms-excel")}
+
+    with TestClient(app) as client:
+        response = client.post(_EXTRACT_FILE_URL, files=files)
+
+    assert response.status_code == 415
+    assert "Legacy .xls files are not supported" in response.json()["detail"]
+
+
+def test_extract_file_rejects_empty_upload() -> None:
+    files = {"file": ("empty.csv", b"", "text/csv")}
+
+    with TestClient(app) as client:
+        response = client.post(_EXTRACT_FILE_URL, files=files)
+
+    assert response.status_code == 422
+
+
+def test_extract_file_rejects_upload_over_2mb() -> None:
+    files = {"file": ("big.csv", b"a" * (2 * 1024 * 1024 + 1), "text/csv")}
+
+    with TestClient(app) as client:
+        response = client.post(_EXTRACT_FILE_URL, files=files)
+
+    assert response.status_code == 413

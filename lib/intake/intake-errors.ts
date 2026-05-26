@@ -23,6 +23,43 @@ function isFailedToFetchMessage(message: string): boolean {
   );
 }
 
+function apiDetail(body: string): string {
+  const trimmed = body.trim();
+  if (!trimmed) return "";
+
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      "detail" in parsed
+    ) {
+      const detail = (parsed as { detail: unknown }).detail;
+      if (typeof detail === "string") return detail;
+      if (Array.isArray(detail)) {
+        return detail
+          .map((item) => {
+            if (
+              item &&
+              typeof item === "object" &&
+              "msg" in item &&
+              typeof (item as { msg: unknown }).msg === "string"
+            ) {
+              return (item as { msg: string }).msg;
+            }
+            return "";
+          })
+          .filter(Boolean)
+          .join(" ");
+      }
+    }
+  } catch {
+    return trimmed;
+  }
+
+  return trimmed;
+}
+
 /** True when the error is a reachability / gateway failure, not validation. */
 export function isBackendUnavailableError(err: unknown): boolean {
   if (err instanceof TypeError) {
@@ -49,7 +86,7 @@ export function describeIntakePreviewError(err: unknown): string {
   }
 
   if (err instanceof ApiError) {
-    const detail = err.body.trim();
+    const detail = apiDetail(err.body);
     if (detail) {
       return `Preview failed (HTTP ${err.status}): ${detail.slice(0, 280)}`;
     }

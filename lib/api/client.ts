@@ -175,6 +175,16 @@ export function postCsvIntakePreview(
   return postForm<IntakePreviewResponse>("/api/intake/preview-file/csv", form, opts);
 }
 
+export function postIntakeFilePreview(
+  file: File,
+  opts: ApiClientOptions = {},
+): Promise<IntakePreviewResponse> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("generate_missing_lead_ids", "true");
+  return postForm<IntakePreviewResponse>("/api/intake/extract-file", form, opts);
+}
+
 export function postPipelineBatch(
   leads: LeadIn[],
   opts: ApiClientOptions = {},

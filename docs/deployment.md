@@ -144,9 +144,27 @@ Optional:
 | `LIVE_RESEARCH_MAX_RESULTS` | `3` | Hard cap on Exa results per request. |
 | `LIVE_RESEARCH_TIMEOUT_SECONDS` | `8` | Per-request Exa timeout. Block 10E surfaces a structured timeout response when exceeded. |
 | `LIVE_RESEARCH_DAILY_LIMIT` | `20` | In-process daily request counter cap; resets on backend restart by design (no Redis/DB persistence). |
+| `INTAKE_MAX_UPLOAD_MB` | `2` | Block 10F-A in-memory CSV/XLSX/PDF intake upload limit. |
 
 Do not add real secrets to `.env.example`, `render.yaml`, README files, or any
 `NEXT_PUBLIC_*` frontend variable.
+
+### Block 10F-A — CSV, Excel, and PDF table intake
+
+Add Leads supports in-memory multipart uploads through
+`POST /api/intake/extract-file` for CSV, `.xlsx`, and text-based PDF tables.
+The backend uses `openpyxl` for `.xlsx` and `pdfplumber` for PDF text/table
+extraction; both are Python libraries listed in `backend/requirements.txt`.
+No uploaded files are written to disk or persisted.
+
+Limits and scope:
+
+- Default upload cap is `INTAKE_MAX_UPLOAD_MB=2`.
+- Legacy `.xls` is rejected; save as `.xlsx`.
+- PDF support is best-effort for text-based tables. Scanned/image PDFs return
+  an OCR-needed message because image/OCR intake is out of scope for this block.
+- Extracted rows enter the same preview, mapping confirmation, validation, and
+  max-10 processing flow as CSV/paste intake.
 
 ### Block 10E — Live Web Research (Exa) deployment notes
 

@@ -52,14 +52,14 @@ _REQUIRED_FIELDS: tuple[str, ...] = ("company_name", "industry")
 
 _IMPLEMENTED_NOW: list[str] = [
     "csv_text",
+    "csv_file",
     "pasted_table",
     "records_json",
     "raw_text",
-]
-_FUTURE_ADAPTERS: list[str] = [
-    "csv_file",
     "excel_file",
     "pdf_file",
+]
+_FUTURE_ADAPTERS: list[str] = [
     "image_file",
     "screenshot",
 ]

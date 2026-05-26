@@ -10,6 +10,10 @@ SQLAlchemy==2.0.36
 python-dotenv==1.0.1
 # Required by FastAPI to parse multipart/form-data (CSV file upload, Fase 4.3B.1).
 python-multipart==0.0.20
+# Block 10F-A intake file extraction. openpyxl reads .xlsx in memory; pdfplumber
+# extracts text-based PDF tables only (no OCR, no system binaries).
+openpyxl==3.1.5
+pdfplumber==0.11.9
 # Official Groq Python SDK — used by GroqModelService (Phase 5.5B). Pulls in
 # httpx transitively; we never import httpx directly.
 groq==1.2.0
