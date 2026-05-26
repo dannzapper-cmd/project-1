@@ -94,6 +94,7 @@ export function LeadDetailDrawer({
   const detail: LeadDetail =
     detailProp ?? (lead ? { ...mockLeadDetail, ...lead } : mockLeadDetail);
   const fitStyles = getFitScoreStyles(detail.fit_score);
+  const intakeWarnings = detail.intake_warnings ?? [];
 
   const handleStatusChange = (status: Lead["status"]) => {
     if (lead) {
@@ -169,10 +170,14 @@ export function LeadDetailDrawer({
                 </div>
                 <div>
                   <p className="text-xs text-[--text-muted]">Website</p>
-                  <a href={`https://${detail.website}`} target="_blank" rel="noopener noreferrer" className="text-sm text-[--accent-primary] hover:underline inline-flex items-center gap-1">
-                    {detail.website}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
+                  {detail.website ? (
+                    <a href={`https://${detail.website}`} target="_blank" rel="noopener noreferrer" className="text-sm text-[--accent-primary] hover:underline inline-flex items-center gap-1">
+                      {detail.website}
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  ) : (
+                    <p className="text-sm text-[--text-muted]">Missing website</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-xs text-[--text-muted]">Industry</p>
@@ -198,6 +203,24 @@ export function LeadDetailDrawer({
             </section>
 
             <Separator className="bg-[--border-subtle]" />
+
+            {intakeWarnings.length > 0 && (
+              <>
+                <section className="bg-[--color-warning-bg]/30 border border-[--color-warning]/30 rounded-lg p-4">
+                  <h3 className="text-xs uppercase tracking-widest text-[--color-warning] font-mono mb-3">
+                    Intake warnings
+                  </h3>
+                  <ul className="space-y-1">
+                    {intakeWarnings.map((warning, idx) => (
+                      <li key={idx} className="text-xs text-[--text-secondary]">
+                        - {warning}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+                <Separator className="bg-[--border-subtle]" />
+              </>
+            )}
 
             {/* Company Context */}
             <section>

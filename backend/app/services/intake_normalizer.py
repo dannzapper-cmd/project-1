@@ -47,6 +47,9 @@ from app.schemas.lead import LeadIn
 # Static configuration
 # ---------------------------------------------------------------------------
 
+MAX_LEADS_PER_RUN: int = 10
+_REQUIRED_FIELDS: tuple[str, ...] = ("company_name", "industry")
+
 _IMPLEMENTED_NOW: list[str] = [
     "csv_text",
     "pasted_table",
@@ -83,6 +86,7 @@ def _build_alias_index() -> dict[str, str]:
             "website",
             "url",
             "domain",
+            "site",
             "website_url",
             "web",
         ],
@@ -108,6 +112,7 @@ def _build_alias_index() -> dict[str, str]:
             "number_of_employees",
         ],
         "contact_name": [
+            "name",
             "contact",
             "contact_name",
             "full_name",
@@ -122,6 +127,7 @@ def _build_alias_index() -> dict[str, str]:
             "title",
             "job_title",
             "contact_role",
+            "contact role",
             "position",
             "job title",
         ],
@@ -303,7 +309,7 @@ def _map_columns(
                 IntakeIssue(
                     severity="info",
                     code="unmapped_column",
-                    message=f"Column '{header}' could not be mapped to a LeadIn field.",
+                    message=f"Column '{header}' could not be mapped to an internal Lead field.",
                     row_number=None,
                     field=header,
                 )
@@ -420,60 +426,59 @@ def _build_row(
         if issue.row_number is None:
             issue.row_number = row_number
 
-    company_name = normalized.get("company_name")
-    if not company_name:
+    missing_required: list[str] = [
+        field for field in _REQUIRED_FIELDS if not normalized.get(field)
+    ]
+    for field in missing_required:
         issues.append(
             IntakeIssue(
                 severity="error",
-                code="missing_company_name",
-                message="Row has no company_name.",
+                code=f"missing_{field}",
+                message=f"Row has no required field '{field}'.",
                 row_number=row_number,
-                field="company_name",
+                field=field,
             )
         )
+
+    low_confidence_fields: list[str] = []
+    for field, message in (
+        ("website", "Missing website; research confidence will be reduced."),
+        ("country", "Missing country; geography scoring will be weaker."),
+        (
+            "employee_count",
+            "Missing employee_count; company size confidence will be reduced.",
+        ),
+        (
+            "contact_role",
+            "Missing contact_role; personalization and contact fit will be weaker.",
+        ),
+        ("notes", "Missing notes; fewer user-provided sales signals are available."),
+    ):
+        if normalized.get(field) in (None, ""):
+            low_confidence_fields.append(field)
+            issues.append(
+                IntakeIssue(
+                    severity="warning",
+                    code=f"missing_{field}",
+                    message=message,
+                    row_number=row_number,
+                    field=field,
+                )
+            )
+
+    if missing_required:
         return (
             NormalizedLeadRow(
                 row_number=row_number,
+                status="invalid",
+                normalized_fields=normalized,
                 lead=None,
                 confidence=None,
+                missing_required_fields=missing_required,
+                low_confidence_fields=low_confidence_fields,
                 issues=issues,
             ),
             False,
-        )
-
-    industry = normalized.get("industry")
-    website = normalized.get("website")
-    contact_role = normalized.get("contact_role")
-
-    if not industry:
-        issues.append(
-            IntakeIssue(
-                severity="warning",
-                code="missing_industry",
-                message="Row has no industry.",
-                row_number=row_number,
-                field="industry",
-            )
-        )
-    if not website:
-        issues.append(
-            IntakeIssue(
-                severity="warning",
-                code="missing_website",
-                message="Row has no website.",
-                row_number=row_number,
-                field="website",
-            )
-        )
-    if not contact_role:
-        issues.append(
-            IntakeIssue(
-                severity="warning",
-                code="missing_contact_role",
-                message="Row has no contact_role.",
-                row_number=row_number,
-                field="contact_role",
-            )
         )
 
     lead_id = normalized.get("lead_id")
@@ -500,7 +505,7 @@ def _build_row(
     # on this alone"). The downstream UI can treat empty as "needs id".
     lead = LeadIn(
         lead_id=lead_id if lead_id is not None else "",
-        company_name=company_name,
+        company_name=normalized["company_name"],
         website=normalized.get("website"),
         industry=normalized.get("industry"),
         country=normalized.get("country"),
@@ -515,13 +520,20 @@ def _build_row(
     return (
         NormalizedLeadRow(
             row_number=row_number,
+            status=(
+                "warning"
+                if any(issue.severity == "warning" for issue in issues)
+                else "valid"
+            ),
+            normalized_fields=normalized,
             lead=lead,
             confidence=confidence,
+            missing_required_fields=[],
+            low_confidence_fields=low_confidence_fields,
             issues=issues,
         ),
         lead_id_generated,
     )
-
 
 def _assign_confidence(
     lead: LeadIn,
@@ -640,8 +652,8 @@ def build_preview(request: IntakePreviewRequest) -> IntakePreviewResponse:
             generated_index += 1
 
     total_rows = len(rows)
-    valid_rows = sum(1 for row in rows if row.lead is not None)
-    failed_rows = sum(1 for row in rows if row.lead is None)
+    valid_rows = sum(1 for row in rows if row.status != "invalid")
+    failed_rows = sum(1 for row in rows if row.status == "invalid")
     rows_with_warnings = sum(
         1
         for row in rows
@@ -664,6 +676,7 @@ def build_preview(request: IntakePreviewRequest) -> IntakePreviewResponse:
         valid_rows=valid_rows,
         rows_with_warnings=rows_with_warnings,
         failed_rows=failed_rows,
+        max_leads_per_run=MAX_LEADS_PER_RUN,
         mapped_columns=mapped_columns,
         unmapped_columns=unmapped_columns,
         normalized_leads=rows,

@@ -31,6 +31,7 @@ B2B outreach fails when teams cannot see *why* an AI recommended a message, whet
 | Deterministic five-agent pipeline | Plain-Python orchestration; see `backend/app/services/pipeline_service.py` |
 | Batch deterministic pipeline | Up to 10 demo leads per batch run |
 | Next.js dashboard | `/demo` — lead table, lead detail drawer |
+| Smart lead intake foundation | CSV upload and pasted table preview/validation in `/demo`; max 10 processed leads per run |
 | Research, Qualifier, Strategist, Email Drafter, QA Evaluator agents | Contract-tested services |
 | Agent traces | Per-step input/output summaries in API and UI |
 | QA evaluations | Scores and recommendations visible in UI |
@@ -44,7 +45,7 @@ B2B outreach fails when teams cannot see *why* an AI recommended a message, whet
 | Advanced roadmap documentation | [`docs/roadmap/advanced-capabilities.md`](docs/roadmap/advanced-capabilities.md) |
 | LangGraph deferred | Per [`docs/adr/langgraph-decision.md`](docs/adr/langgraph-decision.md) — **not** a graph runtime today |
 
-Demo leads and company context are **synthetic/curated** — not live company intelligence.
+Demo leads and company context are **synthetic/curated** — not live company intelligence. User-provided leads can be processed through the deterministic pipeline, but LeadForge does not invent missing company research for them.
 
 ---
 
@@ -52,7 +53,7 @@ Demo leads and company context are **synthetic/curated** — not live company in
 
 Do not expect the following in the current product:
 
-- Smart Lead Intake (no PDF, image, Excel, or pasted-table normalization in the dashboard)
+- PDF, image/OCR, or Excel intake
 - Live web research, scraping, or search APIs
 - LangGraph runtime or checkpointed agent graphs
 - CRM integration or backend sync of review state
@@ -68,12 +69,14 @@ Do not expect the following in the current product:
 ## Demo workflow
 
 1. Start frontend (and optionally backend). Open [`http://localhost:3000/demo`](http://localhost:3000/demo).  
-2. Browse the lead table; open a lead detail drawer.  
-3. Inspect agent outputs, **agent trace**, and **QA evaluation**.  
-4. Mark leads in **local human review** (browser-only state).  
-5. **Export reviewed leads** as CSV locally.  
-6. *(Optional, technical)* Enable live Groq in `backend/.env`, call `POST /api/demo/pipeline/live-groq/{lead_id}`, compare with deterministic baseline.  
-7. *(Optional)* Inspect telemetry via read-only API endpoints.
+2. Use the curated sample results, or add leads in the **Add Leads** panel by pasting CSV/spreadsheet rows or uploading a UTF-8 `.csv` file.  
+3. Confirm the detected column mapping, review row-level validation, then process valid rows through the deterministic pipeline.  
+4. Browse the lead table; open a lead detail drawer.  
+5. Inspect agent outputs, **agent trace**, intake warnings, and **QA evaluation**.  
+6. Mark leads in **local human review** (browser-only state).  
+7. **Export reviewed leads** as CSV locally.  
+8. *(Optional, technical)* Enable live Groq in `backend/.env`, call `POST /api/demo/pipeline/live-groq/{lead_id}`, compare with deterministic baseline.  
+9. *(Optional)* Inspect telemetry via read-only API endpoints.
 
 Full timed scripts: [`docs/demo-script.md`](docs/demo-script.md).
 
@@ -117,6 +120,47 @@ Details: [`docs/architecture-overview.md`](docs/architecture-overview.md).
 | 5 | QA Evaluator | QA score, recommendation, risk signals |
 
 Orchestration is **linear** and **in-process** — not a LangGraph graph.
+
+---
+
+## Smart intake foundation
+
+The dashboard supports two user-provided lead input paths:
+
+- Paste CSV-like or tab-separated spreadsheet rows with headers.
+- Upload a UTF-8 `.csv` file up to 1 MB.
+
+Required columns after mapping:
+
+- `company_name`
+- `industry`
+
+Recommended columns:
+
+- `website`
+- `country`
+- `contact_role`
+
+Optional columns:
+
+- `employee_count`
+- `contact_name`
+- `notes`
+
+Common aliases are detected, for example `company`, `account`, or
+`organization` -> `company_name`; `site`, `url`, or `domain` -> `website`;
+`sector` or `vertical` -> `industry`; and `title`, `role`, or `job title` ->
+`contact_role`.
+
+Before processing, the UI shows the detected mapping and requires confirmation.
+Rows are marked `valid`, `warning`, or `invalid`; invalid rows are not submitted
+to the pipeline. Rows with required fields but missing recommended/optional
+context are still processable and carry low-evidence warnings into the lead
+detail drawer. Batch processing is capped at 10 leads per deterministic run.
+
+Current limitations: no PDF parsing, image/OCR intake, Excel parsing, live web
+research, CRM writes, email sending, or hidden model/API calls are included in
+this intake block.
 
 ---
 
@@ -319,10 +363,11 @@ Add captures under `docs/assets/screenshots/` per [`docs/screenshots-checklist.m
 ## Limitations
 
 - **Demo data only** for default intelligence — not real-time market research.  
+- **User-provided lead context is limited to supplied fields** unless the lead id matches curated demo research; missing context is surfaced as low evidence.  
 - **No outbound execution** — drafts are not emailed.  
 - **No durable ops stack** — telemetry and review state do not survive as production audit logs.  
 - **Single-tenant local demo** — no auth or org isolation.  
-- **Intake preview API** exists (`POST /api/intake/preview`) but Smart Intake is **not** a productized dashboard flow.  
+- **Smart intake is CSV/paste only** in this block; PDF, image/OCR, Excel, and live research remain out of scope.  
 - **SQLite** initializes schema; pipeline/review persistence for production workflows is out of scope.  
 - **Live Groq** requires explicit env enablement and manual API calls — not a dashboard button.
 

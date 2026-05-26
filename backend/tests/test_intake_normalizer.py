@@ -180,8 +180,8 @@ def test_07_row_missing_company_name_produces_error_issue_and_none_confidence() 
     assert missing[0].severity == "error"
 
 
-def test_08_row_missing_industry_is_warning_not_failure() -> None:
-    """Test 8: missing industry → warning, not a failed row."""
+def test_08_row_missing_industry_is_required_field_error() -> None:
+    """Test 8: missing industry -> error and invalid row."""
 
     records = [{"company_name": "Acme Corp", "website": "acme.com"}]
     response = build_preview(
@@ -189,12 +189,13 @@ def test_08_row_missing_industry_is_warning_not_failure() -> None:
     )
 
     row = response.normalized_leads[0]
-    assert row.lead is not None
-    warnings = _issues_with_code(row, "missing_industry")
-    assert len(warnings) == 1
-    assert warnings[0].severity == "warning"
-    assert response.failed_rows == 0
-    assert response.rows_with_warnings == 1
+    assert row.lead is None
+    assert row.status == "invalid"
+    errors = _issues_with_code(row, "missing_industry")
+    assert len(errors) == 1
+    assert errors[0].severity == "error"
+    assert row.missing_required_fields == ["industry"]
+    assert response.failed_rows == 1
 
 
 def test_09_employee_count_with_comma_parses_to_int() -> None:
@@ -318,3 +319,101 @@ def test_12_unknown_column_appears_in_unmapped_columns() -> None:
         issue.code == "unmapped_column" and issue.field == "Budget"
         for issue in response.global_issues
     )
+
+
+def test_missing_recommended_and_optional_fields_are_warnings() -> None:
+    content = "company_name,industry\nAcme Corp,B2B SaaS\n"
+
+    response = build_preview(
+        IntakePreviewRequest(input_type="csv_text", content=content)
+    )
+
+    row = response.normalized_leads[0]
+    assert row.lead is not None
+    assert row.status == "warning"
+    assert row.low_confidence_fields == [
+        "website",
+        "country",
+        "employee_count",
+        "contact_role",
+        "notes",
+    ]
+    codes = {issue.code for issue in row.issues}
+    assert "missing_website" in codes
+    assert "missing_country" in codes
+    assert "missing_employee_count" in codes
+    assert "missing_contact_role" in codes
+    assert "missing_notes" in codes
+
+
+def test_blank_rows_are_ignored() -> None:
+    content = "company_name,industry\n\nAcme Corp,SaaS\n   \n"
+
+    response = build_preview(
+        IntakePreviewRequest(input_type="csv_text", content=content)
+    )
+
+    assert response.total_rows == 1
+    assert response.valid_rows == 1
+
+
+def test_malformed_short_row_surfaces_missing_required_field() -> None:
+    content = "company_name,industry,website\nAcme Corp\n"
+
+    response = build_preview(
+        IntakePreviewRequest(input_type="csv_text", content=content)
+    )
+
+    row = response.normalized_leads[0]
+    assert row.status == "invalid"
+    assert row.lead is None
+    assert row.normalized_fields["company_name"] == "Acme Corp"
+    assert "industry" in row.missing_required_fields
+
+
+def test_mixed_valid_and_invalid_rows_keeps_valid_rows_processable() -> None:
+    content = (
+        "company_name,industry,website\n"
+        "ValidCo,SaaS,valid.example\n"
+        "NoIndustry,,missing.example\n"
+        ",SaaS,missing-company.example\n"
+    )
+
+    response = build_preview(
+        IntakePreviewRequest(input_type="csv_text", content=content)
+    )
+
+    assert response.total_rows == 3
+    assert response.valid_rows == 1
+    assert response.failed_rows == 2
+    assert response.normalized_leads[0].lead is not None
+    assert response.normalized_leads[1].lead is None
+    assert response.normalized_leads[2].lead is None
+
+
+def test_preview_exposes_max_leads_per_run() -> None:
+    rows = ["company_name,industry"]
+    rows.extend(f"Company {idx},SaaS" for idx in range(12))
+
+    response = build_preview(
+        IntakePreviewRequest(input_type="csv_text", content="\n".join(rows))
+    )
+
+    assert response.total_rows == 12
+    assert response.max_leads_per_run == 10
+
+
+def test_pasted_comma_separated_text_with_aliases_maps_expected_fields() -> None:
+    content = "account,vertical,site,market,name,contact role\nAcme,SaaS,acme.example,US,Ada,VP Sales\n"
+
+    response = build_preview(
+        IntakePreviewRequest(input_type="pasted_table", content=content)
+    )
+
+    assert response.mapped_columns["account"] == "company_name"
+    assert response.mapped_columns["vertical"] == "industry"
+    assert response.mapped_columns["site"] == "website"
+    assert response.mapped_columns["name"] == "contact_name"
+    row = response.normalized_leads[0]
+    assert row.lead is not None
+    assert row.lead.contact_name == "Ada"

@@ -74,3 +74,17 @@ class LeadDetail(LeadOut):
     agent_steps: int = Field(..., ge=0)
     est_tokens: int = Field(..., ge=0)
     trace: list[TraceEntry] = Field(default_factory=list)
+
+
+class LeadBatchProcessRequest(BaseModel):
+    """User-provided leads to run through the deterministic batch pipeline."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    leads: list[LeadIn] = Field(
+        ...,
+        min_length=1,
+        max_length=10,
+        description="Normalized, preview-confirmed leads. Max 10 per run.",
+    )
+    source_name: str | None = None
