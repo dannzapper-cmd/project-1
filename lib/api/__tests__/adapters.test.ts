@@ -224,18 +224,20 @@ describe("toRunMetrics", () => {
 });
 
 describe("toAgentStatuses", () => {
-  it("returns exactly 5 entries (no Intake) in canonical order", () => {
+  it("returns exactly 6 entries in canonical order", () => {
     const rows = toAgentStatuses(enriched);
-    assert.equal(rows.length, 5);
+    assert.equal(rows.length, 6);
     assert.deepEqual(
       rows.map((r) => r.name),
-      ["Research", "Qualify", "Strategize", "Draft", "Evaluate"],
+      ["Intake", "Research", "Qualifier", "Strategist", "Email Drafter", "QA Evaluator"],
     );
+    assert.equal(rows[0].status, "warning");
+    assert.match(rows[0].output_summary ?? "", /No intake output/);
   });
 
   it("computes a success_rate string per agent", () => {
     const total = enriched.results.length;
-    for (const row of toAgentStatuses(enriched)) {
+    for (const row of toAgentStatuses(enriched).slice(1)) {
       assert.match(row.success_rate, new RegExp(`^\\d+/${total}$`));
     }
   });
@@ -249,7 +251,7 @@ describe("toTraceEntries", () => {
     assert.equal(view.length, 5);
     assert.deepEqual(
       view.map((e) => e.agent),
-      ["Research", "Qualify", "Strategize", "Draft", "Evaluate"],
+      ["Research", "Qualifier", "Strategist", "Email Drafter", "QA Evaluator"],
     );
     for (let i = 0; i < view.length; i++) {
       assert.equal(view[i].input_summary, first.trace[i].input_summary);

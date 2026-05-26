@@ -24,11 +24,54 @@ export const mockRunMetrics: RunMetrics = {
 };
 
 export const mockAgentStatus: AgentStatus[] = [
-  { name: 'Research', status: 'success', success_rate: '10/10', avg_latency: '4.2s' },
-  { name: 'Qualify', status: 'warning', success_rate: '9/10', avg_latency: '2.1s' },
-  { name: 'Strategize', status: 'success', success_rate: '10/10', avg_latency: '2.8s' },
-  { name: 'Draft', status: 'success', success_rate: '10/10', avg_latency: '3.5s' },
-  { name: 'Evaluate', status: 'success', success_rate: '10/10', avg_latency: '1.9s' },
+  {
+    name: 'Intake',
+    status: 'success',
+    success_rate: '10/10',
+    avg_latency: '0ms',
+    description: 'Normalize submitted lead rows and flag missing context.',
+    output_summary: '10 demo lead records loaded from the saved replay dataset.',
+  },
+  {
+    name: 'Research',
+    status: 'success',
+    success_rate: '10/10',
+    avg_latency: '4.2s',
+    description: 'Collect company context, opportunity signals, and evidence.',
+    output_summary: 'Company summaries and evidence cards are available for review.',
+  },
+  {
+    name: 'Qualifier',
+    status: 'warning',
+    success_rate: '9/10',
+    avg_latency: '2.1s',
+    description: 'Score ICP fit and assign lead priority.',
+    output_summary: 'Fit scores and priorities are present; one lead needs careful review.',
+  },
+  {
+    name: 'Strategist',
+    status: 'success',
+    success_rate: '10/10',
+    avg_latency: '2.8s',
+    description: 'Turn fit and evidence into a sales angle.',
+    output_summary: 'Pain hypotheses, core messages, and likely objections are available.',
+  },
+  {
+    name: 'Email Drafter',
+    status: 'success',
+    success_rate: '10/10',
+    avg_latency: '3.5s',
+    description: 'Draft review-ready outreach from the available context.',
+    output_summary: 'Subjects and email bodies are present for all replay leads.',
+  },
+  {
+    name: 'QA Evaluator',
+    status: 'success',
+    success_rate: '10/10',
+    avg_latency: '1.9s',
+    description: 'Check draft quality, evidence coverage, and hallucination risk.',
+    output_summary: 'QA scores and recommendations are available for review.',
+  },
 ];
 
 export const mockLeadDetail: LeadDetail = {
@@ -87,9 +130,9 @@ Best,
   est_tokens: 3420,
   trace: [
     { agent: 'Research', status: 'success', input_summary: 'Demo lead — NovaBridge Solutions, B2B SaaS, USA', output_summary: '4 evidence cards generated. 3 high-confidence signals. 1 medium. No invented sources.', latency: '4.1s', tokens: 890, prompt_version: 'v1.3' },
-    { agent: 'Qualify', status: 'success', input_summary: 'Lead + 4 evidence cards', output_summary: 'Fit score: 91. Priority: High. 4 reasons, 2 risks. ICP match confirmed.', latency: '2.0s', tokens: 520, prompt_version: 'v1.1' },
-    { agent: 'Strategize', status: 'success', input_summary: 'Lead + research + fit score 91', output_summary: 'Pain hypothesis: scaling ops pressure. Sales angle: ramp accelerator. CTA: 10-min demo.', latency: '2.7s', tokens: 610, prompt_version: 'v1.2' },
-    { agent: 'Draft', status: 'success', input_summary: 'Lead + strategy + product knowledge', output_summary: 'Subject: "Growing revenue teams at NovaBridge — a thought". Body: 4 paragraphs, SDR hiring hook.', latency: '3.4s', tokens: 840, prompt_version: 'v1.4' },
-    { agent: 'Evaluate', status: 'success', input_summary: 'Email draft + all previous outputs', output_summary: 'QA scores: avg 88. Hallucination risk: Low. Recommendation: Approved.', latency: '1.9s', tokens: 280, prompt_version: 'v1.1' },
+    { agent: 'Qualifier', status: 'success', input_summary: 'Lead + 4 evidence cards', output_summary: 'Fit score: 91. Priority: High. 4 reasons, 2 risks. ICP match confirmed.', latency: '2.0s', tokens: 520, prompt_version: 'v1.1' },
+    { agent: 'Strategist', status: 'success', input_summary: 'Lead + research + fit score 91', output_summary: 'Pain hypothesis: scaling ops pressure. Sales angle: ramp accelerator. CTA: 10-min demo.', latency: '2.7s', tokens: 610, prompt_version: 'v1.2' },
+    { agent: 'Email Drafter', status: 'success', input_summary: 'Lead + strategy + product knowledge', output_summary: 'Subject: "Growing revenue teams at NovaBridge — a thought". Body: 4 paragraphs, SDR hiring hook.', latency: '3.4s', tokens: 840, prompt_version: 'v1.4' },
+    { agent: 'QA Evaluator', status: 'success', input_summary: 'Email draft + all previous outputs', output_summary: 'QA scores: avg 88. Hallucination risk: Low. Recommendation: Approved.', latency: '1.9s', tokens: 280, prompt_version: 'v1.1' },
   ],
 };

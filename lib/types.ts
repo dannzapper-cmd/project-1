@@ -21,6 +21,8 @@ export interface AgentStatus {
   status: 'success' | 'warning' | 'failed' | 'running' | 'pending';
   success_rate: string;
   avg_latency: string;
+  description?: string;
+  output_summary?: string;
 }
 
 export interface RunMetrics {

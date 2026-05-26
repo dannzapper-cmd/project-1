@@ -61,8 +61,8 @@ function DashboardSkeleton() {
           />
         ))}
       </div>
-      <div className="grid grid-cols-5 gap-3">
-        {Array.from({ length: 5 }).map((_, i) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+        {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
             className="h-24 bg-[--bg-surface] border border-[--border-subtle] rounded-lg animate-pulse"
@@ -233,7 +233,10 @@ export function DemoDashboardClient() {
           <DemoNextSteps leads={displayLeads} />
         </>
       )}
-      <AgentStatusRow agents={displayAgentStatuses} />
+      <AgentStatusRow
+        agents={displayAgentStatuses}
+        replayMode={displayMetrics?.run_mode === "Replay" || dataSource === "mock"}
+      />
       <LeadTable
         leads={displayLeads}
         getLeadDetail={displayGetLeadDetail}

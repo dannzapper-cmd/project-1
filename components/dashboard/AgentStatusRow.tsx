@@ -8,6 +8,14 @@ interface AgentStatusRowProps {
    * sites continue to render identically.
    */
   agents?: AgentStatus[];
+  replayMode?: boolean;
+}
+
+function getDisplayStatus(
+  status: AgentStatus["status"],
+  replayMode: boolean,
+): AgentStatus["status"] {
+  return replayMode && status === "running" ? "pending" : status;
 }
 
 function getStatusStyles(status: AgentStatus["status"]) {
@@ -51,40 +59,75 @@ function getStatusStyles(status: AgentStatus["status"]) {
   }
 }
 
-export function AgentStatusRow({ agents }: AgentStatusRowProps = {}) {
+export function AgentStatusRow({
+  agents,
+  replayMode = true,
+}: AgentStatusRowProps = {}) {
   const rows = agents ?? mockAgentStatus;
-  // Use a 5-column layout when only five agents are present (API
-  // mode in Phase 6.1/6.2 has no Intake), and the original 6-column
-  // layout when the mock six-agent fallback is in use. This keeps
-  // tiles a consistent width across both modes.
-  const gridColsClass = rows.length === 5 ? "grid-cols-5" : "grid-cols-6";
 
   return (
-    <div className={`grid ${gridColsClass} gap-3`}>
-      {rows.map((agent) => {
-        const styles = getStatusStyles(agent.status);
-        return (
-          <div
-            key={agent.name}
-            className={`bg-[--bg-surface] border ${styles.border} rounded-lg p-4`}
+    <section
+      aria-labelledby="agent-activity-heading"
+      className="bg-[--bg-surface] border border-[--border-default] rounded-lg p-5 space-y-4"
+    >
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2
+            id="agent-activity-heading"
+            className="text-sm font-semibold text-[--text-primary]"
           >
-            <p className="text-sm font-medium text-[--text-primary] mb-2">
-              {agent.name}
-            </p>
-            <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${styles.badge}`}
+            Agent activity
+          </h2>
+          <p className="text-xs text-[--text-muted] mt-0.5">
+            Pipeline stages and saved outputs for this run.
+          </p>
+        </div>
+        {replayMode && (
+          <span className="self-start rounded-full border border-[--color-warning]/30 bg-[--color-warning-bg] px-3 py-1 text-xs font-medium text-[--color-warning]">
+            Replay/demo mode - statuses reflect saved outputs, not live agents running now.
+          </span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+        {rows.map((agent) => {
+          const displayStatus = getDisplayStatus(agent.status, replayMode);
+          const styles = getStatusStyles(displayStatus);
+          return (
+            <div
+              key={agent.name}
+              className={`bg-[--bg-elevated] border ${styles.border} rounded-lg p-4 min-h-44`}
             >
-              <span>{styles.icon}</span>
-              {styles.label}
-            </span>
-            <div className="mt-3 flex items-center gap-2 text-xs text-[--text-muted]">
-              <span>{agent.success_rate}</span>
-              <span>·</span>
-              <span className="font-mono">{agent.avg_latency}</span>
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm font-medium text-[--text-primary]">
+                  {agent.name}
+                </p>
+                <span
+                  className={`inline-flex shrink-0 items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${styles.badge}`}
+                >
+                  <span>{styles.icon}</span>
+                  {styles.label}
+                </span>
+              </div>
+              {agent.description && (
+                <p className="mt-3 text-xs text-[--text-secondary] leading-relaxed">
+                  {agent.description}
+                </p>
+              )}
+              {agent.output_summary && (
+                <p className="mt-3 text-xs text-[--text-muted] leading-relaxed">
+                  {agent.output_summary}
+                </p>
+              )}
+              <div className="mt-3 flex items-center gap-2 text-xs text-[--text-muted]">
+                <span>{agent.success_rate}</span>
+                <span>·</span>
+                <span className="font-mono">{agent.avg_latency}</span>
+              </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
