@@ -76,6 +76,20 @@ class Settings(BaseSettings):
     # live model pipeline behaviour in this phase.
     enable_live_model_pipeline: bool = False
 
+    # Block 10E — Live Web Research MVP (Exa).
+    #
+    # All four settings are intentionally inert when ``enable_live_research``
+    # is False (the default). The Exa API key is backend-only — it must
+    # never be referenced from any frontend / Next.js code. The daily
+    # limit is enforced via an in-process counter (see
+    # ``app.services.live_research_service``) and resets on backend
+    # restart by design (no Redis, DB, or file persistence).
+    enable_live_research: bool = False
+    exa_api_key: str | None = None
+    live_research_max_results: int = Field(default=3, ge=1, le=10)
+    live_research_timeout_seconds: float = Field(default=8.0, gt=0.0, le=30.0)
+    live_research_daily_limit: int = Field(default=20, ge=1, le=10_000)
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_cors_origins(cls, value: object) -> object:

@@ -29,6 +29,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import demo as demo_routes
 from app.api.routes import health as health_routes
 from app.api.routes import intake as intake_routes
+from app.api.routes import research as research_routes
 from app.api.routes import telemetry as telemetry_routes
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
@@ -77,6 +78,7 @@ def create_app() -> FastAPI:
     app.include_router(health_routes.router)
     app.include_router(demo_routes.router)
     app.include_router(intake_routes.router)
+    app.include_router(research_routes.router)
     app.include_router(telemetry_routes.router)
 
     return app

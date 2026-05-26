@@ -301,3 +301,62 @@ export interface EnrichedBatch {
   summary: PipelineRunSummary;
   results: EnrichedLeadResult[];
 }
+
+// --------------------------------------------------------------------------- //
+// Block 10E — Live Web Research MVP                                          //
+//                                                                            //
+// Mirrors `app/schemas/live_research.py`. The endpoint always returns        //
+// HTTP 200; the component renders disabled / unavailable / rate-limited /    //
+// timeout / no-evidence / error states from `status` and `user_message`.     //
+// --------------------------------------------------------------------------- //
+
+export type LiveResearchStatus =
+  | "ok"
+  | "disabled"
+  | "unavailable"
+  | "insufficient_input"
+  | "timeout"
+  | "rate_limited"
+  | "no_evidence"
+  | "provider_error";
+
+export interface LiveResearchRequest {
+  company_name: string;
+  website?: string | null;
+  industry?: string | null;
+  country?: string | null;
+  notes?: string | null;
+}
+
+export interface LiveResearchEvidenceCard {
+  title: string;
+  url: string;
+  source_domain: string;
+  snippet: string;
+  source_type: "live_web";
+  confidence: Confidence;
+  why_it_matters: string;
+}
+
+export interface LiveResearchSource {
+  url: string;
+  domain: string;
+  title: string | null;
+}
+
+export interface LiveResearchResponse {
+  provider: "exa" | "none";
+  run_mode: "live_research";
+  enabled: boolean;
+  status: LiveResearchStatus;
+  company_name: string;
+  query_used: string | null;
+  evidence_cards: LiveResearchEvidenceCard[];
+  information_risks: string[];
+  confidence: Confidence | null;
+  sources: LiveResearchSource[];
+  fetched_at: string;
+  warnings: string[];
+  estimated_request_count: number;
+  user_message: string;
+}
