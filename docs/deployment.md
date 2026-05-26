@@ -139,9 +139,41 @@ Optional:
 | `GROQ_API_KEY` | unset | Required only if you intentionally enable the backend-only live Groq endpoint. |
 | `GROQ_DEFAULT_MODEL` | `llama-3.1-8b-instant` | Optional Groq model id for the live endpoint. |
 | `GROQ_TIMEOUT_SECONDS` | `30` | Optional Groq request timeout. |
+| `ENABLE_LIVE_RESEARCH` | `false` | Block 10E live web research master switch. Off by default. |
+| `EXA_API_KEY` | unset | Backend-only Exa key. Never set this as a `NEXT_PUBLIC_*` variable. |
+| `LIVE_RESEARCH_MAX_RESULTS` | `3` | Hard cap on Exa results per request. |
+| `LIVE_RESEARCH_TIMEOUT_SECONDS` | `8` | Per-request Exa timeout. Block 10E surfaces a structured timeout response when exceeded. |
+| `LIVE_RESEARCH_DAILY_LIMIT` | `20` | In-process daily request counter cap; resets on backend restart by design (no Redis/DB persistence). |
 
 Do not add real secrets to `.env.example`, `render.yaml`, README files, or any
 `NEXT_PUBLIC_*` frontend variable.
+
+### Block 10E — Live Web Research (Exa) deployment notes
+
+The Block 10E endpoint at `POST /api/research/live-company` is OFF by default
+and is wired into the demo dashboard's lead detail drawer as a manual,
+single-lead button labelled "Run live research". To enable it on Render:
+
+1. Set `ENABLE_LIVE_RESEARCH=true`.
+2. Set `EXA_API_KEY` to a valid Exa API key in the Render dashboard
+   environment configuration.
+3. Optionally tune `LIVE_RESEARCH_MAX_RESULTS`, `LIVE_RESEARCH_TIMEOUT_SECONDS`,
+   and `LIVE_RESEARCH_DAILY_LIMIT`. The defaults are deliberately low for the
+   public demo.
+
+Safety guarantees for this path:
+
+- The Exa API key is never exposed to the frontend. There is no
+  `NEXT_PUBLIC_EXA_API_KEY` variable and the response body never contains the
+  key.
+- The endpoint always returns HTTP 200 with a structured body. Disabled,
+  unavailable (no key), rate-limited, timeout, and no-evidence states are
+  reported via `status` and `user_message`, not via HTTP error codes.
+- Snippets and titles returned by Exa are repackaged into evidence cards
+  without any LLM summarization or paraphrasing.
+- The daily limit is enforced by an in-process counter that resets on backend
+  restart. This block deliberately does not introduce Redis, Postgres, file
+  persistence, or background workers.
 
 ## Vercel frontend wiring
 
@@ -266,7 +298,10 @@ storage belongs to a later backend deployment block.
 - App startup does not require Groq or other model keys.
 - No email sending is implemented.
 - No CRM writes are implemented.
-- No auth, payments, live research, Redis, queue workers, or paid search APIs
+- Live web research (Block 10E, Exa) is OFF by default. When enabled it is
+  manual, single-lead-only, backend-keyed, daily-limited via an in-process
+  counter, and never routed through Groq or any LLM.
+- No auth, payments, Redis, queue workers, or other paid search APIs
   are introduced by this deployment path.
 - No request logging middleware is added for user IP, user agent, or
   identifying data.
