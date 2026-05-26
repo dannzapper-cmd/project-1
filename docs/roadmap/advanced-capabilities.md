@@ -21,7 +21,7 @@ As of Block 8.4, LeadForge includes:
 - **LangGraph deferred** per [`docs/adr/langgraph-decision.md`](../adr/langgraph-decision.md) — linear plain-Python orchestration today
 - **Advanced capabilities roadmap** documenting current-vs-future boundaries
 
-LeadForge does **not** today provide Smart Intake, live web research, PDF/image/Excel parsing, vertical profiles, LangGraph runtime, durable telemetry storage, backend review persistence, CRM integration, email sending, or a frontend live Groq button.
+LeadForge does **not** today provide image/OCR intake, vertical profiles, LangGraph runtime, durable telemetry storage, backend review persistence, CRM integration, email sending, or a frontend live Groq button.
 
 ## Capability status table
 
@@ -35,7 +35,7 @@ LeadForge does **not** today provide Smart Intake, live web research, PDF/image/
 | Telemetry foundation | ✅ Implemented | Block 8.2 | — |
 | Live Groq single-lead | ✅ Implemented (opt-in) | Block 8.3 | — |
 | Advanced capabilities roadmap | ✅ Implemented | Block 8.4 | — |
-| Smart Lead Intake | 🗺 Roadmap | — | Future |
+| Smart Lead Intake | ⚠️ Partial | Blocks 10A, 10F-A | OCR/image intake remains future |
 | Live Company Research | 🗺 Roadmap | — | Future |
 | Vertical Profiles | 🗺 Roadmap | — | Future |
 | LangGraph runtime | ⏸ Deferred | — | See ADR |
@@ -48,7 +48,7 @@ This table is the single source of truth for current vs planned state. Do not ma
 
 ## 1. Smart Lead Intake & Data Normalization
 
-**Status:** Not implemented.
+**Status:** Partial — CSV/paste preview plus CSV, `.xlsx`, and text-based PDF table upload are implemented. OCR/image intake remains future scope.
 
 ### Future capability
 
@@ -74,9 +74,6 @@ LeadForge may accept messy lead sources and normalize them into the internal Lea
 ### Not available today
 
 - No OCR
-- No PDF parsing
-- No Excel parsing
-- No upload UI in the dashboard for intake files
 - No Smart Intake agent in the production pipeline path
 
 ### Guardrails (planned)
@@ -236,8 +233,8 @@ The dashboard may expose a **manual** control per lead, for example:
 
 **Do not claim today:**
 
-- LeadForge supports PDF/image/Excel intake
-- LeadForge performs live web research
+- LeadForge supports OCR/image intake or perfect PDF extraction
+- LeadForge performs unrestricted/autonomous live web research
 - LeadForge uses LangGraph runtime
 - LeadForge supports vertical profiles
 - LeadForge persists telemetry durably
@@ -247,7 +244,7 @@ The dashboard may expose a **manual** control per lead, for example:
 
 **Accurate summary wording:**
 
-LeadForge currently provides a deterministic and opt-in live single-lead AI sales intelligence pipeline with telemetry, QA evaluation, human review, and safe local export. Advanced intake, live research, vertical profiles, durable telemetry, frontend live controls, and graph orchestration are documented roadmap capabilities.
+LeadForge currently provides a deterministic and opt-in live single-lead AI sales intelligence pipeline with telemetry, QA evaluation, human review, limited CSV/XLSX/text-PDF intake preview, and safe local export. OCR/image intake, vertical profiles, durable telemetry, frontend live controls, and graph orchestration are documented roadmap capabilities.
 
 ---
 
@@ -255,8 +252,8 @@ LeadForge currently provides a deterministic and opt-in live single-lead AI sale
 
 This document does **not** authorize or implement:
 
-- Smart Intake, live web research, LangGraph runtime, or a frontend live button
-- OCR, PDF parsing, Excel parsing, or browser automation
+- Full Smart Intake automation, LangGraph runtime, or a frontend live Groq button
+- OCR/image intake, browser automation, or perfect PDF extraction
 - CRM integration, email sending, or backend review persistence
 - Auth, payments, or multi-tenancy
 - Vector DB / RAG architecture changes

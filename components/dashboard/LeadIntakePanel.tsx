@@ -7,7 +7,7 @@ import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  postCsvIntakePreview,
+  postIntakeFilePreview,
   postIntakePreview,
   postPipelineBatch,
 } from "@/lib/api/client";
@@ -24,9 +24,11 @@ import {
   rowMessage,
 } from "@/lib/intake/preview-state";
 
-const MAX_CSV_UPLOAD_BYTES = 1 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
 
-type InputMode = "paste" | "csv";
+type InputMode = "paste" | "file";
+
+type IntakeFileFormat = "CSV" | "Excel (.xlsx)" | "PDF table" | "Unsupported";
 
 interface LeadIntakePanelProps {
   onBatchProcessed: (batch: PipelineRunContractOutput, leads: LeadIn[]) => void;
@@ -51,6 +53,7 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
 
   const validLeads = useMemo(() => processableLeads(preview), [preview]);
   const limitMessage = processLimitMessage(preview);
+  const selectedFileFormat = file ? detectIntakeFileFormat(file) : null;
   const canProcess = isProcessEnabled({
     preview,
     mappingConfirmed,
@@ -77,8 +80,8 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
 
     try {
       const nextPreview =
-        mode === "csv"
-          ? await previewCsvFile(file)
+        mode === "file"
+          ? await previewIntakeFile(file)
           : await postIntakePreview({
               input_type: "pasted_table",
               source_name: "dashboard_paste",
@@ -121,8 +124,8 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
   const previewDisabledReason =
     mode === "paste" && pasteValue.trim() === ""
       ? "Paste CSV or spreadsheet rows with headers before previewing."
-      : mode === "csv" && file === null
-        ? "Choose a .csv file before previewing."
+      : mode === "file" && file === null
+        ? "Choose a CSV, Excel, or PDF table file before previewing."
         : null;
 
   const processDisabledReason = !preview
@@ -141,8 +144,8 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
             Add Leads
           </h2>
           <p className="text-sm text-[--text-muted] mt-1">
-            Use the sample demo below, paste spreadsheet rows, or upload a CSV.
-            LeadForge previews and validates B2B lead data before processing.
+            Use the sample demo below, paste spreadsheet rows, or upload CSV,
+            Excel, or PDF table files. Preview extracted rows before processing.
           </p>
         </div>
         <div className="text-xs text-[--text-muted] border border-[--border-subtle] rounded-full px-3 py-1">
@@ -168,16 +171,16 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
         <button
           type="button"
           onClick={() => {
-            setMode("csv");
+            setMode("file");
             resetPreview();
           }}
           className={`px-3 py-1.5 rounded-md text-sm font-medium ${
-            mode === "csv"
+            mode === "file"
               ? "bg-[--accent-primary] text-white"
               : "border border-[--border-default] text-[--text-secondary]"
           }`}
         >
-          Upload CSV
+          Upload CSV / Excel / PDF
         </button>
         <span className="text-xs text-[--text-muted] self-center">
           Required columns: company_name and industry. Recommended: website,
@@ -196,17 +199,28 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
           className="min-h-32 bg-[--bg-elevated] border-[--border-default] text-sm"
         />
       ) : (
-        <div className="border border-dashed border-[--border-default] rounded-lg p-4">
+        <div className="border border-dashed border-[--border-default] rounded-lg p-4 space-y-3">
           <label className="flex items-center gap-3 text-sm text-[--text-secondary] cursor-pointer">
             <Upload className="h-4 w-4" />
-            <span>{file ? file.name : "Choose a UTF-8 .csv file (max 1 MB)"}</span>
+            <span>
+              {file ? file.name : "Upload CSV, Excel, or PDF table (max 2 MB)"}
+            </span>
             <input
               type="file"
-              accept=".csv,text/csv"
+              accept=".csv,.xlsx,.pdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/pdf"
               onChange={handleFileChange}
               className="sr-only"
             />
           </label>
+          <div className="text-xs text-[--text-muted] space-y-1">
+            {file && (
+              <p>
+                Selected file: {file.name} - Detected format: {selectedFileFormat}
+              </p>
+            )}
+            <p>PDF extraction works best with text-based tables.</p>
+            <p>Scanned images require OCR and are not supported in this block.</p>
+          </div>
         </div>
       )}
 
@@ -217,7 +231,11 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
           disabled={loadingPreview || previewDisabledReason !== null}
           className="bg-[--accent-primary] hover:bg-[--accent-primary]/90 text-white disabled:opacity-50"
         >
-          {loadingPreview ? "Previewing..." : "Preview and validate"}
+          {loadingPreview
+            ? mode === "file"
+              ? "Extracting..."
+              : "Previewing..."
+            : "Preview and validate"}
         </Button>
         {previewDisabledReason && (
           <p className="text-xs text-[--text-muted]">{previewDisabledReason}</p>
@@ -258,6 +276,19 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
               <p className="font-semibold text-[--color-error]">{preview.failed_rows}</p>
             </div>
           </div>
+
+          {preview.global_issues.length > 0 && (
+            <div className="text-sm bg-[--bg-elevated] border border-[--border-default] rounded-lg p-3 space-y-2">
+              <p className="font-medium text-[--text-primary]">Preview warnings</p>
+              <ul className="list-disc pl-5 space-y-1 text-[--text-muted]">
+                {preview.global_issues.map((issue, index) => (
+                  <li key={`${issue.code}-${index}`}>
+                    {issue.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="border border-[--border-default] rounded-lg overflow-hidden">
             <div className="bg-[--bg-elevated] px-4 py-3 border-b border-[--border-default]">
@@ -354,15 +385,33 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
   );
 }
 
-async function previewCsvFile(file: File | null): Promise<IntakePreviewResponse> {
+function detectIntakeFileFormat(file: File): IntakeFileFormat {
+  const name = file.name.toLowerCase();
+  if (name.endsWith(".csv")) return "CSV";
+  if (name.endsWith(".xlsx")) return "Excel (.xlsx)";
+  if (name.endsWith(".pdf")) return "PDF table";
+  return "Unsupported";
+}
+
+async function previewIntakeFile(file: File | null): Promise<IntakePreviewResponse> {
   if (!file) {
-    throw new Error("Choose a .csv file before previewing.");
+    throw new Error("Choose a CSV, Excel, or PDF table file before previewing.");
   }
-  if (!file.name.toLowerCase().endsWith(".csv")) {
-    throw new Error("Only .csv files are supported in this block.");
+  const lowerName = file.name.toLowerCase();
+  if (lowerName.endsWith(".xls")) {
+    throw new Error(
+      "Legacy .xls files are not supported in this block. Save the workbook as .xlsx and upload again.",
+    );
   }
-  if (file.size > MAX_CSV_UPLOAD_BYTES) {
-    throw new Error("CSV file is larger than the 1 MB safety limit.");
+  if (
+    !lowerName.endsWith(".csv") &&
+    !lowerName.endsWith(".xlsx") &&
+    !lowerName.endsWith(".pdf")
+  ) {
+    throw new Error("Only .csv, .xlsx, and text-based .pdf files are supported.");
   }
-  return postCsvIntakePreview(file);
+  if (file.size > MAX_UPLOAD_BYTES) {
+    throw new Error("File is larger than the 2 MB safety limit.");
+  }
+  return postIntakeFilePreview(file);
 }

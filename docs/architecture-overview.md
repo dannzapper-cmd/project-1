@@ -40,14 +40,14 @@ POST /api/demo/pipeline/live-groq/{lead_id}
 - **Dashboard:** `/demo` — lead table, lead detail drawer, agent outputs, traces, QA, human review, local CSV export.  
 - **Data source:** `NEXT_PUBLIC_DATA_SOURCE` — `mock` (bundled demo data) or `api` (FastAPI at `NEXT_PUBLIC_API_URL`).  
 - **Human review:** State stored in the browser only; not persisted to the backend.  
-- **Not implemented on frontend:** Live Groq button, Excel/PDF/image intake, auth, payments, multi-tenancy.
+- **Not implemented on frontend:** Live Groq button, image/OCR intake, auth, payments, multi-tenancy.
 
 ---
 
 ## FastAPI backend
 
 - **Entry:** `backend/app/main.py` — CORS, lifespan, SQLite schema init (`create_all`), route registration.  
-- **Routers:** Health (`/health`), demo pipeline and agents (`/api/demo/*`), intake preview (`POST /api/intake/preview` — preview-only, not production intake), telemetry (`/api/demo/telemetry/*`).  
+- **Routers:** Health (`/health`), demo pipeline and agents (`/api/demo/*`), intake preview (`POST /api/intake/preview` plus in-memory CSV/XLSX/PDF extraction at `POST /api/intake/extract-file` — preview-only, not production intake), telemetry (`/api/demo/telemetry/*`).  
 - **ORM:** SQLAlchemy models exist (`Lead`, `Run`, `AgentTrace`, `QAResult`); schema initializes on startup. Pipeline runs and human review are **not** durably persisted for the demo product path described here.  
 - **Docs:** OpenAPI at `http://localhost:8000/docs` when running locally.
 
@@ -196,7 +196,7 @@ LeadForge-Agentic Core is an engineering demo product, not a production SaaS. No
 | Telemetry | In-memory summaries | No durable DB, JSONL sink, or external APM |
 | Outreach | Drafts only | No SMTP, no CRM write |
 | Research | Demo/fixture context | No live web research or scraping |
-| Intake | CSV/paste preview and max-10 deterministic processing | No PDF/Excel/OCR |
+| Intake | CSV/paste preview plus CSV/XLSX/text-PDF table extraction and max-10 deterministic processing | No image/OCR |
 | Live model | API-only Groq | No frontend live button |
 | Orchestration | Linear Python | LangGraph deferred per ADR |
 | Data | Synthetic demo leads | Not real-time company intelligence |

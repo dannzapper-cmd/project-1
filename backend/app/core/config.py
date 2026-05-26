@@ -90,6 +90,11 @@ class Settings(BaseSettings):
     live_research_timeout_seconds: float = Field(default=8.0, gt=0.0, le=30.0)
     live_research_daily_limit: int = Field(default=20, ge=1, le=10_000)
 
+    # Block 10F-A — intake file extraction safety limit.
+    # Uploads are processed from FastAPI UploadFile in memory only and are
+    # rejected after one byte beyond this cap is read.
+    intake_max_upload_mb: int = Field(default=2, ge=1, le=10)
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_cors_origins(cls, value: object) -> object:
