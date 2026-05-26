@@ -11,6 +11,7 @@ import {
   postIntakePreview,
   postPipelineBatch,
 } from "@/lib/api/client";
+import { describeIntakePreviewError } from "@/lib/intake/intake-errors";
 import type {
   IntakePreviewResponse,
   LeadIn,
@@ -29,11 +30,6 @@ type InputMode = "paste" | "csv";
 
 interface LeadIntakePanelProps {
   onBatchProcessed: (batch: PipelineRunContractOutput, leads: LeadIn[]) => void;
-}
-
-function describeError(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  return "Unknown intake error.";
 }
 
 function statusClass(status: string): string {
@@ -96,7 +92,7 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
       setPreview(nextPreview);
     } catch (err) {
       setPreview(null);
-      setError(describeError(err));
+      setError(describeIntakePreviewError(err));
     } finally {
       setLoadingPreview(false);
     }
@@ -116,7 +112,7 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
         `Processed ${batch.lead_count} lead${batch.lead_count === 1 ? "" : "s"} through the deterministic pipeline.`,
       );
     } catch (err) {
-      setError(describeError(err));
+      setError(describeIntakePreviewError(err));
     } finally {
       setProcessing(false);
     }
@@ -229,8 +225,11 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
       </div>
 
       {error && (
-        <div role="alert" className="text-sm text-[--color-error] bg-[--color-error-bg] border border-[--color-error]/30 rounded-lg p-3">
-          {error}
+        <div
+          role="alert"
+          className="text-sm text-[--color-error] bg-[--color-error-bg] border border-[--color-error]/30 rounded-lg p-3 space-y-1"
+        >
+          <p>{error}</p>
         </div>
       )}
       {successMessage && (

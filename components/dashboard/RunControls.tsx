@@ -34,15 +34,34 @@ export function RunControls() {
         <div className="flex items-center gap-3">
           <div className="flex items-center rounded-lg border border-[--border-default] p-1">
             <button
+              type="button"
+              aria-pressed="true"
               className="px-3 py-1.5 rounded-md text-sm font-medium bg-[--accent-primary] text-white"
             >
               Replay Mode
             </button>
-            <span
-              className="px-3 py-1.5 rounded-md text-sm font-medium text-[--text-muted]"
-            >
-              Live API-only
-            </span>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <button
+                      type="button"
+                      disabled
+                      aria-disabled="true"
+                      className="px-3 py-1.5 rounded-md text-sm font-medium text-[--text-muted] opacity-50 cursor-not-allowed"
+                    >
+                      Live API (requires backend)
+                    </button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    Live Groq runs through the backend only. Configure the API in
+                    Block 11; this demo view stays on replay.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
 
           <TooltipProvider>
@@ -52,14 +71,18 @@ export function RunControls() {
                   <Button
                     size="lg"
                     disabled
+                    aria-disabled="true"
                     className="bg-[--accent-primary] hover:bg-[--accent-primary]/90 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Process Leads
+                    Process Leads (sample loaded)
                   </Button>
                 </span>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Pipeline execution is loaded from mock/API data; live Groq is invoked only through the backend POST endpoint.</p>
+                <p>
+                  Sample results are already loaded in replay mode. Use Add Leads
+                  when the backend is available, or review the table below.
+                </p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
