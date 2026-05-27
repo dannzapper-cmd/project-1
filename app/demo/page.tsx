@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ExternalLink } from "lucide-react";
 import { DemoOnboarding } from "@/components/dashboard/DemoOnboarding";
+import { DemoAccessCodePanel } from "@/components/dashboard/DemoAccessCodePanel";
 import { ReplayModeBanner } from "@/components/dashboard/ReplayModeBanner";
 import { DemoDashboardClient } from "@/components/dashboard/DemoDashboardClient";
 
@@ -52,6 +53,7 @@ export default function DemoPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-6">
         <DemoOnboarding />
+        <DemoAccessCodePanel />
 
         {/* Data-driven dashboard sections.
             Reads `DATA_SOURCE` (the only point in the app where it

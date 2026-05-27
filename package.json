@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "node --experimental-strip-types --test lib/api/__tests__/*.test.ts lib/intake/__tests__/*.test.ts lib/export/__tests__/*.test.ts lib/metrics/__tests__/*.test.ts",
+    "test:backend": "cd backend && pytest -q",
+    "smoke:backend": "bash scripts/smoke-check.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

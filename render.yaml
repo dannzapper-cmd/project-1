@@ -14,5 +14,19 @@ services:
         value: INFO
       - key: ENABLE_LIVE_MODEL_PIPELINE
         value: false
+      - key: RATE_LIMIT_ENABLED
+        value: true
+      - key: RATE_LIMIT_REQUESTS_PER_MINUTE
+        value: 30
+      - key: RATE_LIMIT_LIVE_REQUESTS_PER_MINUTE
+        value: 5
+      - key: MAX_LEADS_PER_RUN
+        value: 10
+      - key: INTAKE_MAX_UPLOAD_MB
+        value: 5
+      - key: DEMO_ACCESS_CODE
+        sync: false
+      - key: BUILD_SHA
+        sync: false
       - key: CORS_ORIGINS
         sync: false

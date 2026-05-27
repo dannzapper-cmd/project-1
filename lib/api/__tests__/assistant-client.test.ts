@@ -71,10 +71,15 @@ describe("postAssistantLeadQuestion", () => {
     const response = await postAssistantLeadQuestion(exampleRequest(), {
       baseUrl: "https://api.test",
       fetchImpl: fakeFetch,
+      headers: { "X-LeadForge-Demo-Key": "demo-code" },
     });
 
     assert.equal(capturedUrl, "https://api.test/api/assistant/lead-question");
     assert.equal(capturedInit?.method, "POST");
+    assert.equal(
+      (capturedInit?.headers as Record<string, string>)["X-LeadForge-Demo-Key"],
+      "demo-code",
+    );
     assert.equal(response.status, "ok");
     assert.equal(response.mode, "live_llm");
     assert.equal(response.used_context_fields.length, 4);

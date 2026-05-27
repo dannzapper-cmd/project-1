@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, status
 
+from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.schemas.agents import (
     EmailDrafterAgentOutput,
@@ -884,11 +885,24 @@ def post_pipeline_batch(
 
     Leads must already be normalized and preview-confirmed by the intake UI/API.
     This reuses the existing deterministic five-agent pipeline, never calls
-    Groq, never performs live research, and processes at most 10 leads.
+    Groq, never performs live research, and respects MAX_LEADS_PER_RUN.
     """
 
+    settings = get_settings()
+    if len(request.leads) > settings.max_leads_per_run:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                f"This demo processes up to {settings.max_leads_per_run} "
+                "leads per run. Remove extra rows and try again."
+            ),
+        )
+
     try:
-        return run_pipeline_for_user_leads(request.leads)
+        return run_pipeline_for_user_leads(
+            request.leads,
+            max_leads=settings.max_leads_per_run,
+        )
     except DemoDataError as exc:
         _raise_500(exc)
         raise  # pragma: no cover

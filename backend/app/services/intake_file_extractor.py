@@ -23,7 +23,7 @@ from openpyxl import load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 import pdfplumber
 
-from app.services.intake_normalizer import MAX_LEADS_PER_RUN
+from app.services.intake_normalizer import get_max_leads_per_run
 
 ExtractedInputType = Literal["csv_text", "records_json"]
 
@@ -355,16 +355,17 @@ def _limit_records(
     records: list[dict[str, Any]],
     format_label: str,
 ) -> tuple[list[dict[str, Any]], int, list[str]]:
+    max_leads_per_run = get_max_leads_per_run()
     found_rows = len(records)
-    if found_rows <= MAX_LEADS_PER_RUN:
+    if found_rows <= max_leads_per_run:
         return records, found_rows, []
     return (
-        records[:MAX_LEADS_PER_RUN],
+        records[:max_leads_per_run],
         found_rows,
         [
             (
                 f"{format_label} extraction found {found_rows} rows; "
-                f"previewing the first {MAX_LEADS_PER_RUN} rows to match the intake limit."
+                f"previewing the first {max_leads_per_run} rows to match the intake limit."
             )
         ],
     )

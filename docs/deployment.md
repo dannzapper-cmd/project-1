@@ -1,6 +1,6 @@
 # LeadForge controlled deployment guide
 
-This guide covers Block 11A: a cheap, controlled public backend deployment
+This guide covers Block 11A/11B: a cheap, controlled public backend deployment
 that lets the Vercel frontend call the FastAPI backend while preserving the
 demo/replay safety boundaries.
 
@@ -10,7 +10,7 @@ Recommended shape:
 - Backend: Render Web Service running FastAPI.
 - Database: no production database for this block. SQLite schema init remains
   local/ephemeral only and is not used for durable review or pipeline state.
-- No Docker, Redis, Postgres, queue workers, auth, email provider, CRM, or new
+- No Docker, Redis, Postgres, queue workers, full auth, email provider, CRM, or new
   paid APIs are required.
 
 ## Why Render for the backend
@@ -144,7 +144,13 @@ Optional:
 | `LIVE_RESEARCH_MAX_RESULTS` | `3` | Hard cap on Exa results per request. |
 | `LIVE_RESEARCH_TIMEOUT_SECONDS` | `8` | Per-request Exa timeout. Block 10E surfaces a structured timeout response when exceeded. |
 | `LIVE_RESEARCH_DAILY_LIMIT` | `20` | In-process daily request counter cap; resets on backend restart by design (no Redis/DB persistence). |
-| `INTAKE_MAX_UPLOAD_MB` | `2` | Block 10F-A in-memory CSV/XLSX/PDF intake upload limit. |
+| `RATE_LIMIT_ENABLED` | `true` | Block 11B in-memory public-demo rate limiting. Resets on Render restart/spin-down. |
+| `RATE_LIMIT_REQUESTS_PER_MINUTE` | `30` | Protected preview/process request cap per IP. |
+| `RATE_LIMIT_LIVE_REQUESTS_PER_MINUTE` | `5` | Lower cap for live research, assistant, and Groq-backed paths. |
+| `MAX_LEADS_PER_RUN` | `10` | Configurable public-demo intake/process cap. |
+| `INTAKE_MAX_UPLOAD_MB` | `5` | Block 11B in-memory CSV/XLSX/PDF intake upload limit. |
+| `DEMO_ACCESS_CODE` | unset | Optional portfolio-demo abuse deterrent. If set, protected actions require the `X-LeadForge-Demo-Key` header. |
+| `BUILD_SHA` | unset | Optional safe deployment traceability field returned by `/api/system/status`. |
 
 Do not add real secrets to `.env.example`, `render.yaml`, README files, or any
 `NEXT_PUBLIC_*` frontend variable.
@@ -159,7 +165,7 @@ No uploaded files are written to disk or persisted.
 
 Limits and scope:
 
-- Default upload cap is `INTAKE_MAX_UPLOAD_MB=2`.
+- Default upload cap is `INTAKE_MAX_UPLOAD_MB=5`.
 - Legacy `.xls` is rejected; save as `.xlsx`.
 - PDF support is best-effort for text-based tables. Scanned/image PDFs return
   an OCR-needed message because image/OCR intake is out of scope for this block.
@@ -271,6 +277,17 @@ Expected success:
 }
 ```
 
+Safe status URL:
+
+```text
+https://YOUR_RENDER_SERVICE_NAME.onrender.com/api/system/status
+```
+
+This endpoint exposes only safe booleans and deployment hints such as
+`rate_limit_enabled`, live feature configured true/false, `storage_mode:
+"ephemeral"`, and optional `build_sha`. It never exposes API keys, secret env
+values, internal paths, or provider credentials.
+
 ## Free hosting limitations
 
 Render Free web services are useful for a controlled public preview, but they
@@ -306,10 +323,15 @@ storage belongs to a later backend deployment block.
 ## Safety boundaries verified for this deployment
 
 - `/health` is public and lightweight.
+- `/api/system/status` is public but safe; it exposes booleans, not secrets.
 - Replay/mock demo works without the backend.
 - Add Leads requires the backend for preview/process.
-- CSV upload is capped at 1 MB.
-- User-lead batch processing is capped at 10 leads per run.
+- CSV/XLSX/text-PDF upload is capped by `INTAKE_MAX_UPLOAD_MB` (default 5 MB).
+- User-lead batch processing is capped by `MAX_LEADS_PER_RUN` (default 10).
+- Protected demo actions are rate limited in memory by IP. Counters reset on
+  Render restart/spin-down by design.
+- If `DEMO_ACCESS_CODE` is set, protected demo actions require the
+  `X-LeadForge-Demo-Key` header. This is abuse deterrence, not full auth.
 - Deterministic and intake routes do not require API keys.
 - Live Groq/model routes are backend-only, single-lead, opt-in, and guarded by
   `ENABLE_LIVE_MODEL_PIPELINE=true` plus `GROQ_API_KEY`.
@@ -329,12 +351,11 @@ storage belongs to a later backend deployment block.
   research. Question length is capped by
   `LLM_ASSISTANT_MAX_QUESTION_CHARS` (default 300). The system prompt is
   constructed backend-side and is never exposed in any response field.
-- No auth, payments, Redis, queue workers, or other paid search APIs
+- No full auth, payments, Redis, queue workers, or other paid search APIs
   are introduced by this deployment path.
-- No request logging middleware is added for user IP, user agent, or
-  identifying data.
-- No rate limiting is added in Block 11A. Safety relies on existing bounded
-  file size, max-10 batch processing, and live-model opt-in.
+- Request logs include request id, endpoint, method, status, latency, and a
+  high-level error category. They do not log secrets, prompts, uploaded file
+  contents, API keys, or private contact data.
 
 ## Troubleshooting
 

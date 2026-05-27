@@ -30,7 +30,7 @@
  *     the live mode is disabled / unavailable / rate limited.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Send, Sparkles } from "lucide-react";
 
 import {
@@ -44,6 +44,10 @@ import type {
   AssistantResponse,
 } from "@/lib/api/types";
 import type { LeadDetail } from "@/lib/types";
+import {
+  DEMO_ACCESS_REQUIRED_MESSAGE,
+  apiDetail,
+} from "@/lib/intake/intake-errors";
 
 interface ReviewAssistantPanelProps {
   detail: LeadDetail;
@@ -345,6 +349,26 @@ function modeLabel(response: AssistantResponse): string {
   }
 }
 
+function describeAssistantTransportError(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.status === 401 || err.status === 403) {
+      return DEMO_ACCESS_REQUIRED_MESSAGE;
+    }
+    if (err.status === 429) {
+      return "The live assistant is rate limited for this public demo. Please wait a moment and try again.";
+    }
+    if (err.status === 503) {
+      return "The live assistant is unavailable or the backend is warming up. Try again in a moment.";
+    }
+    const detail = apiDetail(err.body);
+    return detail
+      ? `Assistant request failed (HTTP ${err.status}): ${detail}`
+      : `Assistant request failed (HTTP ${err.status}). Try again in a moment.`;
+  }
+  if (err instanceof Error) return err.message;
+  return "Unexpected error contacting the assistant.";
+}
+
 // --------------------------------------------------------------------------- //
 // Component                                                                   //
 // --------------------------------------------------------------------------- //
@@ -354,6 +378,8 @@ export function ReviewAssistantPanel({
   postAssistantQuestion = postAssistantLeadQuestion,
 }: ReviewAssistantPanelProps) {
   const [selectedQuestion, setSelectedQuestion] = useState<QuestionId>("evidence");
+  const answerRef = useRef<HTMLDivElement | null>(null);
+  const [scrollAnswerIntoView, setScrollAnswerIntoView] = useState(false);
   const selected =
     ALL_QUESTIONS.find((question) => question.id === selectedQuestion) ??
     ALL_QUESTIONS[0];
@@ -372,6 +398,12 @@ export function ReviewAssistantPanel({
   const overLimit = trimmed.length > QUESTION_CHAR_LIMIT;
   const submitDisabled = isLoading || trimmed.length === 0 || overLimit;
 
+  useEffect(() => {
+    if (!scrollAnswerIntoView) return;
+    answerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    setScrollAnswerIntoView(false);
+  }, [deterministicAnswer, scrollAnswerIntoView]);
+
   const handleAsk = async () => {
     if (submitDisabled) return;
     setIsLoading(true);
@@ -386,13 +418,7 @@ export function ReviewAssistantPanel({
       const result = await postAssistantQuestion(payload);
       setResponse(result);
     } catch (err) {
-      const message =
-        err instanceof ApiError
-          ? `Assistant request failed (HTTP ${err.status}). The backend may be unavailable or warming up — try again in a moment.`
-          : err instanceof Error
-            ? err.message
-            : "Unexpected error contacting the assistant.";
-      setTransportError(message);
+      setTransportError(describeAssistantTransportError(err));
       setResponse(null);
     } finally {
       setIsLoading(false);
@@ -440,7 +466,10 @@ export function ReviewAssistantPanel({
                 <button
                   key={q.id}
                   type="button"
-                  onClick={() => setSelectedQuestion(q.id)}
+                  onClick={() => {
+                    setSelectedQuestion(q.id);
+                    setScrollAnswerIntoView(true);
+                  }}
                   className={`rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
                     selectedQuestion === q.id
                       ? "border-[--accent-primary] bg-[--accent-primary]/10 text-[--text-primary]"
@@ -455,7 +484,10 @@ export function ReviewAssistantPanel({
         ))}
       </div>
 
-      <div className="mt-4 rounded-lg border border-[--border-subtle] bg-[--bg-elevated] p-3">
+      <div
+        ref={answerRef}
+        className="mt-4 rounded-lg border border-[--border-subtle] bg-[--bg-elevated] p-3"
+      >
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-medium text-[--text-primary]">
             {selected.label}

@@ -24,7 +24,8 @@ import {
   rowMessage,
 } from "@/lib/intake/preview-state";
 
-const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
+const MAX_UPLOAD_MB = 5;
+const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024;
 
 type InputMode = "paste" | "file";
 
@@ -230,7 +231,7 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
           <label className="flex items-center gap-3 text-sm text-[--text-secondary] cursor-pointer">
             <Upload className="h-4 w-4" />
             <span>
-              {file ? file.name : "Upload CSV, Excel, or PDF table (max 2 MB)"}
+              {file ? file.name : `Upload CSV, Excel, or PDF table (max ${MAX_UPLOAD_MB} MB)`}
             </span>
             <input
               type="file"
@@ -455,7 +456,7 @@ async function previewIntakeFile(file: File | null): Promise<IntakePreviewRespon
     throw new Error("Only .csv, .xlsx, and text-based .pdf files are supported.");
   }
   if (file.size > MAX_UPLOAD_BYTES) {
-    throw new Error("File is larger than the 2 MB safety limit.");
+    throw new Error(`File is larger than the ${MAX_UPLOAD_MB} MB safety limit.`);
   }
   return postIntakeFilePreview(file);
 }

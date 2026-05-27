@@ -29,6 +29,10 @@ import type {
   LiveResearchEvidenceCard,
   LiveResearchResponse,
 } from "@/lib/api/types";
+import {
+  DEMO_ACCESS_REQUIRED_MESSAGE,
+  apiDetail,
+} from "@/lib/intake/intake-errors";
 
 interface LiveResearchPanelProps {
   lead: LeadDetail | null;
@@ -62,6 +66,26 @@ function buildRequest(lead: LeadDetail) {
     country: lead.country || null,
     notes: null,
   };
+}
+
+function describeLiveResearchTransportError(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.status === 401 || err.status === 403) {
+      return DEMO_ACCESS_REQUIRED_MESSAGE;
+    }
+    if (err.status === 429) {
+      return "Live research is rate limited for this public demo. Please wait a moment and try again.";
+    }
+    if (err.status === 503) {
+      return "Live research is unavailable or the backend is warming up. Try again in a moment.";
+    }
+    const detail = apiDetail(err.body);
+    return detail
+      ? `Live research request failed (HTTP ${err.status}): ${detail}`
+      : `Live research request failed (HTTP ${err.status}). Try again in a moment.`;
+  }
+  if (err instanceof Error) return err.message;
+  return "Unexpected error running live research.";
 }
 
 interface DisabledNoticeProps {
@@ -128,13 +152,7 @@ export function LiveResearchPanel({
       const result = await postLiveResearch(buildRequest(lead));
       setResponse(result);
     } catch (err) {
-      const message =
-        err instanceof ApiError
-          ? `Live research request failed (HTTP ${err.status}). The backend may be unavailable or warming up — try again in a moment.`
-          : err instanceof Error
-            ? err.message
-            : "Unexpected error running live research.";
-      setError(message);
+      setError(describeLiveResearchTransportError(err));
       setResponse(null);
     } finally {
       setIsLoading(false);
