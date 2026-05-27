@@ -1,19 +1,27 @@
 export const DEMO_ACCESS_HEADER = "X-LeadForge-Demo-Key";
 export const DEMO_ACCESS_STORAGE_KEY = "leadforge-demo-access-code";
 
+let inMemoryDemoAccessCode: string | null = null;
+
 export function getStoredDemoAccessCode(): string | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined") return inMemoryDemoAccessCode;
   try {
     const value = window.sessionStorage.getItem(DEMO_ACCESS_STORAGE_KEY);
-    return value && value.trim() ? value.trim() : null;
+    const trimmed = value?.trim();
+    if (trimmed) {
+      inMemoryDemoAccessCode = trimmed;
+      return trimmed;
+    }
   } catch {
-    return null;
+    // sessionStorage may be unavailable in some privacy modes.
   }
+  return inMemoryDemoAccessCode;
 }
 
 export function setStoredDemoAccessCode(code: string): void {
-  if (typeof window === "undefined") return;
   const trimmed = code.trim();
+  inMemoryDemoAccessCode = trimmed || null;
+  if (typeof window === "undefined") return;
   try {
     if (trimmed) {
       window.sessionStorage.setItem(DEMO_ACCESS_STORAGE_KEY, trimmed);
@@ -26,6 +34,7 @@ export function setStoredDemoAccessCode(code: string): void {
 }
 
 export function clearStoredDemoAccessCode(): void {
+  inMemoryDemoAccessCode = null;
   if (typeof window === "undefined") return;
   try {
     window.sessionStorage.removeItem(DEMO_ACCESS_STORAGE_KEY);

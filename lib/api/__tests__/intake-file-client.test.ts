@@ -5,11 +5,81 @@
  *   node --experimental-strip-types --test lib/api/__tests__/intake-file-client.test.ts
  */
 
-import { describe, it } from "node:test";
+import { afterEach, describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-import { postIntakeFilePreview } from "../client.ts";
+import {
+  postCsvIntakePreview,
+  postIntakeFilePreview,
+  postIntakePreview,
+} from "../client.ts";
+import {
+  clearStoredDemoAccessCode,
+  DEMO_ACCESS_HEADER,
+  setStoredDemoAccessCode,
+} from "../demo-access.ts";
 import type { IntakePreviewResponse } from "../types.ts";
+
+const globalWithWindow = globalThis as typeof globalThis & { window?: Window };
+
+function installSessionStorage(): void {
+  const values = new Map<string, string>();
+  const storage: Storage = {
+    get length() {
+      return values.size;
+    },
+    clear() {
+      values.clear();
+    },
+    getItem(key: string) {
+      return values.get(key) ?? null;
+    },
+    key(index: number) {
+      return Array.from(values.keys())[index] ?? null;
+    },
+    removeItem(key: string) {
+      values.delete(key);
+    },
+    setItem(key: string, value: string) {
+      values.set(key, value);
+    },
+  };
+  globalWithWindow.window = { sessionStorage: storage } as unknown as Window;
+}
+
+function installBlockedSessionStorage(): void {
+  const blocked = () => {
+    throw new DOMException("sessionStorage is blocked", "SecurityError");
+  };
+  const storage: Storage = {
+    get length() {
+      blocked();
+      return 0;
+    },
+    clear: blocked,
+    getItem: blocked,
+    key: blocked,
+    removeItem: blocked,
+    setItem: blocked,
+  };
+  globalWithWindow.window = { sessionStorage: storage } as unknown as Window;
+}
+
+function makePreviewFetch(captured: { url: string; init?: RequestInit }): typeof fetch {
+  return (async (url: string, init?: RequestInit) => {
+    captured.url = url;
+    captured.init = init;
+    return new Response(JSON.stringify(previewResponse()), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }) as unknown as typeof fetch;
+}
+
+afterEach(() => {
+  clearStoredDemoAccessCode();
+  delete globalWithWindow.window;
+});
 
 function previewResponse(): IntakePreviewResponse {
   return {
@@ -37,17 +107,10 @@ function previewResponse(): IntakePreviewResponse {
 
 describe("postIntakeFilePreview", () => {
   it("posts multipart form data to /api/intake/extract-file", async () => {
-    let capturedUrl = "";
-    let capturedInit: RequestInit | undefined;
-
-    const fakeFetch = (async (url: string, init?: RequestInit) => {
-      capturedUrl = url;
-      capturedInit = init;
-      return new Response(JSON.stringify(previewResponse()), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    }) as unknown as typeof fetch;
+    installSessionStorage();
+    setStoredDemoAccessCode("demo-code");
+    const captured = { url: "", init: undefined as RequestInit | undefined };
+    const fakeFetch = makePreviewFetch(captured);
 
     const file = new File(["company_name,industry\nAcme,SaaS\n"], "leads.csv", {
       type: "text/csv",
@@ -55,20 +118,93 @@ describe("postIntakeFilePreview", () => {
     const response = await postIntakeFilePreview(file, {
       baseUrl: "https://api.test",
       fetchImpl: fakeFetch,
-      headers: { "X-LeadForge-Demo-Key": "demo-code" },
     });
 
-    assert.equal(capturedUrl, "https://api.test/api/intake/extract-file");
-    assert.equal(capturedInit?.method, "POST");
+    assert.equal(captured.url, "https://api.test/api/intake/extract-file");
+    assert.equal(captured.init?.method, "POST");
     assert.equal(
-      (capturedInit?.headers as Record<string, string>)["X-LeadForge-Demo-Key"],
+      (captured.init?.headers as Record<string, string>)[DEMO_ACCESS_HEADER],
       "demo-code",
     );
-    assert.ok(capturedInit?.body instanceof FormData);
+    assert.ok(captured.init?.body instanceof FormData);
     assert.equal(response.input_type, "excel_file");
 
-    const form = capturedInit.body as FormData;
+    const form = captured.init.body as FormData;
     assert.equal(form.get("file"), file);
     assert.equal(form.get("generate_missing_lead_ids"), "true");
+  });
+
+  it("sends the saved demo access header for pasted intake previews", async () => {
+    installBlockedSessionStorage();
+    setStoredDemoAccessCode("demo-code");
+    const captured = { url: "", init: undefined as RequestInit | undefined };
+
+    await postIntakePreview(
+      {
+        input_type: "pasted_table",
+        source_name: "dashboard_paste",
+        content: "company_name\tindustry\nAcme\tSaaS",
+      },
+      {
+        baseUrl: "https://api.test",
+        fetchImpl: makePreviewFetch(captured),
+      },
+    );
+
+    assert.equal(captured.url, "https://api.test/api/intake/preview");
+    assert.equal(
+      (captured.init?.headers as Record<string, string>)[DEMO_ACCESS_HEADER],
+      "demo-code",
+    );
+  });
+
+  it("sends the saved demo access header for both FormData intake previews", async () => {
+    installSessionStorage();
+    setStoredDemoAccessCode("demo-code");
+    const csvUpload = { url: "", init: undefined as RequestInit | undefined };
+    const extractUpload = { url: "", init: undefined as RequestInit | undefined };
+    const file = new File(["company_name,industry\nAcme,SaaS\n"], "leads.csv", {
+      type: "text/csv",
+    });
+
+    await postCsvIntakePreview(file, {
+      baseUrl: "https://api.test",
+      fetchImpl: makePreviewFetch(csvUpload),
+    });
+    await postIntakeFilePreview(file, {
+      baseUrl: "https://api.test",
+      fetchImpl: makePreviewFetch(extractUpload),
+    });
+
+    assert.equal(csvUpload.url, "https://api.test/api/intake/preview-file/csv");
+    assert.equal(extractUpload.url, "https://api.test/api/intake/extract-file");
+    assert.equal(
+      (csvUpload.init?.headers as Record<string, string>)[DEMO_ACCESS_HEADER],
+      "demo-code",
+    );
+    assert.equal(
+      (extractUpload.init?.headers as Record<string, string>)[DEMO_ACCESS_HEADER],
+      "demo-code",
+    );
+  });
+
+  it("does not send the demo access header when no code is saved", async () => {
+    const captured = { url: "", init: undefined as RequestInit | undefined };
+
+    await postIntakePreview(
+      {
+        input_type: "pasted_table",
+        source_name: "dashboard_paste",
+        content: "company_name\tindustry\nAcme\tSaaS",
+      },
+      {
+        baseUrl: "https://api.test",
+        fetchImpl: makePreviewFetch(captured),
+      },
+    );
+
+    assert.ok(
+      !(DEMO_ACCESS_HEADER in (captured.init?.headers as Record<string, string>)),
+    );
   });
 });

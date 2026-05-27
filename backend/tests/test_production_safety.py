@@ -72,6 +72,11 @@ def test_demo_access_code_required_only_for_protected_actions(monkeypatch) -> No
         with TestClient(test_app) as client:
             health_response = client.get("/health")
             missing_response = client.post("/api/intake/preview", json=_preview_payload())
+            invalid_response = client.post(
+                "/api/intake/preview",
+                json=_preview_payload(),
+                headers={"X-LeadForge-Demo-Key": "wrong-code"},
+            )
             allowed_response = client.post(
                 "/api/intake/preview",
                 json=_preview_payload(),
@@ -84,6 +89,8 @@ def test_demo_access_code_required_only_for_protected_actions(monkeypatch) -> No
     assert missing_response.status_code == 403
     assert missing_response.json()["error"] == "demo_access_required"
     assert "private demo access code" in missing_response.json()["detail"]
+    assert invalid_response.status_code == 403
+    assert invalid_response.json()["error"] == "demo_access_required"
     assert allowed_response.status_code == 200
 
 
