@@ -9,7 +9,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-export function RunControls() {
+interface RunControlsProps {
+  /** True after the user has processed a batch in this session. */
+  hasLoadedResults?: boolean;
+  leadsCount?: number;
+}
+
+export function RunControls({
+  hasLoadedResults = false,
+  leadsCount = 0,
+}: RunControlsProps = {}) {
   const scrollToIntake = () => {
     document.getElementById("lead-intake")?.scrollIntoView({
       behavior: "smooth",
@@ -22,9 +31,23 @@ export function RunControls() {
       <div className="flex items-center justify-between">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[--border-subtle] bg-[--bg-elevated]">
-            <span className="text-sm text-[--text-primary]">Sample Dataset</span>
-            <span className="text-[--text-muted]">·</span>
-            <span className="text-sm text-[--text-secondary]">10 B2B leads</span>
+            {hasLoadedResults ? (
+              <>
+                <span className="text-sm text-[--text-primary]">Pipeline results loaded</span>
+                <span className="text-[--text-muted]">·</span>
+                <span className="text-sm text-[--text-secondary]">
+                  {leadsCount} lead{leadsCount === 1 ? "" : "s"} in this run
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-sm text-[--text-primary]">Sample CSV available</span>
+                <span className="text-[--text-muted]">·</span>
+                <span className="text-sm text-[--text-secondary]">
+                  Not loaded yet — use Add Leads below
+                </span>
+              </>
+            )}
           </div>
           <p className="text-xs text-[--text-muted] mt-2">
             Replay demo is free. Live Groq is backend API-only and opt-in.
@@ -74,14 +97,15 @@ export function RunControls() {
                     aria-disabled="true"
                     className="bg-[--accent-primary] hover:bg-[--accent-primary]/90 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Process Leads (sample loaded)
+                    {hasLoadedResults ? "Process Leads (results loaded)" : "Process Leads"}
                   </Button>
                 </span>
               </TooltipTrigger>
               <TooltipContent>
                 <p>
-                  Sample results are already loaded in replay mode. Use Add Leads
-                  when the backend is available, or review the table below.
+                  {hasLoadedResults
+                    ? "Results for this run are shown below. Use Add Leads to process another batch."
+                    : "No leads loaded yet. Paste or upload sample data in Add Leads, then process to run the pipeline."}
                 </p>
               </TooltipContent>
             </Tooltip>

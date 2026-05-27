@@ -27,6 +27,7 @@ import { AgentStatusRow } from "./AgentStatusRow";
 import { BusinessValueSection } from "./BusinessValueSection";
 import { DemoNextSteps } from "./DemoNextSteps";
 import { LeadIntakePanel } from "./LeadIntakePanel";
+import { RunControls } from "./RunControls";
 import { LeadTable } from "./LeadTable";
 import { MetricsRow } from "./MetricsRow";
 import { RunQualityPanel } from "./RunQualityPanel";
@@ -142,9 +143,12 @@ export function DemoDashboardClient({ sampleCsvContent }: DemoDashboardClientPro
     [displayLeads],
   );
 
+  const hasLoadedResults = displayLeads.length > 0;
+
   if (error) {
     return (
       <>
+        <RunControls hasLoadedResults={false} />
         <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
         <DashboardError message={error} onRetry={refresh} />
       </>
@@ -154,6 +158,7 @@ export function DemoDashboardClient({ sampleCsvContent }: DemoDashboardClientPro
   if (displayLeads.length === 0) {
     return (
       <>
+        <RunControls hasLoadedResults={false} />
         <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
         <DashboardEmptyState sampleCsvContent={sampleCsvContent} />
       </>
@@ -162,6 +167,10 @@ export function DemoDashboardClient({ sampleCsvContent }: DemoDashboardClientPro
 
   return (
     <>
+      <RunControls
+        hasLoadedResults={hasLoadedResults}
+        leadsCount={displayLeads.length}
+      />
       <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
       <B2BProfilePackPanel
         selectedId={profilePackId}
