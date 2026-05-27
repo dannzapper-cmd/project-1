@@ -27,9 +27,11 @@ import { AgentStatusRow } from "./AgentStatusRow";
 import { BusinessValueSection } from "./BusinessValueSection";
 import { DemoNextSteps } from "./DemoNextSteps";
 import { LeadIntakePanel } from "./LeadIntakePanel";
+import { RunControls } from "./RunControls";
 import { LeadTable } from "./LeadTable";
 import { MetricsRow } from "./MetricsRow";
 import { RunQualityPanel } from "./RunQualityPanel";
+import { DashboardEmptyState } from "./DashboardEmptyState";
 import { joinBatchWithLeads } from "@/lib/api/client";
 import {
   toAgentStatuses,
@@ -46,33 +48,9 @@ import type { LeadDetail } from "@/lib/types";
 import { getProfilePack, type B2BProfilePackId } from "@/lib/b2b-profile-packs";
 import { useDashboardData } from "@/lib/api/useDashboardData";
 
-function DashboardSkeleton() {
-  // Lightweight skeleton that mirrors the production layout (metrics
-  // row + agent row + table) so the page does not visibly reflow
-  // when data arrives. Uses the same surface tokens as the real
-  // cards so the placeholder blends with the dashboard theme.
-  return (
-    <div className="space-y-6" aria-busy="true" aria-live="polite">
-      <div className="grid grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-28 bg-[--bg-surface] border border-[--border-subtle] rounded-lg animate-pulse"
-          />
-        ))}
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-24 bg-[--bg-surface] border border-[--border-subtle] rounded-lg animate-pulse"
-          />
-        ))}
-      </div>
-      <div className="h-64 bg-[--bg-surface] border border-[--border-default] rounded-lg animate-pulse" />
-      <p className="sr-only">Loading dashboard data…</p>
-    </div>
-  );
+interface DemoDashboardClientProps {
+  /** Contents of `data/demo/leads.csv` for the empty-state onboarding. */
+  sampleCsvContent: string;
 }
 
 function DashboardError({
@@ -106,21 +84,7 @@ function DashboardError({
   );
 }
 
-function DashboardEmpty() {
-  return (
-    <div className="bg-[--bg-surface] border border-[--border-default] rounded-lg p-8 text-center">
-      <p className="text-sm font-medium text-[--text-primary]">
-        No leads in this run.
-      </p>
-      <p className="text-xs text-[--text-muted] mt-2">
-        The backend returned an empty pipeline result. Try refreshing once new
-        demo leads are seeded.
-      </p>
-    </div>
-  );
-}
-
-export function DemoDashboardClient() {
+export function DemoDashboardClient({ sampleCsvContent }: DemoDashboardClientProps) {
   const [userBatch, setUserBatch] = useState<EnrichedBatch | null>(null);
   const [profilePackId, setProfilePackId] =
     useState<B2BProfilePackId>(DEFAULT_PROFILE_PACK_ID);
@@ -133,7 +97,6 @@ export function DemoDashboardClient() {
     leads,
     agentStatuses,
     getLeadDetail,
-    loading,
     error,
     refresh,
     dataSource,
@@ -180,18 +143,12 @@ export function DemoDashboardClient() {
     [displayLeads],
   );
 
-  if (loading) {
-    return (
-      <>
-        <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
-        <DashboardSkeleton />
-      </>
-    );
-  }
+  const hasLoadedResults = displayLeads.length > 0;
 
   if (error) {
     return (
       <>
+        <RunControls hasLoadedResults={false} />
         <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
         <DashboardError message={error} onRetry={refresh} />
       </>
@@ -201,14 +158,19 @@ export function DemoDashboardClient() {
   if (displayLeads.length === 0) {
     return (
       <>
+        <RunControls hasLoadedResults={false} />
         <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
-        <DashboardEmpty />
+        <DashboardEmptyState sampleCsvContent={sampleCsvContent} />
       </>
     );
   }
 
   return (
     <>
+      <RunControls
+        hasLoadedResults={hasLoadedResults}
+        leadsCount={displayLeads.length}
+      />
       <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
       <B2BProfilePackPanel
         selectedId={profilePackId}

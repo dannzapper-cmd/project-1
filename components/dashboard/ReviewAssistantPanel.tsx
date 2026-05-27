@@ -55,10 +55,10 @@ interface ReviewAssistantPanelProps {
 }
 
 type QuestionId =
+  | "evidence"
   | "priority"
   | "sales-angle"
-  | "missing-data"
-  | "confidence"
+  | "email-strength"
   | "review-check"
   | "qa-score";
 
@@ -67,32 +67,40 @@ interface Question {
   label: string;
 }
 
-const QUESTIONS: Question[] = [
+interface QuestionGroup {
+  lens: string;
+  questions: Question[];
+}
+
+const QUESTION_GROUPS: QuestionGroup[] = [
   {
-    id: "priority",
-    label: "Why is this lead high / medium / low priority?",
+    lens: "Research",
+    questions: [
+      { id: "evidence", label: "What evidence supports this lead?" },
+    ],
   },
   {
-    id: "sales-angle",
-    label: "What is the recommended sales angle?",
+    lens: "Qualifier",
+    questions: [{ id: "priority", label: "Why this priority?" }],
   },
   {
-    id: "missing-data",
-    label: "What data is missing for this lead?",
+    lens: "Strategist",
+    questions: [{ id: "sales-angle", label: "What angle should we use?" }],
   },
   {
-    id: "confidence",
-    label: "What would improve confidence?",
+    lens: "Email Drafter",
+    questions: [{ id: "email-strength", label: "Is the email strong enough?" }],
   },
   {
-    id: "review-check",
-    label: "What should the reviewer check before approving?",
-  },
-  {
-    id: "qa-score",
-    label: "What does the QA score mean for this lead?",
+    lens: "QA Evaluator",
+    questions: [
+      { id: "review-check", label: "What should I review before approving?" },
+      { id: "qa-score", label: "What does the QA score mean?" },
+    ],
   },
 ];
+
+const ALL_QUESTIONS: Question[] = QUESTION_GROUPS.flatMap((g) => g.questions);
 
 // Mirrors LLM_ASSISTANT_MAX_QUESTION_CHARS default on the backend.
 // The backend re-enforces this independently — this is purely a UX
@@ -128,12 +136,6 @@ function missingLeadFields(detail: LeadDetail): string[] {
   return missing;
 }
 
-function lowConfidenceEvidence(detail: LeadDetail): string[] {
-  return detail.evidence_cards
-    .filter((card) => card.confidence !== "High")
-    .map((card) => `${card.headline} (${card.confidence})`);
-}
-
 function qaAvailable(detail: LeadDetail): boolean {
   return !(
     detail.qa_score <= 0 &&
@@ -142,6 +144,36 @@ function qaAvailable(detail: LeadDetail): boolean {
     detail.qa_scores.cta_quality <= 0 &&
     detail.qa_scores.tone_match <= 0
   );
+}
+
+function answerEvidence(detail: LeadDetail): string {
+  if (detail.evidence_cards.length === 0) {
+    return "No evidence cards are in this run yet. Run the pipeline or Live Research to add company context before approving.";
+  }
+  const headlines = detail.evidence_cards
+    .slice(0, 4)
+    .map((card) => `${card.headline} (${card.confidence})`);
+  return `Evidence used in this run: ${headlines.join("; ")}. Review each card in Evidence used before approving outreach.`;
+}
+
+function answerEmailStrength(detail: LeadDetail): string {
+  if (!hasText(detail.email_subject) || !hasText(detail.email_body)) {
+    return FALLBACK;
+  }
+  const parts: string[] = [
+    `Subject: "${detail.email_subject}".`,
+  ];
+  if (qaAvailable(detail)) {
+    parts.push(
+      `QA Evaluator scored this draft ${detail.qa_score} with recommendation ${detail.qa_scores.recommendation}.`,
+    );
+  }
+  if (detail.personalization_notes?.length) {
+    parts.push(
+      `Review notes: ${listFirst(detail.personalization_notes, 2)}.`,
+    );
+  }
+  return parts.join(" ");
 }
 
 function answerPriority(detail: LeadDetail): string {
@@ -173,51 +205,6 @@ function answerSalesAngle(detail: LeadDetail): string {
   return support.length
     ? `${detail.sales_angle} ${support.join(" ")}`
     : detail.sales_angle;
-}
-
-function answerMissingData(detail: LeadDetail): string {
-  const missing = missingLeadFields(detail);
-  const warnings = detail.intake_warnings ?? [];
-  const parts: string[] = [];
-
-  if (missing.length > 0) {
-    parts.push(`Missing or sparse fields: ${missing.join(", ")}.`);
-  }
-  if (warnings.length > 0) {
-    parts.push(`Intake warnings: ${listFirst(warnings, 3)}.`);
-  }
-  if (detail.low_evidence) {
-    parts.push("This run also flags the lead as low evidence.");
-  }
-
-  return parts.length > 0
-    ? parts.join(" ")
-    : "No obvious missing lead fields are flagged in this run. Reviewer should still verify the evidence before approving.";
-}
-
-function answerConfidence(detail: LeadDetail): string {
-  const improvements: string[] = [];
-  const lowEvidence = lowConfidenceEvidence(detail);
-
-  if (detail.low_evidence) {
-    improvements.push("more evidence for the company and buyer context");
-  }
-  if (lowEvidence.length > 0) {
-    improvements.push(`stronger sources for ${listFirst(lowEvidence, 2)}`);
-  }
-  if (detail.fit_risks.length > 0) {
-    improvements.push(`resolving fit risks: ${listFirst(detail.fit_risks, 2)}`);
-  }
-  if (detail.pain_confidence !== "High" && hasText(detail.pain_hypothesis)) {
-    improvements.push(`validating the pain hypothesis (${detail.pain_confidence} confidence)`);
-  }
-  if (missingLeadFields(detail).length > 0) {
-    improvements.push(`filling missing fields: ${missingLeadFields(detail).slice(0, 3).join(", ")}`);
-  }
-
-  return improvements.length > 0
-    ? `Confidence would improve with ${improvements.join("; ")}.`
-    : "Confidence is relatively strong in this run; the main improvement would be reviewer validation that the cited evidence still matches the lead before approval.";
 }
 
 function answerReviewCheck(detail: LeadDetail): string {
@@ -261,14 +248,14 @@ function answerQaScore(detail: LeadDetail): string {
 
 function buildAnswer(questionId: QuestionId, detail: LeadDetail): string {
   switch (questionId) {
+    case "evidence":
+      return answerEvidence(detail);
     case "priority":
       return answerPriority(detail);
     case "sales-angle":
       return answerSalesAngle(detail);
-    case "missing-data":
-      return answerMissingData(detail);
-    case "confidence":
-      return answerConfidence(detail);
+    case "email-strength":
+      return answerEmailStrength(detail);
     case "review-check":
       return answerReviewCheck(detail);
     case "qa-score":
@@ -366,8 +353,10 @@ export function ReviewAssistantPanel({
   detail,
   postAssistantQuestion = postAssistantLeadQuestion,
 }: ReviewAssistantPanelProps) {
-  const [selectedQuestion, setSelectedQuestion] = useState<QuestionId>("priority");
-  const selected = QUESTIONS.find((question) => question.id === selectedQuestion) ?? QUESTIONS[0];
+  const [selectedQuestion, setSelectedQuestion] = useState<QuestionId>("evidence");
+  const selected =
+    ALL_QUESTIONS.find((question) => question.id === selectedQuestion) ??
+    ALL_QUESTIONS[0];
   const deterministicAnswer = useMemo(
     () => buildAnswer(selectedQuestion, detail),
     [selectedQuestion, detail],
@@ -412,7 +401,7 @@ export function ReviewAssistantPanel({
 
   return (
     <section
-      className="bg-[--bg-surface] border border-[--border-subtle] rounded-lg p-4"
+      className="surface-card rounded-lg p-4"
       aria-labelledby="contextual-assistant-heading"
     >
       <div className="flex items-start justify-between gap-3">
@@ -421,37 +410,48 @@ export function ReviewAssistantPanel({
             id="contextual-assistant-heading"
             className="text-sm font-semibold text-[--text-primary]"
           >
-            Contextual lead assistant
+            Ask the LeadForge agents
           </h3>
           <p className="text-xs text-[--text-muted] mt-1">
-            Ask about this lead
+            Contextual agent assistant
           </p>
         </div>
         <span className="rounded-full border border-[--border-subtle] bg-[--bg-overlay] px-2 py-0.5 text-[10px] font-medium text-[--text-muted]">
-          Grounded in this lead context
+          Grounded in this lead
         </span>
       </div>
 
-      <p className="text-xs text-[--text-muted] mt-3">
-        Answers are grounded in this lead&apos;s available context. The
-        assistant does not browse the web, send email, or update CRM.
-        Live assistant is off by default.
+      <p className="text-xs text-[--text-secondary] mt-3 leading-relaxed">
+        Answers are grounded in this lead&apos;s available context. When live
+        research has been run, available research evidence may inform the
+        answer. Run Live Research first to enrich this lead&apos;s context.
+        The assistant does not browse the web automatically, send email, or
+        update CRM. Live LLM is off by default.
       </p>
 
-      <div className="grid grid-cols-1 gap-2 mt-4">
-        {QUESTIONS.map((q) => (
-          <button
-            key={q.id}
-            type="button"
-            onClick={() => setSelectedQuestion(q.id)}
-            className={`rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
-              selectedQuestion === q.id
-                ? "border-[--accent-primary] bg-[--accent-primary]/10 text-[--text-primary]"
-                : "border-[--border-subtle] bg-[--bg-elevated] text-[--text-secondary] hover:text-[--text-primary]"
-            }`}
-          >
-            {q.label}
-          </button>
+      <div className="mt-4 space-y-4">
+        {QUESTION_GROUPS.map((group) => (
+          <div key={group.lens}>
+            <p className="text-[10px] font-mono uppercase tracking-widest text-[--accent-primary] mb-2">
+              {group.lens}
+            </p>
+            <div className="grid grid-cols-1 gap-2">
+              {group.questions.map((q) => (
+                <button
+                  key={q.id}
+                  type="button"
+                  onClick={() => setSelectedQuestion(q.id)}
+                  className={`rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                    selectedQuestion === q.id
+                      ? "border-[--accent-primary] bg-[--accent-primary]/10 text-[--text-primary]"
+                      : "border-[--border-subtle] bg-[--bg-elevated] text-[--text-secondary] hover:text-[--text-primary]"
+                  }`}
+                >
+                  {q.label}
+                </button>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 
@@ -461,7 +461,7 @@ export function ReviewAssistantPanel({
             {selected.label}
           </p>
           <span className="rounded-full border border-[--border-subtle] bg-[--bg-overlay] px-2 py-0.5 text-[10px] font-medium text-[--text-muted]">
-            Deterministic
+            {detail.run_mode === "Replay" ? "Replay/demo output" : "Deterministic"}
           </span>
         </div>
         <p className="text-sm text-[--text-secondary] leading-relaxed mt-2">
@@ -469,18 +469,17 @@ export function ReviewAssistantPanel({
         </p>
       </div>
 
-      {/* --- Block 10G: optional free-form question ---------------------- */}
       <div className="mt-5">
         <label
           htmlFor="contextual-assistant-input"
           className="flex items-center gap-2 text-xs font-medium text-[--text-primary]"
         >
           <Sparkles className="h-3 w-3" />
-          Ask the assistant a custom question
+          Ask the agent team a custom question
         </label>
         <p className="mt-1 text-[10px] text-[--text-muted]">
-          Optional. The assistant only sees this lead&apos;s loaded
-          context — no web browsing, email sending, or CRM updates.
+          Optional. Submit only when ready — no auto-call on load or while
+          typing. Uses this lead&apos;s loaded context only.
         </p>
         <textarea
           id="contextual-assistant-input"
@@ -504,7 +503,7 @@ export function ReviewAssistantPanel({
             type="button"
             onClick={handleAsk}
             disabled={submitDisabled}
-            className="inline-flex items-center gap-2 rounded-md border border-[--accent-primary]/40 bg-[--accent-primary]/10 px-3 py-1.5 text-xs font-medium text-[--accent-primary] hover:bg-[--accent-primary]/20 disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn-primary !px-3 !py-1.5 !text-xs disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>
@@ -514,7 +513,7 @@ export function ReviewAssistantPanel({
             ) : (
               <>
                 <Send className="h-3 w-3" />
-                Ask assistant
+                Ask agents
               </>
             )}
           </button>

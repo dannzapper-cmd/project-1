@@ -32,7 +32,7 @@ export function TraceTimeline({ trace }: TraceTimelineProps) {
       >
         <div className="flex items-center gap-2">
           <h4 className="text-xs uppercase tracking-widest text-[--text-muted] font-mono">
-            Agent Trace
+            Decision trace
           </h4>
           <span className="text-xs text-[--text-secondary] bg-[--bg-overlay] px-2 py-0.5 rounded-full">
             {trace.length} steps
@@ -72,8 +72,14 @@ export function TraceTimeline({ trace }: TraceTimelineProps) {
                         {entry.prompt_version}
                       </span>
                     </div>
+                    <p className="text-[10px] uppercase tracking-wide text-[--text-muted]">
+                      Input summary
+                    </p>
                     <p className="text-xs text-[--text-muted] italic">
                       {entry.input_summary}
+                    </p>
+                    <p className="text-[10px] uppercase tracking-wide text-[--text-muted] mt-2">
+                      Output summary
                     </p>
                     <p className="text-xs text-[--text-secondary]">
                       {entry.output_summary}

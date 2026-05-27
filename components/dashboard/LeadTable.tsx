@@ -11,7 +11,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { mockLeads } from "@/lib/mock-data";
 import { LeadDetailDrawer } from "./LeadDetailDrawer";
 import type { B2BProfilePack } from "@/lib/b2b-profile-packs";
 import type { Lead, LeadDetail } from "@/lib/types";
@@ -19,7 +18,7 @@ import type { Lead, LeadDetail } from "@/lib/types";
 interface LeadTableProps {
   /**
    * Optional list of leads to render. When omitted, the table
-   * falls back to `mockLeads` so legacy mock-only consumers
+   * falls back to an empty list when omitted
    * keep working without code changes.
    */
   leads?: Lead[];
@@ -37,9 +36,23 @@ type PriorityFilter = "All" | "High" | "Medium" | "Low";
 type StatusFilter = "All" | "Pending" | "Approved" | "Rejected";
 
 function getFitScoreStyles(score: number) {
-  if (score >= 70) return "bg-[--color-success-bg] text-[--color-success]";
-  if (score >= 40) return "bg-[--color-warning-bg] text-[--color-warning]";
-  return "bg-[--color-error-bg] text-[--color-error]";
+  if (score >= 80) return "bg-emerald-50 text-emerald-700 border border-emerald-200";
+  if (score >= 50) return "bg-amber-50 text-amber-700 border border-amber-200";
+  return "bg-slate-100 text-slate-600 border border-slate-200";
+}
+
+function getStatusDotColor(status: Lead["status"]) {
+  switch (status) {
+    case "Approved":
+      return "bg-[--color-success]";
+    case "Rejected":
+      return "bg-[--color-error]";
+    case "Needs Edit":
+      return "bg-[--color-warning]";
+    case "Pending Review":
+    default:
+      return "bg-[--accent-primary]";
+  }
 }
 
 function getPriorityStyles(priority: Lead["priority"]) {
@@ -72,7 +85,7 @@ export function LeadTable({
   getLeadDetail,
   profilePack,
 }: LeadTableProps = {}) {
-  const initialLeads = leadsProp ?? mockLeads;
+  const initialLeads = leadsProp ?? [];
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("All");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
@@ -192,49 +205,55 @@ export function LeadTable({
       <div className="border border-[--border-default] rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-[--bg-surface] border-b border-[--border-default] hover:bg-[--bg-surface]">
-              <TableHead className="text-[--text-muted] text-xs font-medium">Company</TableHead>
-              <TableHead className="text-[--text-muted] text-xs font-medium">Industry</TableHead>
-              <TableHead className="text-[--text-muted] text-xs font-medium">Country</TableHead>
-              <TableHead className="text-[--text-muted] text-xs font-medium">Contact Role</TableHead>
-              <TableHead className="text-[--text-muted] text-xs font-medium">Fit Score</TableHead>
-              <TableHead className="text-[--text-muted] text-xs font-medium">Priority</TableHead>
-              <TableHead className="text-[--text-muted] text-xs font-medium">QA</TableHead>
-              <TableHead className="text-[--text-muted] text-xs font-medium">Status</TableHead>
-              <TableHead className="text-[--text-muted] text-xs font-medium">Est. Cost</TableHead>
-              <TableHead className="text-[--text-muted] text-xs font-medium">Action</TableHead>
+            <TableRow className="bg-[--surface] border-b-2 border-[--border-default] hover:bg-[--surface]">
+              <TableHead className="py-3 px-4 text-[--text-muted] text-xs font-medium">Company</TableHead>
+              <TableHead className="py-3 px-4 text-[--text-muted] text-xs font-medium">Industry</TableHead>
+              <TableHead className="py-3 px-4 text-[--text-muted] text-xs font-medium">Country</TableHead>
+              <TableHead className="py-3 px-4 text-[--text-muted] text-xs font-medium">Contact Role</TableHead>
+              <TableHead className="py-3 px-4 text-[--text-muted] text-xs font-medium">Fit Score</TableHead>
+              <TableHead className="py-3 px-4 text-[--text-muted] text-xs font-medium">Priority</TableHead>
+              <TableHead className="py-3 px-4 text-[--text-muted] text-xs font-medium">QA</TableHead>
+              <TableHead className="py-3 px-4 text-[--text-muted] text-xs font-medium">Status</TableHead>
+              <TableHead className="py-3 px-4 text-[--text-muted] text-xs font-medium">Est. Cost</TableHead>
+              <TableHead className="py-3 px-4 text-[--text-muted] text-xs font-medium">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredLeads.map((lead) => (
+            {filteredLeads.map((lead, index) => (
               <TableRow
                 key={lead.id}
                 onClick={() => handleRowClick(lead)}
-                className="cursor-pointer hover:bg-[--bg-overlay] border-b border-[--border-subtle]"
+                className={`cursor-pointer hover:bg-[#f8fafc] border-b border-[--border-subtle] ${
+                  index % 2 === 0 ? "bg-[--bg-elevated]" : "bg-[--background]"
+                }`}
               >
-                <TableCell className="text-sm text-[--text-primary] font-medium">
+                <TableCell className="py-3 px-4 text-sm text-[--text-primary] font-medium">
                   {lead.company}
                 </TableCell>
-                <TableCell className="text-sm text-[--text-secondary]">{lead.industry}</TableCell>
-                <TableCell className="text-sm text-[--text-secondary]">{lead.country}</TableCell>
-                <TableCell className="text-sm text-[--text-secondary]">{lead.contact_role}</TableCell>
-                <TableCell>
-                  <span className={`inline-flex items-center justify-center w-10 h-6 rounded text-xs font-semibold ${getFitScoreStyles(lead.fit_score)}`}>
+                <TableCell className="py-3 px-4 text-sm text-[--text-secondary]">{lead.industry}</TableCell>
+                <TableCell className="py-3 px-4 text-sm text-[--text-secondary]">{lead.country}</TableCell>
+                <TableCell className="py-3 px-4 text-sm text-[--text-secondary]">{lead.contact_role}</TableCell>
+                <TableCell className="py-3 px-4">
+                  <span className={`inline-flex items-center justify-center min-w-[2.5rem] h-7 px-2 rounded-md text-xs font-semibold font-mono ${getFitScoreStyles(lead.fit_score)}`}>
                     {lead.fit_score}
                   </span>
                 </TableCell>
-                <TableCell>
+                <TableCell className="py-3 px-4">
                   <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${getPriorityStyles(lead.priority)}`}>
                     {lead.priority}
                   </span>
                 </TableCell>
-                <TableCell className="text-sm text-[--text-secondary]">{lead.qa_score}</TableCell>
-                <TableCell>
-                  <span className={`text-sm font-medium ${getStatusStyles(lead.status)}`}>
+                <TableCell className="py-3 px-4 text-sm font-mono text-[--text-secondary]">{lead.qa_score}</TableCell>
+                <TableCell className="py-3 px-4">
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${getStatusStyles(lead.status)}`}>
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${getStatusDotColor(lead.status)}`}
+                      aria-hidden
+                    />
                     {lead.status}
                   </span>
                 </TableCell>
-                <TableCell className="text-sm font-mono text-[--text-muted]">{lead.est_cost}</TableCell>
+                <TableCell className="py-3 px-4 text-sm font-mono text-[--text-muted]">{lead.est_cost}</TableCell>
                 <TableCell>
                   <button
                     onClick={(e) => {

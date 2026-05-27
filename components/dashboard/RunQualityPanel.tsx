@@ -43,16 +43,22 @@ export function RunQualityPanel({
   return (
     <section
       aria-labelledby="run-quality-heading"
-      className="bg-[--bg-surface] border border-[--border-default] rounded-lg p-5"
+      className="surface-card rounded-lg p-5"
     >
-      <div className="flex items-center gap-2 mb-4">
-        <Gauge className="h-4 w-4 text-[--accent-primary]" aria-hidden />
-        <h2
-          id="run-quality-heading"
-          className="text-sm font-semibold text-[--text-primary]"
-        >
-          Run quality
-        </h2>
+      <div className="mb-4 space-y-1">
+        <div className="flex items-center gap-2">
+          <Gauge className="h-4 w-4 text-[--accent-primary]" aria-hidden />
+          <h2
+            id="run-quality-heading"
+            className="text-sm font-semibold text-[--text-primary]"
+          >
+            Run quality &amp; mode
+          </h2>
+        </div>
+        <p className="text-xs text-[--text-muted] pl-6">
+          How this batch ran — replay/demo vs live, model, processing time, and
+          estimated cost.
+        </p>
       </div>
 
       <dl className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">

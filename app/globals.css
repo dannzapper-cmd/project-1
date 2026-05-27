@@ -4,58 +4,72 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* LeadForge Design Tokens */
-  --bg-base: #09090d;
-  --bg-surface: #111116;
-  --bg-elevated: #18181f;
-  --bg-overlay: #1e1e28;
-  --border-subtle: #1e1e2a;
-  --border-default: #2a2a38;
+  /* LeadForge design tokens — light-first */
+  --background: #ffffff;
+  --surface: #f8fafc;
+  --surface-elevated: #ffffff;
+  --border: #e2e8f0;
+
+  --bg-base: var(--background);
+  --bg-surface: var(--surface);
+  --bg-elevated: var(--surface-elevated);
+  --bg-overlay: #f1f5f9;
+  --border-subtle: #e2e8f0;
+  --border-default: #cbd5e1;
+
   --accent-primary: #6366f1;
   --accent-primary-dim: #4f52c9;
-  --accent-glow: rgba(99, 102, 241, 0.15);
-  --accent-secondary: #22d3ee;
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #475569;
+  --accent-soft: #eef2ff;
+  --accent-glow: rgba(99, 102, 241, 0.12);
+  --accent-secondary: #0891b2;
 
-  /* shadcn tokens mapped to dark theme */
-  --background: #09090d;
-  --foreground: #f1f5f9;
-  --card: #111116;
-  --card-foreground: #f1f5f9;
-  --popover: #111116;
-  --popover-foreground: #f1f5f9;
-  --primary: #6366f1;
+  --btn-primary-bg: #6366f1;
+  --btn-primary-hover: #4f46e5;
+  --btn-primary-fg: #ffffff;
+
+  --color-success: #059669;
+  --color-success-bg: #ecfdf5;
+  --color-warning: #d97706;
+  --color-warning-bg: #fffbeb;
+  --color-error: #dc2626;
+  --color-error-bg: #fef2f2;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+
+  /* shadcn tokens */
+  --foreground: var(--text-primary);
+  --card: var(--surface-elevated);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface-elevated);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--accent-primary);
   --primary-foreground: #ffffff;
-  --secondary: #18181f;
-  --secondary-foreground: #f1f5f9;
-  --muted: #18181f;
-  --muted-foreground: #94a3b8;
-  --accent: #18181f;
-  --accent-foreground: #f1f5f9;
-  --destructive: #ef4444;
+  --secondary: #f1f5f9;
+  --secondary-foreground: var(--text-primary);
+  --muted: #f1f5f9;
+  --muted-foreground: var(--text-secondary);
+  --accent: #f1f5f9;
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--color-error);
   --destructive-foreground: #ffffff;
-  --border: #2a2a38;
-  --input: #2a2a38;
-  --ring: #6366f1;
+  --input: var(--border-default);
+  --ring: var(--accent-primary);
   --chart-1: #6366f1;
-  --chart-2: #22d3ee;
-  --chart-3: #10b981;
-  --chart-4: #f59e0b;
-  --chart-5: #ef4444;
+  --chart-2: #0891b2;
+  --chart-3: #059669;
+  --chart-4: #d97706;
+  --chart-5: #dc2626;
   --radius: 0.625rem;
-  --sidebar: #111116;
-  --sidebar-foreground: #f1f5f9;
-  --sidebar-primary: #6366f1;
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--accent-primary);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #18181f;
-  --sidebar-accent-foreground: #f1f5f9;
-  --sidebar-border: #2a2a38;
-  --sidebar-ring: #6366f1;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: var(--text-primary);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--accent-primary);
 }
 
 @theme inline {
@@ -104,21 +118,189 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
 }
 
-/* Dot grid pattern for hero background */
+/* Subtle grid for hero — light theme */
 .dot-grid {
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(15, 23, 42, 0.06) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
-/* Radial glow effects */
 .hero-glow {
-  background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(99, 102, 241, 0.06), transparent);
+  background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(99, 102, 241, 0.08), transparent);
 }
 
 .cta-glow {
-  background: radial-gradient(ellipse 60% 40% at 50% 50%, rgba(99, 102, 241, 0.08), transparent);
+  background: radial-gradient(ellipse 60% 40% at 50% 50%, rgba(99, 102, 241, 0.06), transparent);
+}
+
+/* Card elevation helper */
+.surface-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 150ms ease;
+}
+
+.surface-card:hover {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+/* Button system — light theme contrast */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--btn-primary-fg) !important;
+  background-color: var(--btn-primary-bg) !important;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--btn-primary-hover) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.25);
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.35);
+  outline-offset: 2px;
+}
+
+.btn-primary:disabled {
+  background-color: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  border: 1px solid #e2e8f0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-hero {
+  min-height: 48px;
+  padding: 14px 28px;
+  font-size: 16px;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text-primary) !important;
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #f8fafc !important;
+  transform: translateY(-1px);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-disabled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #94a3b8 !important;
+  background-color: #f1f5f9 !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: not-allowed;
+}
+
+.input-focus {
+  transition: box-shadow 150ms ease, border-color 150ms ease;
+}
+
+.input-focus:focus-visible {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-overlay) 25%,
+    #ffffff 50%,
+    var(--bg-overlay) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+
+/* Agent card states (landing / dashboard) */
+.agent-card-pending {
+  border-color: var(--border-subtle);
+  opacity: 0.92;
+}
+
+.agent-card-running {
+  border-color: rgba(99, 102, 241, 0.45);
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.12);
+  animation: agent-pulse 2s ease-in-out infinite;
+}
+
+.agent-card-success {
+  border-color: rgba(5, 150, 105, 0.35);
+  background: linear-gradient(to bottom, #ffffff, #f0fdf4);
+}
+
+.agent-card-warning {
+  border-color: rgba(217, 119, 6, 0.35);
+  background: linear-gradient(to bottom, #ffffff, #fffbeb);
+}
+
+@keyframes agent-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.12);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+  }
 }

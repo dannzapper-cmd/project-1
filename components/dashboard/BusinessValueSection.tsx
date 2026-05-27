@@ -30,7 +30,7 @@ export function BusinessValueSection({
   return (
     <section
       aria-labelledby="business-value-heading"
-      className="bg-[--bg-surface] border border-[--border-default] rounded-lg p-5 space-y-4"
+      className="surface-card rounded-lg p-5 space-y-4"
     >
       <div className="flex items-start gap-3">
         <TrendingUp
@@ -45,7 +45,8 @@ export function BusinessValueSection({
             Business value from this run
           </h2>
           <p className="text-sm text-[--text-muted] mt-1">
-            Illustrative estimates from run metrics — not guaranteed ROI or revenue.
+            Agentic workflow value from this run — illustrative time and cost
+            estimates, not guaranteed ROI.
           </p>
         </div>
       </div>

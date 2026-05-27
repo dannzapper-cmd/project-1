@@ -6,7 +6,7 @@ import { ExternalLink } from "lucide-react"
 
 export function FinalCTASection() {
   return (
-    <section className="relative py-24 px-4 overflow-hidden">
+    <section className="relative py-20 px-4 overflow-hidden">
       {/* Background glow */}
       <div className="absolute inset-0 cta-glow" />
 
@@ -41,23 +41,18 @@ export function FinalCTASection() {
           transition={{ delay: 0.2 }}
           className="flex flex-col sm:flex-row gap-3 justify-center"
         >
-          <Link href="/demo">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="px-6 py-2.5 rounded-md bg-[--accent-primary] text-white font-medium hover:brightness-110 transition-all shadow-[0_0_20px_rgba(99,102,241,0.3)]"
-            >
-              Run Sample Demo
-            </motion.button>
+          <Link href="/demo" className="btn-primary btn-hero">
+            Run Sample Demo
           </Link>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-md border border-[--border-default] text-[--text-secondary] font-medium hover:bg-[--bg-elevated] transition-all"
+          <a
+            href="https://github.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary btn-hero"
           >
             View on GitHub
             <ExternalLink className="w-4 h-4" />
-          </motion.button>
+          </a>
         </motion.div>
 
         {/* Footer note */}

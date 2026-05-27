@@ -55,7 +55,7 @@ const itemVariants = {
 
 export function ArchitectureSection() {
   return (
-    <section className="py-24 px-4">
+    <section id="architecture" className="py-20 px-4">
       <div className="max-w-5xl mx-auto">
         {/* Label */}
         <motion.p
