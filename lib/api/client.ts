@@ -9,6 +9,7 @@
  */
 
 import { API_BASE_URL } from "./config.ts";
+import { getDemoAccessHeaders } from "./demo-access.ts";
 import type {
   AssistantRequest,
   AssistantResponse,
@@ -30,6 +31,8 @@ export interface ApiClientOptions {
   fetchImpl?: typeof fetch;
   /** AbortSignal forwarded to every request. */
   signal?: AbortSignal;
+  /** Optional request headers. Demo access header is added automatically in browsers. */
+  headers?: Record<string, string>;
 }
 
 export class ApiError extends Error {
@@ -60,7 +63,11 @@ async function getJson<T>(path: string, opts: ApiClientOptions = {}): Promise<T>
 
   const response = await fetchImpl(url, {
     method: "GET",
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      ...getDemoAccessHeaders(),
+      ...(opts.headers ?? {}),
+    },
     signal: opts.signal,
     // The demo backend is fully read-only and never sets cookies.
     credentials: "omit",
@@ -91,6 +98,8 @@ async function postJson<T>(
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
+      ...getDemoAccessHeaders(),
+      ...(opts.headers ?? {}),
     },
     body: JSON.stringify(body),
     signal: opts.signal,
@@ -119,7 +128,11 @@ async function postForm<T>(
 
   const response = await fetchImpl(url, {
     method: "POST",
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      ...getDemoAccessHeaders(),
+      ...(opts.headers ?? {}),
+    },
     body,
     signal: opts.signal,
     credentials: "omit",

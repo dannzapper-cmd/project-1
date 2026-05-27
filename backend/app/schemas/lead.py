@@ -84,7 +84,7 @@ class LeadBatchProcessRequest(BaseModel):
     leads: list[LeadIn] = Field(
         ...,
         min_length=1,
-        max_length=10,
-        description="Normalized, preview-confirmed leads. Max 10 per run.",
+        max_length=25,
+        description="Normalized, preview-confirmed leads. Runtime cap is MAX_LEADS_PER_RUN.",
     )
     source_name: str | None = None

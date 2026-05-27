@@ -33,6 +33,7 @@ import io
 import re
 from typing import Any
 
+from app.core.config import get_settings
 from app.schemas.intake import (
     CapabilityMap,
     IntakeIssue,
@@ -618,6 +619,12 @@ def _parse_records(
     return headers, list(records_csv)
 
 
+def get_max_leads_per_run() -> int:
+    """Return the configured preview/process lead cap for the demo."""
+
+    return get_settings().max_leads_per_run
+
+
 def build_preview(request: IntakePreviewRequest) -> IntakePreviewResponse:
     """Run the full intake preview pipeline."""
 
@@ -676,7 +683,7 @@ def build_preview(request: IntakePreviewRequest) -> IntakePreviewResponse:
         valid_rows=valid_rows,
         rows_with_warnings=rows_with_warnings,
         failed_rows=failed_rows,
-        max_leads_per_run=MAX_LEADS_PER_RUN,
+        max_leads_per_run=get_max_leads_per_run(),
         mapped_columns=mapped_columns,
         unmapped_columns=unmapped_columns,
         normalized_leads=rows,

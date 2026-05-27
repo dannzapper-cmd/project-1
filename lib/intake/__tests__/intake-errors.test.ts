@@ -51,4 +51,24 @@ describe("describeIntakePreviewError", () => {
     assert.match(message, /422/);
     assert.match(message, /company_name is required/);
   });
+
+  it("returns demo-access copy for protected action errors", () => {
+    const err = new ApiError("forbidden", {
+      status: 403,
+      url: "http://x",
+      body: JSON.stringify({ detail: "hidden" }),
+    });
+    const message = describeIntakePreviewError(err);
+    assert.match(message, /private demo access code/);
+  });
+
+  it("returns friendly rate-limit copy for 429", () => {
+    const err = new ApiError("limited", {
+      status: 429,
+      url: "http://x",
+      body: "",
+    });
+    const message = describeIntakePreviewError(err);
+    assert.match(message, /too many requests/i);
+  });
 });

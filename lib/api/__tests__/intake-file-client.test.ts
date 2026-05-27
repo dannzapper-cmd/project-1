@@ -55,10 +55,15 @@ describe("postIntakeFilePreview", () => {
     const response = await postIntakeFilePreview(file, {
       baseUrl: "https://api.test",
       fetchImpl: fakeFetch,
+      headers: { "X-LeadForge-Demo-Key": "demo-code" },
     });
 
     assert.equal(capturedUrl, "https://api.test/api/intake/extract-file");
     assert.equal(capturedInit?.method, "POST");
+    assert.equal(
+      (capturedInit?.headers as Record<string, string>)["X-LeadForge-Demo-Key"],
+      "demo-code",
+    );
     assert.ok(capturedInit?.body instanceof FormData);
     assert.equal(response.input_type, "excel_file");
 

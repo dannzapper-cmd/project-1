@@ -16,3 +16,4 @@ if str(BACKEND_DIR) not in sys.path:
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///./leadforge.test.db")
 os.environ.setdefault("APP_ENV", "test")
+os.environ.setdefault("RATE_LIMIT_ENABLED", "false")

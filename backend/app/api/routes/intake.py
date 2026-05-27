@@ -35,10 +35,6 @@ from app.services.intake_normalizer import build_preview
 router = APIRouter(prefix="/api/intake", tags=["intake"])
 logger = get_logger(__name__)
 
-# Hard cap for CSV uploads in Fase 4.3B.1. Files are read fully into memory
-# before being passed to the existing csv_text pipeline.
-_MAX_CSV_UPLOAD_BYTES: int = 1 * 1024 * 1024
-
 # Content types that are commonly emitted by browsers / OSes for .csv files.
 # Used only when the client actually sends a non-empty Content-Type; when
 # Content-Type is absent we rely on the filename extension alone.
@@ -81,7 +77,7 @@ async def _read_and_decode_csv_upload(file: UploadFile) -> str:
     1. Filename must end with ``.csv`` (case-insensitive) → 415.
     2. ``Content-Type``, if present and non-empty, must be in the
        accepted list → 415.
-    3. Read at most ``_MAX_CSV_UPLOAD_BYTES + 1`` bytes (so an oversize
+    3. Read at most ``INTAKE_MAX_UPLOAD_MB + 1`` bytes (so an oversize
        upload is rejected without loading the full payload into memory);
        empty payload → 422.
     4. Reject payloads larger than ``_MAX_CSV_UPLOAD_BYTES`` → 413.
@@ -103,9 +99,12 @@ async def _read_and_decode_csv_upload(file: UploadFile) -> str:
             detail=f"Content-Type '{file.content_type}' is not accepted for CSV upload.",
         )
 
+    settings = get_settings()
+    max_csv_upload_bytes = settings.intake_max_upload_mb * 1024 * 1024
+
     # Read one byte past the limit so we can distinguish "exactly at limit"
     # from "over limit" without loading an arbitrarily large file into RAM.
-    file_bytes = await file.read(_MAX_CSV_UPLOAD_BYTES + 1)
+    file_bytes = await file.read(max_csv_upload_bytes + 1)
 
     if len(file_bytes) == 0:
         raise HTTPException(
@@ -113,12 +112,12 @@ async def _read_and_decode_csv_upload(file: UploadFile) -> str:
             detail="Uploaded file is empty.",
         )
 
-    if len(file_bytes) > _MAX_CSV_UPLOAD_BYTES:
+    if len(file_bytes) > max_csv_upload_bytes:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=(
-                f"Uploaded file is larger than the {_MAX_CSV_UPLOAD_BYTES} "
-                f"byte limit for CSV uploads."
+                f"Uploaded file is larger than the "
+                f"{settings.intake_max_upload_mb} MB safety limit."
             ),
         )
 

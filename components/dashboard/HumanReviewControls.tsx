@@ -63,7 +63,7 @@ export function HumanReviewControls({
   const canExport = hasBeenReviewed && onExportLead !== undefined;
 
   return (
-    <div className="bg-[--bg-elevated] border-t border-[--border-default] px-6 py-4">
+    <div className="flex-shrink-0 bg-[--bg-elevated] border-t border-[--border-default] px-6 py-4">
       <div className="flex items-center gap-2 mb-4">
         <span className="text-xs text-[--text-muted]">Status:</span>
         {getStatusBadge(status)}
@@ -76,8 +76,8 @@ export function HumanReviewControls({
             disabled={status === "Approved"}
             className={`px-4 py-2 text-sm font-medium ${
               status === "Approved"
-                ? "bg-[--color-success]/50 text-white cursor-not-allowed"
-                : "bg-[--color-success] hover:brightness-110 text-white"
+                ? "bg-green-600 text-white cursor-not-allowed"
+                : "bg-green-600 text-white hover:bg-green-700"
             }`}
           >
             {status === "Approved" ? (

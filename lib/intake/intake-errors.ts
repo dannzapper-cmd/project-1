@@ -12,6 +12,9 @@ const BACKEND_UNAVAILABLE_MESSAGE =
 
 const BACKEND_UNAVAILABLE_STATUSES = new Set([0, 502, 503, 504]);
 
+export const DEMO_ACCESS_REQUIRED_MESSAGE =
+  "This demo action requires the private demo access code. If you're a recruiter or hiring manager, the code was included with the demo link.";
+
 function isFailedToFetchMessage(message: string): boolean {
   const lower = message.toLowerCase();
   return (
@@ -23,7 +26,7 @@ function isFailedToFetchMessage(message: string): boolean {
   );
 }
 
-function apiDetail(body: string): string {
+export function apiDetail(body: string): string {
   const trimmed = body.trim();
   if (!trimmed) return "";
 
@@ -86,6 +89,19 @@ export function describeIntakePreviewError(err: unknown): string {
   }
 
   if (err instanceof ApiError) {
+    if (err.status === 401 || err.status === 403) {
+      return DEMO_ACCESS_REQUIRED_MESSAGE;
+    }
+    if (err.status === 429) {
+      return "This demo is receiving too many requests. Please wait a moment and try again.";
+    }
+    if (err.status === 413) {
+      return "Upload failed: the file is larger than this public demo allows. Try a smaller CSV, Excel, or text-based PDF file.";
+    }
+    if (err.status === 415) {
+      const detail = apiDetail(err.body);
+      return detail || "Unsupported file type. Upload CSV, Excel (.xlsx), or a text-based PDF.";
+    }
     const detail = apiDetail(err.body);
     if (detail) {
       return `Preview failed (HTTP ${err.status}): ${detail.slice(0, 280)}`;

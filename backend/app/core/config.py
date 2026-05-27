@@ -25,7 +25,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     app_host: str = "0.0.0.0"
     app_port: int = 8000
     log_level: str = "INFO"
+    build_sha: str = ""
 
     database_url: str = "sqlite:///./leadforge.db"
 
@@ -90,10 +91,24 @@ class Settings(BaseSettings):
     live_research_timeout_seconds: float = Field(default=8.0, gt=0.0, le=30.0)
     live_research_daily_limit: int = Field(default=20, ge=1, le=10_000)
 
-    # Block 10F-A — intake file extraction safety limit.
+    # Block 10F-A / 11B — intake file extraction safety limit.
     # Uploads are processed from FastAPI UploadFile in memory only and are
     # rejected after one byte beyond this cap is read.
-    intake_max_upload_mb: int = Field(default=2, ge=1, le=10)
+    intake_max_upload_mb: int = Field(
+        default=5,
+        ge=1,
+        le=10,
+        validation_alias=AliasChoices("INTAKE_MAX_UPLOAD_MB", "MAX_UPLOAD_SIZE_MB"),
+    )
+    max_leads_per_run: int = Field(default=10, ge=1, le=25)
+
+    # Block 11B — lightweight demo safety controls. These are intentionally
+    # in-process and optional so the portfolio demo needs no Redis or auth
+    # provider.
+    rate_limit_enabled: bool = True
+    rate_limit_requests_per_minute: int = Field(default=30, ge=1, le=600)
+    rate_limit_live_requests_per_minute: int = Field(default=5, ge=1, le=120)
+    demo_access_code: str | None = None
 
     # Block 10G — Contextual LLM Lead Assistant.
     #

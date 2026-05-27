@@ -360,16 +360,16 @@ def test_csv_11_invalid_utf8_bytes_return_422() -> None:
     assert response.status_code == 422
 
 
-def test_csv_12_file_over_1mb_returns_413() -> None:
-    """csv_12: file > 1 MB → 413.
+def test_csv_12_file_over_configured_limit_returns_413() -> None:
+    """csv_12: file > configured upload limit → 413.
 
-    The endpoint reads only ``_MAX_CSV_UPLOAD_BYTES + 1`` bytes from the
-    upload before rejecting, so a much larger payload (e.g. 4 MiB) must
+    The endpoint reads only one byte past the configured cap from the
+    upload before rejecting, so a much larger payload (e.g. 8 MiB) must
     still be refused with 413 without being fully loaded into memory.
     """
 
-    # ``1 MiB + 1`` byte — minimal overflow.
-    minimal_overflow = b"a" * (1024 * 1024 + 1)
+    # ``5 MiB + 1`` byte — minimal overflow for the default demo cap.
+    minimal_overflow = b"a" * (5 * 1024 * 1024 + 1)
     files = {"file": ("big.csv", minimal_overflow, "text/csv")}
 
     with TestClient(app) as client:
@@ -378,7 +378,7 @@ def test_csv_12_file_over_1mb_returns_413() -> None:
     assert response.status_code == 413
 
     # Larger payload also rejected; documents the bounded-read behavior.
-    large_overflow = b"b" * (4 * 1024 * 1024)
+    large_overflow = b"b" * (8 * 1024 * 1024)
     files = {"file": ("huge.csv", large_overflow, "text/csv")}
 
     with TestClient(app) as client:
@@ -560,8 +560,8 @@ def test_extract_file_rejects_empty_upload() -> None:
     assert response.status_code == 422
 
 
-def test_extract_file_rejects_upload_over_2mb() -> None:
-    files = {"file": ("big.csv", b"a" * (2 * 1024 * 1024 + 1), "text/csv")}
+def test_extract_file_rejects_upload_over_default_limit() -> None:
+    files = {"file": ("big.csv", b"a" * (5 * 1024 * 1024 + 1), "text/csv")}
 
     with TestClient(app) as client:
         response = client.post(_EXTRACT_FILE_URL, files=files)

@@ -42,6 +42,7 @@ from __future__ import annotations
 
 from uuid import uuid4
 
+from app.core.config import get_settings
 from app.agents.email_drafter_agent import EmailDrafterAgentService
 from app.agents.qa_evaluator_agent import QAEvaluatorAgentService
 from app.agents.qualifier_agent import QualifierAgentService
@@ -586,17 +587,18 @@ _BATCH_MAX_LEADS: int = 10
 
 
 def _clamp_max_leads(max_leads: int) -> int:
-    """Clamp ``max_leads`` to the inclusive range ``[1, 10]``.
+    """Clamp ``max_leads`` to the configured public-demo safety cap.
 
-    Phase 6.2 deliberately fixes the upper bound at 10 to keep the
-    deterministic batch pipeline cheap and predictable. The clamp is
-    internal — the HTTP surface does not expose a query parameter.
+    The default remains 10 to keep the deterministic batch pipeline cheap and
+    predictable. The clamp is internal — the HTTP surface does not expose a
+    query parameter.
     """
 
+    configured_max = get_settings().max_leads_per_run
     if max_leads < _BATCH_MIN_LEADS:
         return _BATCH_MIN_LEADS
-    if max_leads > _BATCH_MAX_LEADS:
-        return _BATCH_MAX_LEADS
+    if max_leads > configured_max:
+        return configured_max
     return max_leads
 
 

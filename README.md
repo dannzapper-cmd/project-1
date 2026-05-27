@@ -31,7 +31,8 @@ B2B outreach fails when teams cannot see *why* an AI recommended a message, whet
 | Deterministic five-agent pipeline | Plain-Python orchestration; see `backend/app/services/pipeline_service.py` |
 | Batch deterministic pipeline | Up to 10 demo leads per batch run |
 | Next.js dashboard | `/demo` — lead table, lead detail drawer |
-| Smart lead intake foundation | CSV upload and pasted table preview/validation in `/demo`; max 10 processed leads per run |
+| Smart lead intake foundation | CSV, Excel, PDF, and pasted table preview/validation in `/demo`; max 10 processed leads per run |
+| Production-safety layer | In-memory rate limiting, optional demo access code, request IDs, security headers, safe system status |
 | Demo onboarding + business-value panel | `/demo` explains replay vs Add Leads; illustrative ROI-style metrics from run data |
 | Backend-unavailable UX for Add Leads | Clear message when preview cannot reach the API (public Vercel without backend) |
 | Research, Qualifier, Strategist, Email Drafter, QA Evaluator agents | Contract-tested services |
@@ -55,14 +56,13 @@ Demo leads and company context are **synthetic/curated** — not live company in
 
 Do not expect the following in the current product:
 
-- PDF, image/OCR, or Excel intake
-- Live web research, scraping, or search APIs
+- Image/OCR intake
 - LangGraph runtime or checkpointed agent graphs
 - CRM integration or backend sync of review state
 - Email sending or deliverability tooling
 - Durable telemetry database or long-term eval history store
 - Frontend “Run live Groq” button (live path is API-only)
-- Authentication, payments, or multi-tenancy
+- Full authentication, payments, or multi-tenancy
 - Backend persistence of human review decisions
 - Guaranteed reply rates or “AI replaces SDRs” automation
 
@@ -71,7 +71,7 @@ Do not expect the following in the current product:
 ## Demo workflow
 
 1. Start frontend (and optionally backend). Open [`http://localhost:3000/demo`](http://localhost:3000/demo).  
-2. Use the curated sample results, or add leads in the **Add Leads** panel by pasting CSV/spreadsheet rows or uploading a UTF-8 `.csv` file.  
+2. Use the curated sample results, or add leads in the **Add Leads** panel by pasting CSV/spreadsheet rows or uploading a UTF-8 `.csv`, `.xlsx`, or text-based `.pdf` file.  
 3. Confirm the detected column mapping, review row-level validation, then process valid rows through the deterministic pipeline.  
 4. Browse the lead table; open a lead detail drawer.  
 5. Inspect agent outputs, **agent trace**, intake warnings, and **QA evaluation**.  
@@ -90,7 +90,7 @@ Full timed scripts: [`docs/demo-script.md`](docs/demo-script.md).
 | **Add Leads** (paste / CSV preview + process) | Requires a reachable FastAPI backend and `NEXT_PUBLIC_API_URL` | On public Vercel without backend config, preview shows a clear “backend unavailable” message instead of a generic fetch error |
 | **Business metrics** on `/demo` | Derived in the browser from run data | Illustrative estimates (e.g. 30–45 min manual research per lead); not guaranteed ROI |
 
-Controlled backend deployment steps are documented in [`docs/deployment.md`](docs/deployment.md). This repo does not send emails or write to a CRM in any mode.
+Controlled backend deployment steps are documented in [`docs/deployment.md`](docs/deployment.md), with runbook checks in [`docs/operations.md`](docs/operations.md). This repo does not send emails or write to a CRM in any mode.
 
 ---
 
@@ -140,7 +140,7 @@ Orchestration is **linear** and **in-process** — not a LangGraph graph.
 The dashboard supports two user-provided lead input paths:
 
 - Paste CSV-like or tab-separated spreadsheet rows with headers.
-- Upload a UTF-8 `.csv` file up to 1 MB.
+- Upload a UTF-8 `.csv`, `.xlsx`, or text-based `.pdf` file up to 5 MB by default.
 
 Required columns after mapping:
 
@@ -170,9 +170,8 @@ to the pipeline. Rows with required fields but missing recommended/optional
 context are still processable and carry low-evidence warnings into the lead
 detail drawer. Batch processing is capped at 10 leads per deterministic run.
 
-Current limitations: no PDF parsing, image/OCR intake, Excel parsing, live web
-research, CRM writes, email sending, or hidden model/API calls are included in
-this intake block.
+Current limitations: no image/OCR intake, CRM writes, email sending, or hidden
+model/API calls are included in this intake flow.
 
 ---
 
@@ -293,6 +292,10 @@ Use placeholders in docs and commits — **never commit real API keys**.
 | `LOG_LEVEL` | `INFO` | Logging |
 | `DATABASE_URL` | `sqlite:///./leadforge.db` | Schema initialization (no review/pipeline durable writes in demo) |
 | `CORS_ORIGINS` | `http://localhost:3000` | Allowed browser origins; production must use explicit origins, not `*` |
+| `RATE_LIMIT_ENABLED` | `true` | In-memory public-demo rate limiting; resets on Render restart/spin-down |
+| `DEMO_ACCESS_CODE` | *(unset)* | Optional private demo access code for protected actions; never put in frontend env |
+| `MAX_LEADS_PER_RUN` | `10` | Public-demo preview/process cap |
+| `INTAKE_MAX_UPLOAD_MB` | `5` | Public-demo upload cap |
 | `GROQ_API_KEY` | *(unset)* | Required only when enabling live Groq path or live smoke tests |
 | `GROQ_DEFAULT_MODEL` | `llama-3.1-8b-instant` | Groq model id |
 | `GROQ_TIMEOUT_SECONDS` | `30` | Request timeout |
@@ -395,7 +398,7 @@ Add captures under `docs/assets/screenshots/` per [`docs/screenshots-checklist.m
 - **No outbound execution** — drafts are not emailed.  
 - **No durable ops stack** — telemetry and review state do not survive as production audit logs.  
 - **Single-tenant local demo** — no auth or org isolation.  
-- **Smart intake is CSV/paste only** in this block; PDF, image/OCR, Excel, and live research remain out of scope.  
+- **Smart intake does not support image/OCR**; CSV, Excel, text-based PDF, and paste remain preview-first.  
 - **SQLite** initializes schema; pipeline/review persistence for production workflows is out of scope.  
 - **Live Groq** requires explicit env enablement and manual API calls — not a dashboard button.
 
@@ -458,6 +461,7 @@ Post-v1 items are **design intent** until shipped and reflected in the capabilit
 | [Architecture overview](docs/architecture-overview.md) | System design, diagrams, production gaps |
 | [Demo script](docs/demo-script.md) | 60s / 90s / 3min walkthroughs |
 | [Deployment guide](docs/deployment.md) | Render backend deployment and Vercel wiring |
+| [Operations runbook](docs/operations.md) | Env vars, smoke checks, rollback, rate-limit notes |
 | [Screenshots checklist](docs/screenshots-checklist.md) | Capture guide and safety rules |
 | [ADR-001: LangGraph](docs/adr/langgraph-decision.md) | Why graph runtime is deferred |
 | [Advanced capabilities roadmap](docs/roadmap/advanced-capabilities.md) | Implemented vs future capability table |

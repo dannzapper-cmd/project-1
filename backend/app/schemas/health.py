@@ -13,3 +13,16 @@ class HealthResponse(BaseModel):
     version: str = Field(..., description="Application version")
     env: str = Field(..., description="Application environment")
     db: Literal["ok", "error"] = Field(..., description="Database connectivity status")
+
+
+class SystemStatusResponse(BaseModel):
+    backend_alive: bool = True
+    demo_mode_available: bool = True
+    demo_access_required: bool
+    live_research_configured: bool
+    assistant_configured: bool
+    rate_limit_enabled: bool
+    max_leads_per_run: int
+    max_upload_size_mb: int
+    storage_mode: Literal["ephemeral"] = "ephemeral"
+    build_sha: str = ""

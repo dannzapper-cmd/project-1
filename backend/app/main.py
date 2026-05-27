@@ -34,6 +34,11 @@ from app.api.routes import research as research_routes
 from app.api.routes import telemetry as telemetry_routes
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
+from app.core.safety import (
+    InMemoryRateLimiter,
+    build_request_safety_middleware,
+    build_security_headers_middleware,
+)
 from app.db.init_db import init_db
 
 
@@ -67,6 +72,20 @@ def create_app() -> FastAPI:
         ),
         lifespan=lifespan,
     )
+
+    request_limiter = InMemoryRateLimiter()
+    app.middleware("http")(
+        build_request_safety_middleware(
+            settings=settings,
+            limiter=request_limiter,
+            logger=logger,
+        )
+    )
+
+    # Basic security headers for the public demo. Content-Security-Policy is
+    # intentionally deferred because the current frontend setup needs a fuller
+    # asset/script inventory before CSP can be added safely.
+    app.middleware("http")(build_security_headers_middleware())
 
     app.add_middleware(
         CORSMiddleware,
