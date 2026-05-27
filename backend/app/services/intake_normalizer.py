@@ -633,24 +633,7 @@ def build_preview(request: IntakePreviewRequest) -> IntakePreviewResponse:
         future_adapters=list(_FUTURE_ADAPTERS),
     )
 
-    max_leads_per_run = get_max_leads_per_run()
     headers, records = _parse_records(request)
-    found_rows = len(records)
-    limit_issues: list[IntakeIssue] = []
-    if found_rows > max_leads_per_run:
-        records = records[:max_leads_per_run]
-        limit_issues.append(
-            IntakeIssue(
-                severity="warning",
-                code="max_leads_per_run",
-                message=(
-                    f"Input included {found_rows} rows; previewing the first "
-                    f"{max_leads_per_run} rows to match the intake limit."
-                ),
-                row_number=None,
-                field=None,
-            )
-        )
 
     # For raw_text the "columns" are the regex-derived field names, which
     # are already LeadIn field names. Build a trivial mapping for them.
@@ -660,7 +643,6 @@ def build_preview(request: IntakePreviewRequest) -> IntakePreviewResponse:
         global_issues: list[IntakeIssue] = []
     else:
         mapped_columns, unmapped_columns, global_issues = _map_columns(headers)
-    global_issues.extend(limit_issues)
 
     rows: list[NormalizedLeadRow] = []
     generated_index = 1
@@ -701,7 +683,7 @@ def build_preview(request: IntakePreviewRequest) -> IntakePreviewResponse:
         valid_rows=valid_rows,
         rows_with_warnings=rows_with_warnings,
         failed_rows=failed_rows,
-        max_leads_per_run=max_leads_per_run,
+        max_leads_per_run=get_max_leads_per_run(),
         mapped_columns=mapped_columns,
         unmapped_columns=unmapped_columns,
         normalized_leads=rows,

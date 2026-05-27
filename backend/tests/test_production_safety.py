@@ -111,13 +111,13 @@ def test_rate_limit_returns_safe_429(monkeypatch) -> None:
     assert health_response.status_code == 200
 
 
-def test_configured_max_leads_per_run_limits_preview(monkeypatch) -> None:
+def test_configured_max_leads_per_run_limits_processing(monkeypatch) -> None:
     monkeypatch.setenv("MAX_LEADS_PER_RUN", "3")
     get_settings.cache_clear()
     payload = {
-        "input_type": "records_json",
-        "records": [
+        "leads": [
             {
+                "lead_id": f"lead_{idx}",
                 "company_name": f"Company {idx}",
                 "industry": "SaaS",
             }
@@ -128,16 +128,10 @@ def test_configured_max_leads_per_run_limits_preview(monkeypatch) -> None:
     try:
         test_app = create_app()
         with TestClient(test_app) as client:
-            response = client.post("/api/intake/preview", json=payload)
+            response = client.post("/api/demo/pipeline/batch", json=payload)
     finally:
         get_settings.cache_clear()
 
-    assert response.status_code == 200
-    body = response.json()
-    assert body["total_rows"] == 3
-    assert body["max_leads_per_run"] == 3
-    assert any(
-        issue["code"] == "max_leads_per_run"
-        for issue in body["global_issues"]
-    )
+    assert response.status_code == 422
+    assert "up to 3 leads per run" in response.json()["detail"]
 
