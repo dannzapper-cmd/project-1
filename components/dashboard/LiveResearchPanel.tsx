@@ -169,7 +169,7 @@ export function LiveResearchPanel({
         type="button"
         onClick={handleRun}
         disabled={buttonDisabled}
-        className="mt-4 inline-flex items-center gap-2 rounded-md border border-[--accent-primary]/40 bg-[--accent-primary]/10 px-3 py-2 text-xs font-medium text-[--accent-primary] hover:bg-[--accent-primary]/20 disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn-secondary mt-4 !text-xs disabled:cursor-not-allowed"
       >
         {isLoading ? (
           <>

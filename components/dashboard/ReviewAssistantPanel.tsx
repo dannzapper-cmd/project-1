@@ -503,7 +503,7 @@ export function ReviewAssistantPanel({
             type="button"
             onClick={handleAsk}
             disabled={submitDisabled}
-            className="inline-flex items-center gap-2 rounded-md border border-[--accent-primary]/40 bg-[--accent-primary]/10 px-3 py-1.5 text-xs font-medium text-[--accent-primary] hover:bg-[--accent-primary]/20 disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn-primary !px-3 !py-1.5 !text-xs disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>

@@ -19,8 +19,13 @@
 
   --accent-primary: #6366f1;
   --accent-primary-dim: #4f52c9;
+  --accent-soft: #eef2ff;
   --accent-glow: rgba(99, 102, 241, 0.12);
   --accent-secondary: #0891b2;
+
+  --btn-primary-bg: #6366f1;
+  --btn-primary-hover: #4f46e5;
+  --btn-primary-fg: #ffffff;
 
   --color-success: #059669;
   --color-success-bg: #ecfdf5;
@@ -136,4 +141,166 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 150ms ease;
+}
+
+.surface-card:hover {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+/* Button system — light theme contrast */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--btn-primary-fg) !important;
+  background-color: var(--btn-primary-bg) !important;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--btn-primary-hover) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.25);
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.35);
+  outline-offset: 2px;
+}
+
+.btn-primary:disabled {
+  background-color: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  border: 1px solid #e2e8f0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-hero {
+  min-height: 48px;
+  padding: 14px 28px;
+  font-size: 16px;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text-primary) !important;
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #f8fafc !important;
+  transform: translateY(-1px);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-disabled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #94a3b8 !important;
+  background-color: #f1f5f9 !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: not-allowed;
+}
+
+.input-focus {
+  transition: box-shadow 150ms ease, border-color 150ms ease;
+}
+
+.input-focus:focus-visible {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-overlay) 25%,
+    #ffffff 50%,
+    var(--bg-overlay) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+
+/* Agent card states (landing / dashboard) */
+.agent-card-pending {
+  border-color: var(--border-subtle);
+  opacity: 0.92;
+}
+
+.agent-card-running {
+  border-color: rgba(99, 102, 241, 0.45);
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.12);
+  animation: agent-pulse 2s ease-in-out infinite;
+}
+
+.agent-card-success {
+  border-color: rgba(5, 150, 105, 0.35);
+  background: linear-gradient(to bottom, #ffffff, #f0fdf4);
+}
+
+.agent-card-warning {
+  border-color: rgba(217, 119, 6, 0.35);
+  background: linear-gradient(to bottom, #ffffff, #fffbeb);
+}
+
+@keyframes agent-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.12);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+  }
 }

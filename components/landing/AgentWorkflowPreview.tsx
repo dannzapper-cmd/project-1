@@ -78,7 +78,7 @@ const itemVariants = {
 
 export function AgentWorkflowPreview() {
   return (
-    <section className="py-24 px-4 bg-[--surface]">
+    <section className="py-20 px-4 bg-[--surface]">
       <div className="max-w-5xl mx-auto">
         <motion.p
           initial={{ opacity: 0, y: 16 }}
@@ -122,14 +122,14 @@ export function AgentWorkflowPreview() {
             <motion.div
               key={agent.number}
               variants={itemVariants}
-              className="surface-card rounded-lg p-5"
+              className="surface-card agent-card-success rounded-lg p-5 min-h-[140px] flex flex-col h-full"
             >
               <div className="flex items-start justify-between mb-3">
                 <span className="font-mono text-xs text-[--text-muted]">
                   {agent.number}
                 </span>
                 <span className="flex items-center gap-1 text-xs text-[--color-success]">
-                  <CheckCircle className="w-3 h-3" />
+                  <CheckCircle className="w-3 h-3 shrink-0" />
                   Defined role
                 </span>
               </div>
@@ -139,12 +139,12 @@ export function AgentWorkflowPreview() {
               <p className="text-xs font-medium text-[--accent-primary] mb-2">
                 {agent.role}
               </p>
-              <p className="text-sm text-[--text-secondary] mb-4">
+              <p className="text-sm text-[--text-secondary] mb-4 line-clamp-2 leading-relaxed flex-1">
                 {agent.description}
               </p>
-              <div className="border-t border-[--border-subtle] pt-3">
+              <div className="border-t border-[--border-subtle] pt-3 mt-auto">
                 <span className="text-xs text-[--text-muted]">Output summary: </span>
-                <span className="text-xs text-[--text-secondary]">
+                <span className="text-xs text-[--text-secondary] line-clamp-2">
                   {agent.output}
                 </span>
               </div>

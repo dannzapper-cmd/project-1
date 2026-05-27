@@ -71,7 +71,7 @@ export function DashboardEmptyState({ sampleCsvContent }: DashboardEmptyStatePro
           <button
             type="button"
             onClick={handleDownload}
-            className="inline-flex items-center justify-center gap-2 rounded-md border border-[--border-default] bg-[--bg-elevated] px-4 py-2 text-sm font-medium text-[--text-primary] hover:bg-[--bg-overlay] transition-colors shadow-sm"
+            className="btn-secondary flex-1"
           >
             <Download className="h-4 w-4" aria-hidden />
             Download sample CSV
@@ -79,7 +79,7 @@ export function DashboardEmptyState({ sampleCsvContent }: DashboardEmptyStatePro
           <button
             type="button"
             onClick={handleCopy}
-            className="inline-flex items-center justify-center gap-2 rounded-md border border-[--border-default] bg-[--bg-elevated] px-4 py-2 text-sm font-medium text-[--text-primary] hover:bg-[--bg-overlay] transition-colors shadow-sm"
+            className="btn-secondary flex-1"
           >
             {copied ? (
               <>
@@ -96,8 +96,20 @@ export function DashboardEmptyState({ sampleCsvContent }: DashboardEmptyStatePro
         </div>
 
         <p className="text-xs text-[--text-muted] text-center sm:text-left">
-          Paste or upload it in the <strong className="font-medium text-[--text-secondary]">Add Leads</strong> section above to run the full pipeline.
+          Paste or upload it in Add Leads above, then preview and process.
         </p>
+        <button
+          type="button"
+          onClick={() =>
+            document.getElementById("lead-intake")?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            })
+          }
+          className="btn-primary w-full sm:w-auto mx-auto flex"
+        >
+          Go to Add Leads
+        </button>
       </div>
     </section>
   );

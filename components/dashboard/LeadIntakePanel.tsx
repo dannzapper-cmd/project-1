@@ -136,17 +136,44 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
         ? "No valid rows are available to process."
         : null;
 
+  const processCount = preview
+    ? Math.min(validLeads.length, preview.max_leads_per_run)
+    : 0;
+
+  const flowStep = !preview ? 1 : !mappingConfirmed ? 2 : canProcess ? 3 : 2;
+
   return (
-    <section id="lead-intake" className="bg-[--bg-surface] border border-[--border-default] rounded-lg p-5 space-y-5">
+    <section id="lead-intake" className="surface-card rounded-lg p-5 space-y-5 scroll-mt-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-[--text-primary]">
             Add Leads
           </h2>
-          <p className="text-sm text-[--text-muted] mt-1">
-            Use the sample demo below, paste spreadsheet rows, or upload CSV,
-            Excel, or PDF table files. Preview extracted rows before processing.
+          <p className="text-sm text-[--text-muted] mt-1 leading-relaxed">
+            Paste or upload leads, preview and validate rows, then process the
+            batch through the six-agent pipeline.
           </p>
+          <ol className="mt-3 flex flex-wrap gap-2 text-xs" aria-label="Intake flow">
+            {[
+              { n: 1, label: "Paste or upload" },
+              { n: 2, label: "Preview leads" },
+              { n: 3, label: "Process batch" },
+              { n: 4, label: "Review results" },
+            ].map((step) => (
+              <li
+                key={step.n}
+                className={`rounded-full px-3 py-1 border font-medium ${
+                  flowStep === step.n
+                    ? "border-[--accent-primary] bg-[--accent-soft] text-[--accent-primary]"
+                    : flowStep > step.n
+                      ? "border-[--color-success]/40 bg-[--color-success-bg] text-[--color-success]"
+                      : "border-[--border-subtle] bg-[--bg-overlay] text-[--text-muted]"
+                }`}
+              >
+                {step.n}. {step.label}
+              </li>
+            ))}
+          </ol>
         </div>
         <div className="text-xs text-[--text-muted] border border-[--border-subtle] rounded-full px-3 py-1">
           Max {preview?.max_leads_per_run ?? 10} leads per run
@@ -160,11 +187,11 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
             setMode("paste");
             resetPreview();
           }}
-          className={`px-3 py-1.5 rounded-md text-sm font-medium ${
+          className={
             mode === "paste"
-              ? "bg-[--accent-primary] text-white"
-              : "border border-[--border-default] text-[--text-secondary]"
-          }`}
+              ? "btn-primary !px-3 !py-1.5 !text-sm"
+              : "btn-secondary !px-3 !py-1.5 !text-sm"
+          }
         >
           Paste table
         </button>
@@ -174,11 +201,11 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
             setMode("file");
             resetPreview();
           }}
-          className={`px-3 py-1.5 rounded-md text-sm font-medium ${
+          className={
             mode === "file"
-              ? "bg-[--accent-primary] text-white"
-              : "border border-[--border-default] text-[--text-secondary]"
-          }`}
+              ? "btn-primary !px-3 !py-1.5 !text-sm"
+              : "btn-secondary !px-3 !py-1.5 !text-sm"
+          }
         >
           Upload CSV / Excel / PDF
         </button>
@@ -196,7 +223,7 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
             resetPreview();
           }}
           placeholder={"company_name\tindustry\twebsite\tcountry\tcontact_role\nAcme SaaS\tB2B SaaS\tacme.example\tUS\tVP Sales"}
-          className="min-h-32 bg-[--bg-elevated] border-[--border-default] text-sm"
+          className="min-h-32 bg-[--bg-elevated] border-[--border-default] text-sm input-focus"
         />
       ) : (
         <div className="border border-dashed border-[--border-default] rounded-lg p-4 space-y-3">
@@ -224,22 +251,30 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="rounded-lg border border-[--border-subtle] bg-[--accent-soft]/40 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-[--text-primary]">
+            {preview ? "Step 2 complete — review mapping below" : "Step 1 — add your lead data"}
+          </p>
+          <p className="text-xs text-[--text-secondary] mt-0.5">
+            {previewDisabledReason ??
+              (preview
+                ? "Confirm column mapping, then process the batch."
+                : "Paste rows or upload a file, then preview extracted leads.")}
+          </p>
+        </div>
         <Button
           type="button"
           onClick={handlePreview}
           disabled={loadingPreview || previewDisabledReason !== null}
-          className="bg-[--accent-primary] hover:bg-[--accent-primary]/90 text-white disabled:opacity-50"
+          className="btn-primary shrink-0"
         >
           {loadingPreview
             ? mode === "file"
               ? "Extracting..."
               : "Previewing..."
-            : "Preview and validate"}
+            : "Preview Leads"}
         </Button>
-        {previewDisabledReason && (
-          <p className="text-xs text-[--text-muted]">{previewDisabledReason}</p>
-        )}
       </div>
 
       {error && (
@@ -315,10 +350,9 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
             <div className="px-4 pb-4">
               <Button
                 type="button"
-                variant="outline"
                 onClick={() => setMappingConfirmed(true)}
                 disabled={mappingConfirmed}
-                className="border-[--border-default] text-[--text-secondary]"
+                className={mappingConfirmed ? "btn-secondary" : "btn-primary"}
               >
                 {mappingConfirmed ? "Mapping confirmed" : "Confirm mapping"}
               </Button>
@@ -366,18 +400,28 @@ export function LeadIntakePanel({ onBatchProcessed }: LeadIntakePanelProps) {
             </table>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="rounded-lg border-2 border-[--accent-primary]/30 bg-[--accent-soft]/50 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-[--text-primary]">
+                Step 3 — Process batch
+              </p>
+              <p className="text-xs text-[--text-secondary] mt-0.5">
+                {canProcess
+                  ? `Runs the full agent pipeline on ${processCount} lead${processCount === 1 ? "" : "s"}.`
+                  : (processDisabledReason ??
+                    "Complete mapping confirmation to enable processing.")}
+              </p>
+            </div>
             <Button
               type="button"
               onClick={handleProcess}
               disabled={!canProcess}
-              className="bg-[--accent-primary] hover:bg-[--accent-primary]/90 text-white disabled:opacity-50"
+              className="btn-primary btn-hero shrink-0 min-w-[200px]"
             >
-              {processing ? "Processing..." : "Process valid leads"}
+              {processing
+                ? "Processing..."
+                : `Process ${processCount} Lead${processCount === 1 ? "" : "s"}`}
             </Button>
-            {processDisabledReason && (
-              <p className="text-xs text-[--text-muted]">{processDisabledReason}</p>
-            )}
           </div>
         </div>
       )}

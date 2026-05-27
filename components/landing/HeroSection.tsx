@@ -63,7 +63,7 @@ const itemVariants = {
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center py-32 px-4 overflow-hidden">
+    <section className="relative min-h-[85vh] flex flex-col items-center justify-center py-20 px-4 overflow-hidden">
       {/* Background effects */}
       <div className="absolute inset-0 hero-glow" />
       <div className="absolute inset-0 dot-grid" />
@@ -107,22 +107,12 @@ export function HeroSection() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="flex flex-col sm:flex-row gap-3 mt-8"
         >
-          <Link href="/demo">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="px-6 py-2.5 rounded-md bg-[--accent-primary] text-white font-medium hover:brightness-110 transition-all shadow-[0_0_20px_rgba(99,102,241,0.3)]"
-            >
-              Run Sample Demo
-            </motion.button>
+          <Link href="/demo" className="btn-primary btn-hero">
+            Run Sample Demo
           </Link>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="px-6 py-2.5 rounded-md border border-[--border-default] text-[--text-secondary] font-medium hover:bg-[--bg-elevated] transition-all"
-          >
+          <a href="#architecture" className="btn-secondary btn-hero">
             View Architecture
-          </motion.button>
+          </a>
         </motion.div>
 
         {/* Agent Pipeline Visual */}
@@ -140,15 +130,15 @@ export function HeroSection() {
                 className="flex items-center"
               >
                 {/* Agent Card */}
-                <div className="surface-card rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
+                <div className="surface-card agent-card-success rounded-lg px-4 py-3 min-w-[132px] min-h-[88px] flex flex-col justify-between shadow-sm">
                   <div className="flex items-center gap-2 mb-1">
-                    <agent.icon className="w-4 h-4 text-[--accent-primary]" />
+                    <agent.icon className="w-4 h-4 shrink-0 text-[--accent-primary]" />
                     <span className="font-semibold text-sm text-[--text-primary]">
                       {agent.name}
                     </span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-[--color-success] ml-auto" />
+                    <CheckCircle className="w-3.5 h-3.5 text-[--color-success] ml-auto shrink-0" />
                   </div>
-                  <p className="text-xs text-[--text-muted]">
+                  <p className="text-xs text-[--text-muted] line-clamp-2 leading-snug">
                     {agent.description}
                   </p>
                 </div>

@@ -18,6 +18,26 @@ function getDisplayStatus(
   return replayMode && status === "running" ? "pending" : status;
 }
 
+function agentCardStateClass(
+  status: AgentStatus["status"],
+  replayMode: boolean,
+): string {
+  const display = replayMode && status === "running" ? "pending" : status;
+  switch (display) {
+    case "success":
+      return "agent-card-success";
+    case "warning":
+      return "agent-card-warning";
+    case "running":
+      return "agent-card-running";
+    case "failed":
+      return "agent-card-warning";
+    case "pending":
+    default:
+      return "agent-card-pending";
+  }
+}
+
 function getStatusStyles(status: AgentStatus["status"]) {
   switch (status) {
     case "success":
@@ -101,7 +121,7 @@ export function AgentStatusRow({
           return (
             <div
               key={agent.name}
-              className={`bg-[--bg-elevated] border ${styles.border} rounded-lg p-4 min-h-44 shadow-sm`}
+              className={`bg-[--bg-elevated] border ${styles.border} rounded-lg p-4 min-h-44 shadow-sm ${agentCardStateClass(agent.status, replayMode)}`}
             >
               <div className="flex items-start justify-between gap-2">
                 <p className="text-sm font-medium text-[--text-primary]">

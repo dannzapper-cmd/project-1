@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 import {
   Tooltip,
@@ -27,39 +26,37 @@ export function RunControls({
   };
 
   return (
-    <div className="bg-[--bg-surface] border border-[--border-default] rounded-lg p-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[--border-subtle] bg-[--bg-elevated]">
+    <div className="surface-card rounded-lg p-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[--border-subtle] bg-[--bg-overlay] px-2.5 py-1 text-xs text-[--text-secondary]">
             {hasLoadedResults ? (
               <>
-                <span className="text-sm text-[--text-primary]">Pipeline results loaded</span>
+                <span className="font-medium text-[--text-primary]">Results loaded</span>
                 <span className="text-[--text-muted]">·</span>
-                <span className="text-sm text-[--text-secondary]">
+                <span>
                   {leadsCount} lead{leadsCount === 1 ? "" : "s"} in this run
                 </span>
               </>
             ) : (
               <>
-                <span className="text-sm text-[--text-primary]">Sample CSV available</span>
+                <span className="font-medium text-[--text-primary]">Sample CSV available</span>
                 <span className="text-[--text-muted]">·</span>
-                <span className="text-sm text-[--text-secondary]">
-                  Not loaded yet — use Add Leads below
-                </span>
+                <span>Not loaded yet</span>
               </>
             )}
-          </div>
+          </span>
           <p className="text-xs text-[--text-muted] mt-2">
             Replay demo is free. Live Groq is backend API-only and opt-in.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center rounded-lg border border-[--border-default] p-1">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="flex items-center rounded-lg border border-[--border-default] p-1 bg-[--bg-overlay]">
             <button
               type="button"
               aria-pressed="true"
-              className="px-3 py-1.5 rounded-md text-sm font-medium bg-[--accent-primary] text-white"
+              className="px-3 py-1.5 rounded-md text-xs font-semibold bg-[--accent-primary] text-white"
             >
               Replay Mode
             </button>
@@ -71,56 +68,39 @@ export function RunControls({
                       type="button"
                       disabled
                       aria-disabled="true"
-                      className="px-3 py-1.5 rounded-md text-sm font-medium text-[--text-muted] opacity-50 cursor-not-allowed"
+                      className="btn-disabled !px-3 !py-1.5 !text-xs !font-semibold !shadow-none"
                     >
                       Live API (requires backend)
                     </button>
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>
-                    Live Groq is backend-only and opt-in. This demo view stays
-                    on replay unless backend API mode is configured separately.
+                  <p className="max-w-xs text-xs">
+                    Live Groq is backend-only and opt-in. Configure the backend
+                    separately to enable live API mode.
                   </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <Button
-                    size="lg"
-                    disabled
-                    aria-disabled="true"
-                    className="bg-[--accent-primary] hover:bg-[--accent-primary]/90 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {hasLoadedResults ? "Process Leads (results loaded)" : "Process Leads"}
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  {hasLoadedResults
-                    ? "Results for this run are shown below. Use Add Leads to process another batch."
-                    : "No leads loaded yet. Paste or upload sample data in Add Leads, then process to run the pipeline."}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <Button
-            variant="outline"
+          <button
+            type="button"
             onClick={scrollToIntake}
-            className="border-[--border-default] text-[--text-secondary]"
+            className="btn-primary btn-hero"
           >
-            <Upload className="h-4 w-4 mr-2" />
+            <Upload className="h-4 w-4" aria-hidden />
             Add Leads
-          </Button>
+          </button>
         </div>
       </div>
+      {!hasLoadedResults && (
+        <p className="text-xs text-[--text-secondary] mt-3 border-t border-[--border-subtle] pt-3">
+          Use <strong className="font-medium text-[--text-primary]">Add Leads</strong> to
+          paste or upload data, then <strong className="font-medium text-[--text-primary]">Preview Leads</strong> and{" "}
+          <strong className="font-medium text-[--text-primary]">Process</strong> in that section.
+        </p>
+      )}
     </div>
   );
 }
