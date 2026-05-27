@@ -20,7 +20,7 @@ import {
 } from "../demo-access.ts";
 import type { IntakePreviewResponse } from "../types.ts";
 
-const globalWithWindow = globalThis as typeof globalThis & { window?: Window };
+const globalWithWindow = globalThis as unknown as { window?: Window };
 
 function installSessionStorage(): void {
   const values = new Map<string, string>();
