@@ -44,7 +44,7 @@ function getStatusStyles(status: AgentStatus["status"]) {
     case "running":
       return {
         border: "border-[--accent-secondary]/30",
-        badge: "bg-cyan-500/10 text-cyan-400 animate-pulse",
+        badge: "bg-[--accent-secondary]/10 text-[--accent-secondary] animate-pulse",
         icon: "●",
         label: "Running",
       };
@@ -68,18 +68,23 @@ export function AgentStatusRow({
   return (
     <section
       aria-labelledby="agent-activity-heading"
-      className="bg-[--bg-surface] border border-[--border-default] rounded-lg p-5 space-y-4"
+      className="surface-card rounded-lg p-5 space-y-4"
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
+          <p className="text-[10px] font-mono uppercase tracking-widest text-[--accent-primary] mb-1">
+            Agent workflow
+          </p>
           <h2
             id="agent-activity-heading"
             className="text-sm font-semibold text-[--text-primary]"
           >
-            Agent activity
+            Six-agent pipeline
           </h2>
           <p className="text-xs text-[--text-muted] mt-0.5">
-            Pipeline stages and saved outputs for this run.
+            Intake → Research → Qualifier → Strategist → Email Drafter → QA
+            Evaluator. Each card shows role, status, and output summary for this
+            run.
           </p>
         </div>
         {replayMode && (
@@ -96,7 +101,7 @@ export function AgentStatusRow({
           return (
             <div
               key={agent.name}
-              className={`bg-[--bg-elevated] border ${styles.border} rounded-lg p-4 min-h-44`}
+              className={`bg-[--bg-elevated] border ${styles.border} rounded-lg p-4 min-h-44 shadow-sm`}
             >
               <div className="flex items-start justify-between gap-2">
                 <p className="text-sm font-medium text-[--text-primary]">
@@ -115,9 +120,14 @@ export function AgentStatusRow({
                 </p>
               )}
               {agent.output_summary && (
-                <p className="mt-3 text-xs text-[--text-muted] leading-relaxed">
-                  {agent.output_summary}
-                </p>
+                <div className="mt-3">
+                  <p className="text-[10px] uppercase tracking-wide text-[--text-muted] mb-1">
+                    Output summary
+                  </p>
+                  <p className="text-xs text-[--text-secondary] leading-relaxed">
+                    {agent.output_summary}
+                  </p>
+                </div>
               )}
               <div className="mt-3 flex items-center gap-2 text-xs text-[--text-muted]">
                 <span>{agent.success_rate}</span>

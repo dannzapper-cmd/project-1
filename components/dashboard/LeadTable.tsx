@@ -11,7 +11,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { mockLeads } from "@/lib/mock-data";
 import { LeadDetailDrawer } from "./LeadDetailDrawer";
 import type { B2BProfilePack } from "@/lib/b2b-profile-packs";
 import type { Lead, LeadDetail } from "@/lib/types";
@@ -19,7 +18,7 @@ import type { Lead, LeadDetail } from "@/lib/types";
 interface LeadTableProps {
   /**
    * Optional list of leads to render. When omitted, the table
-   * falls back to `mockLeads` so legacy mock-only consumers
+   * falls back to an empty list when omitted
    * keep working without code changes.
    */
   leads?: Lead[];
@@ -72,7 +71,7 @@ export function LeadTable({
   getLeadDetail,
   profilePack,
 }: LeadTableProps = {}) {
-  const initialLeads = leadsProp ?? mockLeads;
+  const initialLeads = leadsProp ?? [];
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("All");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
@@ -192,7 +191,7 @@ export function LeadTable({
       <div className="border border-[--border-default] rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-[--bg-surface] border-b border-[--border-default] hover:bg-[--bg-surface]">
+            <TableRow className="bg-[--surface] border-b-2 border-[--border-default] hover:bg-[--surface]">
               <TableHead className="text-[--text-muted] text-xs font-medium">Company</TableHead>
               <TableHead className="text-[--text-muted] text-xs font-medium">Industry</TableHead>
               <TableHead className="text-[--text-muted] text-xs font-medium">Country</TableHead>
@@ -206,11 +205,13 @@ export function LeadTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredLeads.map((lead) => (
+            {filteredLeads.map((lead, index) => (
               <TableRow
                 key={lead.id}
                 onClick={() => handleRowClick(lead)}
-                className="cursor-pointer hover:bg-[--bg-overlay] border-b border-[--border-subtle]"
+                className={`cursor-pointer hover:bg-[--accent-primary]/5 border-b border-[--border-subtle] ${
+                  index % 2 === 0 ? "bg-[--bg-elevated]" : "bg-[--background]"
+                }`}
               >
                 <TableCell className="text-sm text-[--text-primary] font-medium">
                   {lead.company}

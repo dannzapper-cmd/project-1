@@ -134,10 +134,10 @@ export function LeadDetailDrawer({
       sm:max-w-[620px]
       border-l
       border-[--border-default]
-      !bg-[#18181f]
+      !bg-[--bg-elevated]
       p-0
       text-[--text-primary]
-      shadow-[-12px_0_50px_rgba(0,0,0,0.85)]
+      shadow-[-8px_0_32px_rgba(15,23,42,0.12)]
       flex
       flex-col
     "
@@ -267,7 +267,7 @@ export function LeadDetailDrawer({
 
             {/* Evidence */}
             <section>
-              <h3 className="text-xs uppercase tracking-widest text-[--text-muted] font-mono mb-4">Evidence</h3>
+              <h3 className="text-xs uppercase tracking-widest text-[--text-muted] font-mono mb-4">Evidence used</h3>
               <div className="grid grid-cols-2 gap-3">
                 {detail.evidence_cards.map((card) => (
                   <div key={card.id} className="bg-[--bg-surface] border border-[--border-subtle] rounded-lg p-4 relative">

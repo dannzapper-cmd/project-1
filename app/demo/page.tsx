@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { ExternalLink } from "lucide-react";
 import { DemoOnboarding } from "@/components/dashboard/DemoOnboarding";
 import { ReplayModeBanner } from "@/components/dashboard/ReplayModeBanner";
@@ -11,6 +13,11 @@ export const metadata = {
 };
 
 export default function DemoPage() {
+  const sampleCsvContent = readFileSync(
+    join(process.cwd(), "data/demo/leads.csv"),
+    "utf-8",
+  );
+
   return (
     <div className="min-h-screen bg-[--bg-base]">
       {/* Replay Mode Banner */}
@@ -54,7 +61,7 @@ export default function DemoPage() {
             Reads `DATA_SOURCE` (the only point in the app where it
             is consulted) and renders the metrics row, agent status
             row, and lead table from the normalized view model. */}
-        <DemoDashboardClient />
+        <DemoDashboardClient sampleCsvContent={sampleCsvContent} />
       </main>
     </div>
   );

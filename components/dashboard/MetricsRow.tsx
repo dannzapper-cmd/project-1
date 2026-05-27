@@ -15,10 +15,10 @@ interface MetricsRowProps {
 }
 
 const DEFAULT_METRIC_COPY: Record<MetricCopyKey, string> = {
-  totalProcessed: "leads in this run",
-  highFitLeads: "score >= 70",
-  avgQaScore: "across {count} leads",
-  totalRunCost: "{model} · {mode}",
+  totalProcessed: "Leads processed by the agent pipeline in this run",
+  highFitLeads: "Qualifier output — fit score ≥ 70",
+  avgQaScore: "QA Evaluator average across {count} leads",
+  totalRunCost: "Estimated run cost · {model} · {mode}",
 };
 
 function formatAverage(score: number | null): string {
@@ -51,9 +51,9 @@ export function MetricsRow({
       .replace("{mode}", metrics.run_mode);
 
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Total Processed */}
-      <div className="bg-[--bg-surface] border border-[--border-subtle] rounded-lg p-5 border-l-4 border-l-[--border-default]">
+      <div className="surface-card rounded-lg p-5 border-l-4 border-l-[--border-default]">
         <p className="text-xs text-[--text-muted] uppercase tracking-wider mb-1">
           Total Processed
         </p>
@@ -66,7 +66,7 @@ export function MetricsRow({
       </div>
 
       {/* High Fit Leads */}
-      <div className="bg-[--bg-surface] border border-[--border-subtle] rounded-lg p-5 border-l-4 border-l-[--color-success]">
+      <div className="surface-card rounded-lg p-5 border-l-4 border-l-[--color-success]">
         <p className="text-xs text-[--text-muted] uppercase tracking-wider mb-1">
           High Fit Leads
         </p>
@@ -79,7 +79,7 @@ export function MetricsRow({
       </div>
 
       {/* Avg QA Score */}
-      <div className="bg-[--bg-surface] border border-[--border-subtle] rounded-lg p-5 border-l-4 border-l-[--accent-primary]">
+      <div className="surface-card rounded-lg p-5 border-l-4 border-l-[--accent-primary]">
         <p className="text-xs text-[--text-muted] uppercase tracking-wider mb-1">
           Avg QA Score
         </p>
@@ -90,7 +90,7 @@ export function MetricsRow({
       </div>
 
       {/* Total Run Cost */}
-      <div className="bg-[--bg-surface] border border-[--border-subtle] rounded-lg p-5 border-l-4 border-l-[--text-muted]">
+      <div className="surface-card rounded-lg p-5 border-l-4 border-l-[--text-muted]">
         <p className="text-xs text-[--text-muted] uppercase tracking-wider mb-1">
           Total Run Cost
         </p>

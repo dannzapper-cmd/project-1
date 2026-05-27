@@ -9,9 +9,15 @@ import {
   Mail,
   CheckCircle,
   ArrowRight,
+  ClipboardList,
 } from "lucide-react"
 
 const agents = [
+  {
+    icon: ClipboardList,
+    name: "Intake",
+    description: "Validate & normalize leads",
+  },
   {
     icon: Search,
     name: "Research",
@@ -134,7 +140,7 @@ export function HeroSection() {
                 className="flex items-center"
               >
                 {/* Agent Card */}
-                <div className="bg-[--bg-surface] border border-[--border-default] rounded-lg px-4 py-3 min-w-[140px]">
+                <div className="surface-card rounded-lg px-4 py-3 min-w-[140px] shadow-sm">
                   <div className="flex items-center gap-2 mb-1">
                     <agent.icon className="w-4 h-4 text-[--accent-primary]" />
                     <span className="font-semibold text-sm text-[--text-primary]">

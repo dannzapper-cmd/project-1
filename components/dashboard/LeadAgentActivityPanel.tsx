@@ -57,7 +57,7 @@ function getStatusStyles(status: AgentStatus["status"]) {
     case "running":
       return {
         border: "border-[--accent-secondary]/30",
-        badge: "bg-cyan-500/10 text-cyan-400",
+        badge: "bg-[--accent-secondary]/10 text-[--accent-secondary]",
         icon: "●",
         label: "Running",
       };
@@ -198,14 +198,15 @@ export function LeadAgentActivityPanel({ detail }: LeadAgentActivityPanelProps) 
   const replayMode = detail.run_mode === "Replay";
 
   return (
-    <section className="bg-[--bg-surface] border border-[--border-subtle] rounded-lg p-4">
+    <section className="surface-card rounded-lg p-4">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
           <h3 className="text-xs uppercase tracking-widest text-[--text-muted] font-mono">
-            Agent activity
+            Agent trace
           </h3>
           <p className="text-xs text-[--text-muted] mt-1">
-            Six saved pipeline stages for this lead.
+            Which agent produced each result — validation, evidence, fit,
+            strategy, draft, and QA for this lead.
           </p>
         </div>
         {replayMode && (
@@ -241,7 +242,10 @@ export function LeadAgentActivityPanel({ detail }: LeadAgentActivityPanelProps) 
                   {styles.label}
                 </span>
               </div>
-              <p className="text-xs text-[--text-secondary] mt-2 leading-relaxed">
+              <p className="text-[10px] uppercase tracking-wide text-[--text-muted] mt-2 mb-1">
+                Output summary
+              </p>
+              <p className="text-xs text-[--text-secondary] leading-relaxed">
                 {stage.outputSummary}
               </p>
             </div>
