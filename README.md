@@ -458,6 +458,7 @@ Post-v1 items are **design intent** until shipped and reflected in the capabilit
 
 | Document | Description |
 |----------|-------------|
+| [Business case](docs/business-case.md) | Illustrative ROI, industry benchmarks, safe claims |
 | [Architecture overview](docs/architecture-overview.md) | System design, diagrams, production gaps |
 | [Demo script](docs/demo-script.md) | 60s / 90s / 3min walkthroughs |
 | [Deployment guide](docs/deployment.md) | Render backend deployment and Vercel wiring |
