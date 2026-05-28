@@ -1,8 +1,38 @@
 # LeadForge Demo Script
 
-Product-focused walkthrough scripts for LeadForge-Agentic Core. Use these for a product demo, technical review, or architecture discussion. LeadForge is presented as a controlled AI sales intelligence system — not as a fully autonomous sales agent or production SaaS.
+Product-focused walkthrough scripts for LeadForge-Agentic Core. Use these for a recorded demo video, live presentation, technical review, or architecture discussion. LeadForge is presented as a controlled AI sales intelligence system — not as a fully autonomous sales agent or production SaaS.
 
-**Before you demo:** Run the app locally (see [README](../README.md)). Prefer synthetic demo data. Do not display API keys, `.env` files, or real personal data on screen.
+**Public demo:** [https://v0-project-1-delta-lovat.vercel.app](https://v0-project-1-delta-lovat.vercel.app)
+
+**Before you demo:** Confirm backend is reachable if showing Add Leads → Process (see [deployment.md](./deployment.md)). Prefer synthetic or anonymized B2B sample data. Do not display API keys, `.env` files, or real personal data on screen.
+
+---
+
+## 2–4 minute video demo (recommended)
+
+**Goal:** Show the full product story — landing, dashboard, real intake flow, results, trace, review, export — with honest safety boundaries.
+
+| Time | Screen | Action | Say (approx.) |
+|------|--------|--------|----------------|
+| 0:00 | **Landing (`/`)** — full page | Start at top; slow scroll through hero, problem, solution, architecture preview | "LeadForge helps B2B sales and RevOps teams turn raw lead data into researched, qualified, review-ready opportunities — with humans in control at every step." |
+| 0:25 | Landing — continue scroll | Show workflow/architecture sections if visible | "Five agents run in a fixed order: research, qualify, strategize, draft, and QA — every step is traceable." |
+| 0:40 | Click **View demo** | Navigate to `/demo` | "This is the operator dashboard — replay mode is the default on the public site: safe, predictable, and zero model cost." |
+| 0:50 | **Demo dashboard** — full viewport | Pause on empty or sample state; point at replay vs live copy | "Live batch model runs are intentionally unavailable here. Demo access, rate limits, and max-lead caps protect the deployment." |
+| 1:05 | **Add Leads** panel | Scroll to intake; click sample CSV or paste 3–5 B2B rows | "You can paste or upload CSV, Excel, or a text-based PDF — the product is built for B2B fields like company, industry, website, and role." |
+| 1:25 | **Preview table** | Show valid, warning, and invalid rows if possible; confirm column mapping | "Preview catches bad rows early. Incomplete data still processes but shows warnings and low-confidence states in the drawer." |
+| 1:40 | **B2B profile selector** (if visible) | Select a profile pack | "Profile packs tune messaging context for common B2B segments — still advisory, not autonomous sending." |
+| 1:50 | **Process** | Run deterministic process (backend required) | "Processing runs the deterministic pipeline — no public Groq batch spend." |
+| 2:05 | **Results dashboard** | Show lead table, fit/priority/QA columns | "Each lead gets fit scores, priority, and QA summaries from the five-agent run." |
+| 2:20 | **Lead detail drawer** | Open one lead; scroll agent outputs | "Research, qualification, strategy, and draft email — all structured and inspectable." |
+| 2:35 | **Agent trace + QA** | Expand trace; show QA score and recommendation | "Traces show what each agent consumed and produced. QA flags risk before anything would hypothetically be sent — and we don't send email from this product." |
+| 2:50 | **Human review** | Approve or flag a lead | "Review state stays in the browser — the system prepares intelligence; people decide." |
+| 3:05 | **Export** | Export reviewed CSV | "Export is a local CSV for handoff — no CRM sync." |
+| 3:15 | **System status** (optional) | Open `/api/system/status` in new tab or mention observability | "Backend exposes safe status and summary telemetry — ephemeral on Render restart." |
+| 3:30 | Close | Return to landing or dashboard | "Try your own B2B data in the demo — expect warnings when fields are thin. Public demo stays replay-safe and cost-controlled by design." |
+
+**Emphasize:** B2B Sales / RevOps focus, intake validation, traceability, QA gate, human review, $0 replay, live model restricted on public demo.
+
+**Do not say:** "Sends emails," "CRM integration," "production SaaS," "guaranteed reply rates," "fully autonomous outbound."
 
 ---
 
@@ -66,14 +96,18 @@ Extend the 60-second script with:
 
 ## Recommended screen sequence
 
-1. Landing page (`/`) — product framing  
-2. Demo dashboard (`/demo`) — lead table and summary  
-3. Lead detail drawer — all five agents + trace + QA  
-4. Human review controls — local state only  
-5. CSV export (after marking at least one lead reviewed)  
-6. *(Optional)* OpenAPI `/docs` or telemetry JSON — observability without secrets  
-7. *(Optional)* `curl` live Groq response — only with `ENABLE_LIVE_MODEL_PIPELINE=true` and key in `.env`, never on screen  
-8. Architecture doc or roadmap doc — boundaries and future work  
+1. Landing page (`/`) — **full page** scroll (hero → problem → solution → architecture)  
+2. Demo dashboard (`/demo`) — **full dashboard** initial state (replay mode, Add Leads CTA)  
+3. Add Leads panel — paste or upload sample B2B data  
+4. Preview table — valid / warning / invalid rows + mapping confirmation  
+5. B2B profile selector (if shown)  
+6. Process → results lead table  
+7. Lead detail drawer — five agents + trace + QA  
+8. Human review controls — local state only  
+9. CSV export (after marking at least one lead reviewed)  
+10. System status or telemetry JSON — observability without secrets  
+11. *(Optional, local only)* `curl` live Groq — never on screen in public demo  
+12. Architecture doc or roadmap doc — boundaries and future work  
 
 ---
 
@@ -112,7 +146,7 @@ Extend the 60-second script with:
 | "Live web research" | "Deterministic research path today; live research on roadmap" |
 | "LangGraph-powered" | "Linear plain-Python orchestration; LangGraph deferred per ADR" |
 | "Production SaaS / multi-tenant" | "Local demo product with explicit limitations" |
-| "Smart Intake / PDF / Excel upload" | "Standard lead schema today; intake on roadmap" |
+| "Intake works with any data shape" | "B2B Sales / RevOps fields; warnings when data is incomplete" |
 | "Click Run Groq in the UI" | "Live Groq is API-only until frontend control ships" |
 | "I built this so recruiters…" | *(omit — keep focus on product and architecture)* |
 | "Guaranteed reply rates" | "QA scores and recommendations are advisory" |

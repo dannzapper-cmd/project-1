@@ -2,9 +2,25 @@
 
 **Traceable B2B sales intelligence — controlled AI workflow, human decisions.**
 
-LeadForge is an AI sales intelligence product and engineering codebase: a five-agent pipeline that researches demo leads, qualifies fit, shapes strategy, drafts outreach copy, and evaluates quality before anything reaches a human reviewer. The system is designed for transparency, deterministic replay, and honest scope — not for unsupervised outbound automation.
+LeadForge is a **production-like portfolio deployment** of an AI sales intelligence product: a five-agent pipeline that researches leads, qualifies fit, shapes strategy, drafts outreach copy, and evaluates quality before anything reaches a human reviewer. It is built for **B2B sales and revenue operations teams** who need consistent qualification, evidence-backed personalization, and review-ready outputs — without unsupervised outbound automation.
 
-This repository documents the system architecture, implementation decisions, and local demo workflow.
+### The problem it targets
+
+Revenue teams lose time to manual research, inconsistent qualification, generic outreach, and weak visibility into *why* a lead matters. LeadForge addresses that with a **controlled, traceable workflow**: structured intake, agent collaboration in a fixed order, QA before review, and humans retaining final authority.
+
+### Live demo
+
+**[https://v0-project-1-delta-lovat.vercel.app](https://v0-project-1-delta-lovat.vercel.app)** — landing and `/demo` dashboard. Add Leads → Preview → Process requires the Render backend (`NEXT_PUBLIC_API_URL`). The public demo uses **replay/cost-controlled behavior** by default; **live batch Groq execution is intentionally unavailable** in the UI.
+
+### Core user flow
+
+```
+Landing → Demo dashboard → Add Leads (paste/upload) → Preview (valid/warning/invalid)
+  → Process → Results table → Lead detail → Agent trace + QA
+  → Human review (browser-local) → Export reviewed leads (CSV)
+```
+
+This repository documents architecture, implementation decisions, deployment, and the local demo workflow.
 
 ---
 
@@ -56,7 +72,7 @@ Demo leads and company context are **synthetic/curated** — not live company in
 
 Do not expect the following in the current product:
 
-- Image/OCR intake
+- Image/OCR intake (CSV, Excel, text-based PDF, and paste **are** supported for preview/process)
 - LangGraph runtime or checkpointed agent graphs
 - CRM integration or backend sync of review state
 - Email sending or deliverability tooling
@@ -315,15 +331,33 @@ May incur real API cost. Deterministic `GET /api/demo/pipeline/{lead_id}` remain
 
 ```bash
 # Frontend
+pnpm install
+pnpm typecheck
+pnpm test:unit
 pnpm build
 pnpm lint
 
 # Backend
 cd backend
+pip install -r requirements.txt
 pytest -q
 ```
 
+GitHub Actions runs frontend typecheck, unit tests, and build plus backend `pytest -q` on pushes and PRs (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)). **See CI output for the current test count**; a recent local backend run reported **624 passed, 6 skipped** (Groq live smoke tests opt-in only).
+
 Groq live smoke tests are opt-in (`RUN_GROQ_LIVE_TESTS` / key present); default CI-style runs use mocks. Backend tests set `DATABASE_URL` and `APP_ENV=test` via `backend/tests/conftest.py`.
+
+---
+
+## Cost, safety, and public demo boundaries
+
+| Mode | Cost | Behavior |
+|------|------|----------|
+| **Replay demo** (default on Vercel) | **$0** | Bundled sample results; no live model batch runs |
+| **Add Leads + deterministic process** | **$0** (no Groq in deterministic path) | Requires reachable backend; capped at 10 leads per run |
+| **Live Groq** (backend API only) | Provider usage | Opt-in env flag; single-lead; not exposed as public batch UI |
+
+Public deployment protections: optional **demo access code**, **in-memory rate limits** (reset on Render restart), **max leads per run**, upload size caps, and **ephemeral storage** (pipeline/review/telemetry not durable across restarts). See [`docs/operations.md`](docs/operations.md).
 
 ---
 
@@ -331,6 +365,7 @@ Groq live smoke tests are opt-in (`RUN_GROQ_LIVE_TESTS` / key present); default 
 
 Use [`docs/deployment.md`](docs/deployment.md) for the controlled public setup:
 
+- **Frontend (Vercel):** [https://v0-project-1-delta-lovat.vercel.app](https://v0-project-1-delta-lovat.vercel.app)
 - Render Web Service for the FastAPI backend.
 - Vercel for the Next.js frontend.
 - Vercel variable: `NEXT_PUBLIC_API_URL=<public backend base URL>`.
@@ -411,7 +446,7 @@ Post-v1 items are **design intent** until shipped and reflected in the capabilit
 | ID | Capability | Status |
 |----|------------|--------|
 | A1 | Manual frontend live Groq trigger | Roadmap — API-only today |
-| A2 | Smart Lead Intake & data normalization | Roadmap |
+| A2 | Smart Lead Intake & data normalization | **Partial** — paste/CSV/XLSX/text-PDF preview + batch process (see capability table) |
 | A3 | Live company & market research layer | Roadmap |
 | A4 | Vertical profiles / configurable context | Roadmap |
 | A5 | Durable telemetry / eval history | Roadmap (in-memory foundation only today) |
@@ -436,7 +471,7 @@ Post-v1 items are **design intent** until shipped and reflected in the capabilit
 - Production SaaS or multi-tenant commercial platform  
 - Sends emails or integrates with CRM  
 - Live web research  
-- PDF/image/Excel intake in the dashboard  
+- Image/OCR intake in the dashboard  
 - LangGraph-powered runtime  
 - Durable backend review persistence  
 - Guaranteed reply rate  
@@ -458,9 +493,11 @@ Post-v1 items are **design intent** until shipped and reflected in the capabilit
 
 | Document | Description |
 |----------|-------------|
+| [Case study](docs/case-study.md) | Problem, architecture, impact, trade-offs |
 | [Business case](docs/business-case.md) | Illustrative ROI, industry benchmarks, safe claims |
+| [Portfolio narrative](docs/portfolio-narrative.md) | CV bullets, interview talking points |
 | [Architecture overview](docs/architecture-overview.md) | System design, diagrams, production gaps |
-| [Demo script](docs/demo-script.md) | 60s / 90s / 3min walkthroughs |
+| [Demo script](docs/demo-script.md) | 2–4 min video script + shorter walkthroughs |
 | [Deployment guide](docs/deployment.md) | Render backend deployment and Vercel wiring |
 | [Operations runbook](docs/operations.md) | Env vars, smoke checks, rollback, rate-limit notes |
 | [Screenshots checklist](docs/screenshots-checklist.md) | Capture guide and safety rules |
