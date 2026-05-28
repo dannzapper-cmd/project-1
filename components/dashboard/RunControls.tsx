@@ -47,7 +47,9 @@ export function RunControls({
             )}
           </span>
           <p className="text-xs text-[--text-muted] mt-2">
-            Replay demo is free. Live Groq is backend API-only and opt-in.
+            Replay demo is safe and $0. Live batch model runs are disabled
+            here; demo access, rate limits, and max-leads protections stay
+            enforced.
           </p>
         </div>
 
@@ -70,14 +72,15 @@ export function RunControls({
                       aria-disabled="true"
                       className="btn-disabled !px-3 !py-1.5 !text-xs !font-semibold !shadow-none"
                     >
-                      Live API (requires backend)
+                      Live model run unavailable
                     </button>
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="max-w-xs text-xs">
-                    Live Groq is backend-only and opt-in. Configure the backend
-                    separately to enable live API mode.
+                    No safe live batch endpoint is exposed in this demo.
+                    Replay mode remains cost-controlled, rate limited, and
+                    protected by demo access.
                   </p>
                 </TooltipContent>
               </Tooltip>

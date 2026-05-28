@@ -391,6 +391,43 @@ def test_mixed_valid_and_invalid_rows_keeps_valid_rows_processable() -> None:
     assert response.normalized_leads[2].lead is None
 
 
+def test_imperfect_lead_rows_warn_without_inventing_missing_data() -> None:
+    content = (
+        "company_name,industry,website,country,contact_role,employee_count,notes\n"
+        "MinimalCo,Quantum Widgets,,,,,\n"
+        "MessyCo,B2B SaaS,,US,,unknown,\n"
+        "NoIndustry,,missing.example,US,VP Sales,120,\n"
+        ",Fintech,nameless.example,US,CTO,80,\n"
+    )
+
+    response = build_preview(
+        IntakePreviewRequest(input_type="pasted_table", content=content)
+    )
+
+    assert response.total_rows == 4
+    assert response.valid_rows == 2
+    assert response.rows_with_warnings == 2
+    assert response.failed_rows == 2
+
+    minimal_row = response.normalized_leads[0]
+    assert minimal_row.status == "warning"
+    assert minimal_row.lead is not None
+    assert minimal_row.lead.industry == "Quantum Widgets"
+    assert minimal_row.lead.website is None
+    assert minimal_row.lead.contact_role is None
+    assert "website" in minimal_row.low_confidence_fields
+    assert "contact_role" in minimal_row.low_confidence_fields
+
+    messy_row = response.normalized_leads[1]
+    assert messy_row.status == "warning"
+    assert messy_row.lead is not None
+    assert messy_row.lead.employee_count is None
+    assert any(issue.code == "invalid_employee_count" for issue in messy_row.issues)
+
+    assert response.normalized_leads[2].missing_required_fields == ["industry"]
+    assert response.normalized_leads[3].missing_required_fields == ["company_name"]
+
+
 def test_preview_exposes_max_leads_per_run() -> None:
     rows = ["company_name,industry"]
     rows.extend(f"Company {idx},SaaS" for idx in range(12))
