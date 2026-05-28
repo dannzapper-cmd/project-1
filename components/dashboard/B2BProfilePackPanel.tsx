@@ -69,7 +69,7 @@ export function B2BProfilePackPanel({
             </SelectTrigger>
             <SelectContent
               position="popper"
-              className="z-[200] !bg-[#18181f] text-[--text-primary] border border-[--border-default] shadow-[0_16px_48px_rgba(0,0,0,0.92)] backdrop-blur-none"
+              className="z-[200] bg-[--bg-elevated] text-[--text-primary] border border-[--border-default] shadow-lg backdrop-blur-none"
             >
               {B2B_PROFILE_PACKS.map((p) => (
                 <SelectItem
