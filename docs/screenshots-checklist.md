@@ -6,6 +6,8 @@ Use this checklist when capturing public documentation images for LeadForge-Agen
 
 Replace placeholder references in the [README](../README.md) as screenshots are added.
 
+**Capture against:** [https://v0-project-1-delta-lovat.vercel.app](https://v0-project-1-delta-lovat.vercel.app) (production-like demo) or local `pnpm dev` with the same UI.
+
 ---
 
 ## Safety rules (all screenshots)
@@ -19,146 +21,222 @@ Replace placeholder references in the [README](../README.md) as screenshots are 
 - Private email addresses or real personal data  
 - Sensitive browser tabs (email, banking, admin consoles)  
 - Paid provider account dashboards with billing identifiers  
-- Real customer or prospect lists (use demo leads only)
+- Real customer or prospect lists (use demo or anonymized B2B sample rows only)
 
 **Do include:**
 
-- Synthetic/curated demo company and lead names from the bundled dataset  
-- UI states that reflect honest product scope (review local-only, no “Sent” email status unless clearly labeled as draft)
+- Synthetic/curated demo company names or your own anonymized B2B test rows  
+- UI states that reflect honest product scope (review local-only, draft email labeled as not sent)
 
 ---
 
 ## Required screenshots
 
-### 1. Landing page / hero
+### 1. Landing hero
 
 | Field | Value |
 |-------|--------|
 | **Recommended filename** | `01-landing-hero.png` |
-| **Purpose** | GitHub README hero; first impression of product positioning |
-| **What should be visible** | Hero headline, subtitle, primary CTA toward demo (`/demo`), clean viewport (no browser chrome clutter) |
-| **Safety notes** | Full-page capture; crop out bookmarks bar if it shows personal accounts |
+| **Purpose** | README hero; first impression |
+| **What should be visible** | Headline, subtitle, primary CTA to `/demo` |
+| **Safety notes** | Crop personal bookmarks bar |
 
 ---
 
-### 2. Dashboard overview
+### 2. Full landing page sections
+
+| Field | Value |
+|-------|--------|
+| **Recommended filename** | `01b-landing-full-sections.png` |
+| **Purpose** | Show problem, solution, architecture storytelling |
+| **What should be visible** | Stitched or tall capture: hero through architecture/workflow sections |
+| **Safety notes** | Full-page capture; no secrets in footer links |
+
+---
+
+### 3. Demo dashboard — initial state
 
 | Field | Value |
 |-------|--------|
 | **Recommended filename** | `02-dashboard-overview.png` |
-| **Purpose** | Show operator workspace and summary metrics |
-| **What should be visible** | Lead table header, row count or summary cards, navigation to demo |
-| **Safety notes** | Use `mock` or `api` with demo data only; no real company names added ad hoc |
+| **Purpose** | Operator workspace before or after load |
+| **What should be visible** | Replay mode chip, Add Leads CTA, sample/results state, business-value panel if visible |
+| **Safety notes** | Show “Live model run unavailable” if present — honest public boundary |
 
 ---
 
-### 3. Lead table
+### 4. Add Leads panel
+
+| Field | Value |
+|-------|--------|
+| **Recommended filename** | `02b-add-leads-panel.png` |
+| **Purpose** | Intake entry point |
+| **What should be visible** | Paste area, upload control, sample CSV link, max-leads note |
+| **Safety notes** | No real prospect PII in paste buffer |
+
+---
+
+### 5. Preview table (valid / warning / invalid)
+
+| Field | Value |
+|-------|--------|
+| **Recommended filename** | `02c-intake-preview-table.png` |
+| **Purpose** | Validation UX |
+| **What should be visible** | Column mapping summary, at least one row each of valid, warning, invalid badges |
+| **Safety notes** | Use demo or synthetic companies only |
+
+---
+
+### 6. B2B profile selector
+
+| Field | Value |
+|-------|--------|
+| **Recommended filename** | `02d-b2b-profile-selector.png` |
+| **Purpose** | Profile pack / contrast-readable selector |
+| **What should be visible** | Open dropdown or selected profile with readable contrast |
+| **Safety notes** | Light theme capture preferred |
+
+---
+
+### 7. Processing / results dashboard
 
 | Field | Value |
 |-------|--------|
 | **Recommended filename** | `03-lead-table.png` |
-| **Purpose** | Illustrate lead list, priority/fit columns, selection state |
-| **What should be visible** | Multiple demo leads, sort/filter if present, one row highlighted |
-| **Safety notes** | Avoid scrolling to rows with accidentally pasted real data |
+| **Purpose** | Post-process results |
+| **What should be visible** | Lead table with fit, priority, QA columns; run summary if shown |
+| **Safety notes** | After deterministic process — not live Groq batch |
 
 ---
 
-### 4. Lead detail drawer
+### 8. Lead table (detail context)
+
+| Field | Value |
+|-------|--------|
+| **Recommended filename** | `03b-lead-table-selected.png` |
+| **Purpose** | Row selection state |
+| **What should be visible** | Highlighted row before opening drawer |
+| **Safety notes** | Same as above |
+
+---
+
+### 9. Lead detail drawer
 
 | Field | Value |
 |-------|--------|
 | **Recommended filename** | `04-lead-detail-drawer.png` |
-| **Purpose** | Core product surface — per-lead intelligence |
-| **What should be visible** | Drawer open on a single lead; agent output sections visible (at least Research + Qualifier) |
-| **Safety notes** | Email draft is **draft** content for demo personas — label mentally as not sent |
+| **Purpose** | Core per-lead intelligence |
+| **What should be visible** | Research + Qualifier (minimum); fit score; intake warnings if present |
+| **Safety notes** | Email section is **draft only** |
 
 ---
 
-### 5. Agent trace section
+### 10. Agent trace
 
 | Field | Value |
 |-------|--------|
 | **Recommended filename** | `05-agent-trace.png` |
-| **Purpose** | Demonstrate traceability per agent step |
-| **What should be visible** | Trace list or expanded trace entry: agent name, status, input/output summaries, latency |
-| **Safety notes** | Traces should not expose full prompts if UI ever shows them — crop to summary fields only |
+| **Purpose** | Traceability |
+| **What should be visible** | Per-agent trace entries: status, summaries, latency |
+| **Safety notes** | Crop to summary fields if prompts ever appear |
 
 ---
 
-### 6. QA evaluation section
+### 11. QA evaluation
 
 | Field | Value |
 |-------|--------|
 | **Recommended filename** | `06-qa-evaluation.png` |
-| **Purpose** | Show QA gate before any hypothetical send |
-| **What should be visible** | QA score, recommendation, risk indicators from QA Evaluator |
-| **Safety notes** | Do not imply emails were delivered |
+| **Purpose** | QA gate |
+| **What should be visible** | QA score, recommendation, risk indicators |
+| **Safety notes** | No “sent” or deliverability claims |
 
 ---
 
-### 7. Local human review state
+### 12. Human review state
 
 | Field | Value |
 |-------|--------|
 | **Recommended filename** | `07-human-review.png` |
-| **Purpose** | Human-in-the-loop control |
-| **What should be visible** | Review controls (approve/reject/flag or equivalent), reviewed indicator on a lead |
-| **Safety notes** | Optional: show browser-only hint in UI if present; no backend “synced to CRM” copy |
+| **Purpose** | Human-in-the-loop |
+| **What should be visible** | Approve / reject / flag controls; reviewed indicator |
+| **Safety notes** | Optional UI copy that review is browser-local |
 
 ---
 
-### 8. CSV export (if visually demonstrable)
+### 13. Export / review-ready state
 
 | Field | Value |
 |-------|--------|
 | **Recommended filename** | `08-csv-export.png` |
-| **Purpose** | Local export path for reviewed leads |
-| **What should be visible** | Export button and/or browser download bar with `reviewed-leads.csv` (or actual filename from app) |
-| **Safety notes** | Open downloaded CSV in an editor off-screen or redact before publish; file may contain demo emails |
+| **Purpose** | Local export path |
+| **What should be visible** | Export button and/or download bar with reviewed-leads CSV filename |
+| **Safety notes** | Redact CSV contents before publishing if opened |
 
 ---
 
-### 9. Telemetry endpoint or telemetry UI
+### 14. System status / observability
 
 | Field | Value |
 |-------|--------|
 | **Recommended filename** | `09-telemetry.png` |
-| **Purpose** | Observability story — safe summaries |
-| **What should be visible** | Either Swagger/`/docs` for `GET /api/demo/telemetry/runs` JSON, or a future telemetry UI — run ids, step counts, latencies, token estimates |
-| **Safety notes** | No full prompts or raw Groq responses in frame; blur `Authorization` headers if using browser network tab |
+| **Purpose** | Safe ops visibility |
+| **What should be visible** | `GET /api/system/status` JSON and/or `GET /api/demo/telemetry/runs` — `storage_mode: ephemeral`, feature flags |
+| **Safety notes** | Blur auth headers; no secrets |
 
 ---
 
-### 10. Deterministic-vs-live comparison (if available)
+### 15. Deterministic-vs-live comparison (optional, local only)
 
 | Field | Value |
 |-------|--------|
 | **Recommended filename** | `10-deterministic-vs-live.png` |
-| **Purpose** | Optional live path documentation |
-| **What should be visible** | JSON or formatted UI showing `live_success`, comparison fields, and deterministic baseline alongside live (success or failure state) |
-| **Safety notes** | Capture from local API only; never show `GROQ_API_KEY`; prefer a failed or success response without env file in terminal |
+| **Purpose** | Backend comparison path |
+| **What should be visible** | API JSON with deterministic + live fields |
+| **Safety notes** | Local only; never show API keys |
 
 ---
 
-### 11. Architecture docs / diagram
+### 16. Architecture docs
 
 | Field | Value |
 |-------|--------|
 | **Recommended filename** | `11-architecture-docs.png` |
-| **Purpose** | README / docs credibility |
-| **What should be visible** | `docs/architecture-overview.md` rendered (GitHub or editor preview) with ASCII diagrams, or landing page architecture section |
-| **Safety notes** | Docs-only capture; no secrets in sidebar file tree |
+| **Purpose** | Docs credibility |
+| **What should be visible** | `docs/architecture-overview.md` rendered |
+| **Safety notes** | No secrets in file tree |
 
 ---
 
-### 12. Roadmap docs
+### 17. Roadmap docs
 
 | Field | Value |
 |-------|--------|
 | **Recommended filename** | `12-roadmap-docs.png` |
-| **Purpose** | Honest implemented-vs-roadmap boundary |
-| **What should be visible** | Capability status table from `docs/roadmap/advanced-capabilities.md` |
-| **Safety notes** | Ensure screenshot shows ✅ vs 🗺 vs ⏸ statuses clearly |
+| **Purpose** | Implemented vs future boundary |
+| **What should be visible** | Capability table from `docs/roadmap/advanced-capabilities.md` |
+| **Safety notes** | Status columns clearly visible |
+
+---
+
+## Responsive captures
+
+### Mobile — landing
+
+| Field | Value |
+|-------|--------|
+| **Recommended filename** | `13-mobile-landing.png` |
+| **Viewport** | ~390×844 (iPhone-class) |
+| **What should be visible** | Hero + CTA readable without horizontal scroll |
+| **Notes** | Expected to look good |
+
+### Mobile — dashboard (optional)
+
+| Field | Value |
+|-------|--------|
+| **Recommended filename** | `14-mobile-dashboard.png` |
+| **Viewport** | ~390×844 |
+| **Honest note** | Dashboard is **desktop-first**. Dense tables and drawer may require horizontal scroll or feel cramped. **Skip publishing** if layout is not acceptable; state “desktop-first operator UI” in README instead. |
 
 ---
 
@@ -168,6 +246,7 @@ Replace placeholder references in the [README](../README.md) as screenshots are 
 - [ ] README screenshot placeholders updated with real paths  
 - [ ] No secrets or real PII in any published image  
 - [ ] Captions do not claim roadmap items as shipped  
+- [ ] Replay vs live boundaries visible where relevant  
 - [ ] Alt text describes product behavior, not employment narrative  
 
 ---
@@ -175,5 +254,6 @@ Replace placeholder references in the [README](../README.md) as screenshots are 
 ## Related documentation
 
 - [README](../README.md)  
-- [Architecture overview](./architecture-overview.md)  
 - [Demo script](./demo-script.md)  
+- [Case study](./case-study.md)  
+- [Architecture overview](./architecture-overview.md)
