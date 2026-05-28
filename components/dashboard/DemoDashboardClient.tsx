@@ -17,7 +17,7 @@
  * not here.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   B2BProfilePackPanel,
@@ -32,7 +32,7 @@ import { LeadTable } from "./LeadTable";
 import { MetricsRow } from "./MetricsRow";
 import { RunQualityPanel } from "./RunQualityPanel";
 import { DashboardEmptyState } from "./DashboardEmptyState";
-import { joinBatchWithLeads } from "@/lib/api/client";
+import { getSystemStatus, joinBatchWithLeads } from "@/lib/api/client";
 import {
   toAgentStatuses,
   toLeadDetail,
@@ -43,6 +43,7 @@ import type {
   EnrichedBatch,
   LeadIn,
   PipelineRunContractOutput,
+  SystemStatusResponse,
 } from "@/lib/api/types";
 import type { LeadDetail } from "@/lib/types";
 import { getProfilePack, type B2BProfilePackId } from "@/lib/b2b-profile-packs";
@@ -86,6 +87,8 @@ function DashboardError({
 
 export function DemoDashboardClient({ sampleCsvContent }: DemoDashboardClientProps) {
   const [userBatch, setUserBatch] = useState<EnrichedBatch | null>(null);
+  const [systemStatus, setSystemStatus] = useState<SystemStatusResponse | null>(null);
+  const [systemStatusError, setSystemStatusError] = useState<string | null>(null);
   const [profilePackId, setProfilePackId] =
     useState<B2BProfilePackId>(DEFAULT_PROFILE_PACK_ID);
   const profilePack = useMemo(
@@ -101,6 +104,26 @@ export function DemoDashboardClient({ sampleCsvContent }: DemoDashboardClientPro
     refresh,
     dataSource,
   } = useDashboardData();
+
+  useEffect(() => {
+    let cancelled = false;
+    getSystemStatus()
+      .then((status) => {
+        if (cancelled) return;
+        setSystemStatus(status);
+        setSystemStatusError(null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setSystemStatus(null);
+        setSystemStatusError(
+          err instanceof Error ? err.message : "Backend status unavailable",
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const processedDashboard = useMemo(() => {
     if (!userBatch) return null;
@@ -148,7 +171,11 @@ export function DemoDashboardClient({ sampleCsvContent }: DemoDashboardClientPro
   if (error) {
     return (
       <>
-        <RunControls hasLoadedResults={false} />
+        <RunControls
+          hasLoadedResults={false}
+          systemStatus={systemStatus}
+          systemStatusError={systemStatusError}
+        />
         <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
         <DashboardError message={error} onRetry={refresh} />
       </>
@@ -158,7 +185,11 @@ export function DemoDashboardClient({ sampleCsvContent }: DemoDashboardClientPro
   if (displayLeads.length === 0) {
     return (
       <>
-        <RunControls hasLoadedResults={false} />
+        <RunControls
+          hasLoadedResults={false}
+          systemStatus={systemStatus}
+          systemStatusError={systemStatusError}
+        />
         <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
         <DashboardEmptyState sampleCsvContent={sampleCsvContent} />
       </>
@@ -170,6 +201,8 @@ export function DemoDashboardClient({ sampleCsvContent }: DemoDashboardClientPro
       <RunControls
         hasLoadedResults={hasLoadedResults}
         leadsCount={displayLeads.length}
+        systemStatus={systemStatus}
+        systemStatusError={systemStatusError}
       />
       <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
       <B2BProfilePackPanel
@@ -203,6 +236,7 @@ export function DemoDashboardClient({ sampleCsvContent }: DemoDashboardClientPro
         leads={displayLeads}
         getLeadDetail={displayGetLeadDetail}
         profilePack={profilePack}
+        systemStatus={systemStatus}
       />
     </>
   );

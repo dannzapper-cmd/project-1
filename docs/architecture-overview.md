@@ -40,7 +40,7 @@ POST /api/demo/pipeline/live-groq/{lead_id}
 - **Dashboard:** `/demo` — lead table, lead detail drawer, agent outputs, traces, QA, human review, local CSV export.  
 - **Data source:** `NEXT_PUBLIC_DATA_SOURCE` — `mock` (bundled demo data) or `api` (FastAPI at `NEXT_PUBLIC_API_URL`).  
 - **Human review:** State stored in the browser only; not persisted to the backend.  
-- **Not implemented on frontend:** Live Groq button, image/OCR intake, auth, payments, multi-tenancy.
+- **Not implemented on frontend:** Public live batch Groq execution, image/OCR intake, auth, payments, multi-tenancy. Controlled single-lead draft regeneration is shown only when backend status reports safe live capability.
 
 ---
 

@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { LeadDetailDrawer } from "./LeadDetailDrawer";
 import type { B2BProfilePack } from "@/lib/b2b-profile-packs";
+import type { SystemStatusResponse } from "@/lib/api/types";
 import type { Lead, LeadDetail } from "@/lib/types";
 
 interface LeadTableProps {
@@ -30,6 +31,7 @@ interface LeadTableProps {
    */
   getLeadDetail?: (leadId: string) => LeadDetail | null;
   profilePack?: B2BProfilePack;
+  systemStatus?: SystemStatusResponse | null;
 }
 
 type PriorityFilter = "All" | "High" | "Medium" | "Low";
@@ -84,6 +86,7 @@ export function LeadTable({
   leads: leadsProp,
   getLeadDetail,
   profilePack,
+  systemStatus,
 }: LeadTableProps = {}) {
   const initialLeads = leadsProp ?? [];
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
@@ -145,7 +148,7 @@ export function LeadTable({
   const statusOptions: StatusFilter[] = ["All", "Pending", "Approved", "Rejected"];
 
   return (
-    <div>
+    <div id="lead-results">
       {/* Table Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -279,6 +282,7 @@ export function LeadTable({
         detail={selectedDetail}
         onStatusChange={handleStatusChange}
         profilePack={profilePack}
+        systemStatus={systemStatus}
       />
     </div>
   );

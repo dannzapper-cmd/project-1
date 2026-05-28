@@ -44,11 +44,21 @@ def system_status() -> SystemStatusResponse:
     """Return safe deployment diagnostics without exposing secret values."""
 
     settings = get_settings()
+    groq_live_configured = bool(
+        settings.enable_live_model_pipeline and settings.groq_api_key
+    )
+    controlled_email_regenerate_configured = bool(
+        groq_live_configured
+        and settings.rate_limit_enabled
+        and (settings.demo_access_code or "").strip()
+    )
     return SystemStatusResponse(
         demo_access_required=bool((settings.demo_access_code or "").strip()),
         live_research_configured=bool(
             settings.enable_live_research and settings.exa_api_key
         ),
+        live_model_pipeline_configured=groq_live_configured,
+        live_email_regenerate_configured=controlled_email_regenerate_configured,
         assistant_configured=bool(
             settings.enable_llm_assistant and settings.groq_api_key
         ),

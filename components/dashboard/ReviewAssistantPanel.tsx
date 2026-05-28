@@ -63,6 +63,10 @@ type QuestionId =
   | "priority"
   | "sales-angle"
   | "email-strength"
+  | "missing-data"
+  | "confidence"
+  | "risk-review"
+  | "personalize-draft"
   | "review-check"
   | "qa-score";
 
@@ -81,23 +85,31 @@ const QUESTION_GROUPS: QuestionGroup[] = [
     lens: "Research",
     questions: [
       { id: "evidence", label: "What evidence supports this lead?" },
+      { id: "missing-data", label: "What data is missing?" },
+      { id: "confidence", label: "What would improve confidence?" },
     ],
   },
   {
     lens: "Qualifier",
-    questions: [{ id: "priority", label: "Why this priority?" }],
+    questions: [
+      { id: "priority", label: "Why is this lead high/medium/low priority?" },
+    ],
   },
   {
     lens: "Strategist",
-    questions: [{ id: "sales-angle", label: "What angle should we use?" }],
+    questions: [{ id: "sales-angle", label: "What sales angle should I use?" }],
   },
   {
     lens: "Email Drafter",
-    questions: [{ id: "email-strength", label: "Is the email strong enough?" }],
+    questions: [
+      { id: "email-strength", label: "Is the email strong enough?" },
+      { id: "personalize-draft", label: "How should I personalize this draft?" },
+    ],
   },
   {
     lens: "QA Evaluator",
     questions: [
+      { id: "risk-review", label: "What risks should I review before outreach?" },
       { id: "review-check", label: "What should I review before approving?" },
       { id: "qa-score", label: "What does the QA score mean?" },
     ],
@@ -237,6 +249,53 @@ function answerReviewCheck(detail: LeadDetail): string {
     : FALLBACK;
 }
 
+
+function answerMissingData(detail: LeadDetail): string {
+  const missing = missingLeadFields(detail);
+  if (missing.length === 0) {
+    return "The loaded context includes the core lead fields, company summary, evidence, strategy, and email draft. Still verify any public facts before outreach.";
+  }
+  return `Missing or weak fields: ${missing.join(", ")}. Fill these before approving if the outreach depends on them.`;
+}
+
+function answerConfidence(detail: LeadDetail): string {
+  const suggestions: string[] = [];
+  if (detail.evidence_cards.length < 2) suggestions.push("add more evidence cards or run manual live research");
+  if (detail.fit_risks.length > 0) suggestions.push(`resolve fit risks such as ${listFirst(detail.fit_risks, 2)}`);
+  if (!hasText(detail.company_summary)) suggestions.push("add a concise company summary");
+  if (!hasText(detail.contact_role)) suggestions.push("confirm the buyer role");
+  if (qaAvailable(detail) && detail.qa_score < 80) suggestions.push("improve QA subscores before approval");
+  return suggestions.length > 0
+    ? `Confidence would improve if you ${suggestions.join("; ")}.`
+    : "Confidence is supported by the available evidence and QA signals. Keep the human review step before outreach.";
+}
+
+function answerRiskReview(detail: LeadDetail): string {
+  const risks = [...detail.fit_risks];
+  if (detail.low_evidence) risks.push("low evidence for this lead");
+  if (qaAvailable(detail) && detail.qa_scores.hallucination_risk !== "Low") {
+    risks.push(`QA hallucination risk is ${detail.qa_scores.hallucination_risk}`);
+  }
+  if (!hasText(detail.website)) risks.push("missing website");
+  if (!hasText(detail.contact_role)) risks.push("missing contact role");
+  return risks.length > 0
+    ? `Review these risks before outreach: ${listFirst(risks, 5)}.`
+    : "No major risks are flagged in the loaded context. Still verify the draft and evidence before sending outside LeadForge.";
+}
+
+function answerPersonalizeDraft(detail: LeadDetail): string {
+  const notes = detail.personalization_notes?.length
+    ? `Use these existing notes: ${listFirst(detail.personalization_notes, 3)}.`
+    : "No personalization notes are loaded, so keep the draft exploratory.";
+  const angle = hasText(detail.sales_angle)
+    ? ` Anchor the message on: ${detail.sales_angle}`
+    : " Avoid adding claims that are not in the lead context.";
+  const evidence = detail.evidence_cards.length
+    ? ` Reference evidence carefully: ${listFirst(detail.evidence_cards.map((card) => card.headline), 2)}.`
+    : " Do not imply external research or recent events.";
+  return `${notes}${angle}${evidence}`;
+}
+
 function answerQaScore(detail: LeadDetail): string {
   if (!qaAvailable(detail)) return FALLBACK;
 
@@ -260,6 +319,14 @@ function buildAnswer(questionId: QuestionId, detail: LeadDetail): string {
       return answerSalesAngle(detail);
     case "email-strength":
       return answerEmailStrength(detail);
+    case "missing-data":
+      return answerMissingData(detail);
+    case "confidence":
+      return answerConfidence(detail);
+    case "risk-review":
+      return answerRiskReview(detail);
+    case "personalize-draft":
+      return answerPersonalizeDraft(detail);
     case "review-check":
       return answerReviewCheck(detail);
     case "qa-score":

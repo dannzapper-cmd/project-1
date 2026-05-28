@@ -39,6 +39,7 @@ _PROTECTED_EXACT_POST_PATHS: frozenset[str] = frozenset(
         "/api/intake/extract-file",
         "/api/demo/pipeline/batch",
         "/api/demo/pipeline/live-groq",
+        "/api/demo/email/regenerate-draft",
         "/api/research/live-company",
         "/api/assistant/lead-question",
     }
@@ -48,6 +49,7 @@ _LIVE_PATH_PREFIXES: tuple[str, ...] = (
     "/api/research/live-company",
     "/api/assistant/lead-question",
     "/api/demo/pipeline/live-groq/",
+    "/api/demo/email/regenerate-draft/",
     "/api/demo/model-service/groq-check",
 )
 
@@ -90,6 +92,8 @@ def is_protected_demo_path(method: str, path: str) -> bool:
         if path in _PROTECTED_EXACT_POST_PATHS:
             return True
         if path.startswith("/api/demo/pipeline/live-groq/"):
+            return True
+        if path.startswith("/api/demo/email/regenerate-draft/"):
             return True
 
     if normalized_method == "GET":

@@ -6,6 +6,8 @@ Product-focused walkthrough scripts for LeadForge-Agentic Core. Use these for a 
 
 **Before you demo:** Confirm backend is reachable if showing Add Leads → Process (see [deployment.md](./deployment.md)). Prefer synthetic or anonymized B2B sample data. Do not display API keys, `.env` files, or real personal data on screen.
 
+**Recorded demo note:** Recorded demo assets show the stable replay-mode public demo. Later polish may improve controlled live-mode messaging, regenerate draft affordances, selector contrast, and assistant guidance; do not imply the video shows those changes unless it is re-recorded.
+
 ---
 
 ## 2–4 minute video demo (recommended)
@@ -83,10 +85,10 @@ Extend the 60-second script with:
 | 0:30 | Deterministic pipeline | Dashboard (`api` or `mock` mode) | Open lead, show five agent sections | "Orchestration is plain Python: Research → Qualifier → Strategist → Email Drafter → QA Evaluator. No LangGraph runtime — deferred per ADR when linear orchestration is enough." |
 | 1:00 | Agent contracts | Lead detail drawer | Point at structured fields | "Agents share explicit contracts; outputs feed forward deterministically for tests and demos." |
 | 1:20 | Telemetry | `GET /api/demo/telemetry/runs` (browser or curl) **or** mention if no UI | Show JSON summaries | "In-memory telemetry records summary metadata only — no full prompts or raw provider payloads. Read-only endpoints; not a durable observability DB." |
-| 1:40 | Live Groq (optional) | Terminal with backend running | `curl -X POST .../live-groq/lead_001` only if env enabled | "Live path is backend-only, opt-in, one lead per request, token-capped, with deterministic-vs-live comparison. No frontend button yet. Failures surface explicitly — no silent fallback to live success." |
+| 1:40 | Live Groq (optional) | Terminal with backend running | `curl -X POST .../live-groq/lead_001` only if env enabled | "Live paths are backend-only, opt-in, one lead per request, token-capped or rate-limited. The public UI does not expose live batch Groq; controlled single-lead draft regeneration appears only when backend status says it is safe." |
 | 2:10 | LangGraph ADR | `docs/adr/langgraph-decision.md` | Open Status + Decision | "LangGraph is deferred: we don't need branching, durable checkpoints, or parallel tool fan-out today. Revisit when ADR criteria become real requirements." |
 | 2:30 | Human review + export | Dashboard | Toggle review, export CSV | "Review state is browser-local; backend does not persist review decisions." |
-| 2:50 | Roadmap | `docs/roadmap/advanced-capabilities.md` | Scroll capability table | "Smart Intake, live research, vertical profiles, durable telemetry, and frontend live controls are roadmap — clearly separated from what ships today." |
+| 2:50 | Roadmap | `docs/roadmap/advanced-capabilities.md` | Scroll capability table | "Smart Intake, durable telemetry, public batch live controls, and production SaaS features are roadmap — clearly separated from what ships today." |
 
 **Emphasize:** Test oracle (deterministic), explicit failure semantics on live path, ADR-driven deferral of graph runtime.
 
@@ -147,7 +149,7 @@ Extend the 60-second script with:
 | "LangGraph-powered" | "Linear plain-Python orchestration; LangGraph deferred per ADR" |
 | "Production SaaS / multi-tenant" | "Local demo product with explicit limitations" |
 | "Intake works with any data shape" | "B2B Sales / RevOps fields; warnings when data is incomplete" |
-| "Click Run Groq in the UI" | "Live Groq is API-only until frontend control ships" |
+| "Click Run Groq for a batch in the UI" | "Public live batch Groq is intentionally not exposed. Single-lead draft regeneration is controlled by backend status, demo access, rate limits, and cost tracking." |
 | "I built this so recruiters…" | *(omit — keep focus on product and architecture)* |
 | "Guaranteed reply rates" | "QA scores and recommendations are advisory" |
 | "Real company intelligence" (when using demo data) | "Synthetic/curated demo dataset" |

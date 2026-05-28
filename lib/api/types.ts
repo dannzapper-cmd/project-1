@@ -362,6 +362,76 @@ export interface LiveResearchResponse {
 }
 
 // --------------------------------------------------------------------------- //
+// Block 11C.4 — Safe backend capability status + draft regeneration           //
+// --------------------------------------------------------------------------- //
+
+export interface SystemStatusResponse {
+  backend_alive: boolean;
+  demo_mode_available: boolean;
+  demo_access_required: boolean;
+  live_research_configured: boolean;
+  live_model_pipeline_configured: boolean;
+  live_email_regenerate_configured: boolean;
+  assistant_configured: boolean;
+  rate_limit_enabled: boolean;
+  max_leads_per_run: number;
+  max_upload_size_mb: number;
+  live_single_lead_only: boolean;
+  public_live_batch_enabled: boolean;
+  storage_mode: "ephemeral";
+  build_sha: string;
+}
+
+export type EmailRegenerateStatus =
+  | "ok"
+  | "deterministic_fallback"
+  | "disabled"
+  | "unavailable"
+  | "provider_error";
+
+export type EmailRegenerateMode =
+  | "live_groq"
+  | "deterministic_fallback"
+  | "off";
+
+
+export interface EmailRegenerateLeadContext {
+  company_name: string;
+  website?: string | null;
+  industry?: string | null;
+  country?: string | null;
+  employee_count?: number | null;
+  contact_name?: string | null;
+  contact_role?: string | null;
+  company_summary?: string;
+  pain_hypothesis?: string;
+  sales_angle?: string;
+  core_message?: string;
+  personalization_notes?: string[];
+}
+
+export interface EmailRegenerateRequest {
+  lead: EmailRegenerateLeadContext;
+}
+
+export interface EmailRegenerateResponse {
+  status: EmailRegenerateStatus;
+  mode: EmailRegenerateMode;
+  lead_id: string;
+  draft_only: boolean;
+  email_subject: string;
+  email_body: string;
+  personalization_notes: string[];
+  provider: "groq" | "none";
+  model: string | null;
+  latency: string | null;
+  tokens: number | null;
+  estimated_cost: string | null;
+  user_message: string;
+  warnings: string[];
+}
+
+// --------------------------------------------------------------------------- //
 // Block 10G — Contextual LLM Lead Assistant                                  //
 //                                                                            //
 // Mirrors `app/schemas/assistant.py`. The endpoint always returns HTTP 200;  //

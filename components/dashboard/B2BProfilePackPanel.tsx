@@ -63,19 +63,20 @@ export function B2BProfilePackPanel({
             <SelectTrigger
               id={selectId}
               size="sm"
-              className="w-full sm:w-[280px] border-[--border-default] bg-[--bg-elevated] text-[--text-primary]"
+              className="w-full sm:w-[280px] border-[--border-default] !bg-white text-[--text-primary] shadow-sm"
             >
               <SelectValue placeholder="Select profile" />
             </SelectTrigger>
             <SelectContent
               position="popper"
-              className="z-[200] bg-[--bg-elevated] text-[--text-primary] border border-[--border-default] shadow-lg backdrop-blur-none"
+              className="z-[300] !bg-white text-slate-900 border border-slate-300 shadow-[0_16px_40px_rgba(15,23,42,0.18)] backdrop-blur-none"
+              style={{ backgroundColor: "#ffffff" }}
             >
               {B2B_PROFILE_PACKS.map((p) => (
                 <SelectItem
                   key={p.id}
                   value={p.id}
-                  className="text-[--text-primary] cursor-pointer focus:bg-[--bg-overlay] focus:text-[--text-primary] data-[highlighted]:bg-[--bg-overlay] data-[highlighted]:text-[--text-primary] data-[state=checked]:text-[--accent-secondary]"
+                  className="cursor-pointer text-slate-900 focus:bg-slate-100 focus:text-slate-950 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-950 data-[state=checked]:text-[--accent-secondary]"
                 >
                   {p.displayName}
                 </SelectItem>
