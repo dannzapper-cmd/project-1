@@ -494,6 +494,7 @@ Post-v1 items are **design intent** until shipped and reflected in the capabilit
 | Document | Description |
 |----------|-------------|
 | [Case study](docs/case-study.md) | Problem, architecture, impact, trade-offs |
+| [Business case](docs/business-case.md) | Illustrative ROI, industry benchmarks, safe claims |
 | [Portfolio narrative](docs/portfolio-narrative.md) | CV bullets, interview talking points |
 | [Architecture overview](docs/architecture-overview.md) | System design, diagrams, production gaps |
 | [Demo script](docs/demo-script.md) | 2–4 min video script + shorter walkthroughs |
