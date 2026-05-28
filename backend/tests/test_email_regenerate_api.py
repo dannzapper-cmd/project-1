@@ -92,7 +92,7 @@ def test_regenerate_draft_returns_live_draft_with_safe_metadata(monkeypatch) -> 
             content = json.dumps(
                 {
                     "email_subject": "Idea for NovaBridge",
-                    "email_body": "Hi Jordan,\n\nDraft only for review.\n\nBest,\nLeadForge",
+                    "email_body": "Hi Jordan,\n\nThis is a draft only for human review, based only on the selected lead context.\n\nBest,\nLeadForge",
                     "personalization_notes": ["Used selected lead context only."],
                     "confidence": "medium",
                 }
@@ -102,7 +102,7 @@ def test_regenerate_draft_returns_live_draft_with_safe_metadata(monkeypatch) -> 
                 provider=ModelProvider.GROQ,
                 model_name="llama-3.1-8b-instant",
                 content=content,
-                usage=ModelUsage(prompt_tokens=100, completion_tokens=80, total_tokens=180),
+                usage=ModelUsage(input_tokens=100, output_tokens=80, total_tokens=180),
                 cost=ModelCostEstimate(
                     input_cost=0.0,
                     output_cost=0.0,
