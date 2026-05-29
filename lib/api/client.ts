@@ -13,6 +13,8 @@ import { getDemoAccessHeaders } from "./demo-access.ts";
 import type {
   AssistantRequest,
   AssistantResponse,
+  EmailRegenerateRequest,
+  EmailRegenerateResponse,
   EnrichedBatch,
   EnrichedLeadResult,
   IntakePreviewRequest,
@@ -22,6 +24,7 @@ import type {
   LiveResearchRequest,
   LiveResearchResponse,
   PipelineRunContractOutput,
+  SystemStatusResponse,
 } from "./types.ts";
 
 export interface ApiClientOptions {
@@ -173,6 +176,12 @@ export function getDemoLeads(opts: ApiClientOptions = {}): Promise<LeadIn[]> {
   return getJson<LeadIn[]>("/api/demo/leads", opts);
 }
 
+export function getSystemStatus(
+  opts: ApiClientOptions = {},
+): Promise<SystemStatusResponse> {
+  return getJson<SystemStatusResponse>("/api/system/status", opts);
+}
+
 export function postIntakePreview(
   request: IntakePreviewRequest,
   opts: ApiClientOptions = {},
@@ -240,6 +249,24 @@ export function postAssistantLeadQuestion(
 ): Promise<AssistantResponse> {
   return postJson<AssistantResponse>(
     "/api/assistant/lead-question",
+    request,
+    opts,
+  );
+}
+
+/**
+ * Block 11C.4 — controlled single-lead live email draft regeneration.
+ *
+ * Backend-only Groq path. No API keys are accepted from the browser and the
+ * backend route returns draft text only; it never sends email or writes CRM.
+ */
+export function postRegenerateEmailDraft(
+  leadId: string,
+  request: EmailRegenerateRequest,
+  opts: ApiClientOptions = {},
+): Promise<EmailRegenerateResponse> {
+  return postJson<EmailRegenerateResponse>(
+    `/api/demo/email/regenerate-draft/${encodeURIComponent(leadId)}`,
     request,
     opts,
   );

@@ -40,7 +40,7 @@ LeadForge does **not** today provide image/OCR intake, vertical profiles, LangGr
 | Vertical Profiles | 🗺 Roadmap | — | Future |
 | LangGraph runtime | ⏸ Deferred | — | See ADR |
 | Durable telemetry | 🗺 Roadmap | — | Future |
-| Frontend live Groq button | 🗺 Roadmap | — | Future |
+| Public frontend live Groq batch button | 🗺 Roadmap | — | Future |
 
 This table is the single source of truth for current vs planned state. Do not mark roadmap items as implemented until they ship and are reflected here.
 
@@ -224,8 +224,8 @@ The dashboard may expose a **manual** control per lead, for example:
 
 ### Not available today
 
-- No frontend live Groq button
-- Live Groq is API-only and must be invoked explicitly (e.g. `curl` or API client)
+- No public frontend live Groq batch button
+- Controlled single-lead live draft regeneration may be invoked from the lead drawer only when backend status confirms demo access, rate limits, and Groq configuration. Full live pipeline comparison remains API-only.
 
 ---
 

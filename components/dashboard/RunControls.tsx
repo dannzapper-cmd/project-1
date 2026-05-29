@@ -7,16 +7,21 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { SystemStatusResponse } from "@/lib/api/types";
 
 interface RunControlsProps {
   /** True after the user has processed a batch in this session. */
   hasLoadedResults?: boolean;
   leadsCount?: number;
+  systemStatus?: SystemStatusResponse | null;
+  systemStatusError?: string | null;
 }
 
 export function RunControls({
   hasLoadedResults = false,
   leadsCount = 0,
+  systemStatus = null,
+  systemStatusError = null,
 }: RunControlsProps = {}) {
   const scrollToIntake = () => {
     document.getElementById("lead-intake")?.scrollIntoView({
@@ -24,6 +29,29 @@ export function RunControls({
       block: "start",
     });
   };
+  const scrollToResults = () => {
+    const target =
+      document.getElementById("lead-results") ??
+      document.getElementById("lead-intake");
+    target?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
+  const controlledLiveAvailable =
+    systemStatus?.live_email_regenerate_configured === true &&
+    systemStatus.live_single_lead_only === true &&
+    systemStatus.public_live_batch_enabled === false;
+  const liveButtonLabel = controlledLiveAvailable
+    ? "Live Groq mode — controlled"
+    : "Live Groq mode — backend required";
+  const liveHelper = controlledLiveAvailable
+    ? "Replay mode is active. Controlled Live Groq is backend-protected for one selected lead in the lead drawer; public batch live Groq is not exposed."
+    : "Replay mode is active. Live Groq runs require controlled backend configuration, demo access, rate limits, and cost tracking.";
+  const liveTooltip = controlledLiveAvailable
+    ? "Single-lead draft regeneration is available after selecting a lead. Replay remains the default safe mode."
+    : "Replay mode is active. Live Groq runs require controlled backend configuration.";
 
   return (
     <div className="surface-card rounded-lg p-5">
@@ -47,9 +75,9 @@ export function RunControls({
             )}
           </span>
           <p className="text-xs text-[--text-muted] mt-2">
-            Replay demo is safe and $0. Live batch model runs are disabled
-            here; demo access, rate limits, and max-leads protections stay
-            enforced.
+            Replay demo is safe and $0. Live Groq is controlled, backend-only,
+            and single-lead where enabled; public live batch model runs are not
+            exposed.
           </p>
         </div>
 
@@ -68,19 +96,23 @@ export function RunControls({
                   <span>
                     <button
                       type="button"
-                      disabled
-                      aria-disabled="true"
-                      className="btn-disabled !px-3 !py-1.5 !text-xs !font-semibold !shadow-none"
+                      disabled={!controlledLiveAvailable}
+                      aria-disabled={!controlledLiveAvailable}
+                      onClick={controlledLiveAvailable ? scrollToResults : undefined}
+                      title={liveTooltip}
+                      className={
+                        controlledLiveAvailable
+                          ? "btn-secondary !px-3 !py-1.5 !text-xs !font-semibold !shadow-none"
+                          : "btn-disabled !px-3 !py-1.5 !text-xs !font-semibold !shadow-none"
+                      }
                     >
-                      Live model run unavailable
+                      {liveButtonLabel}
                     </button>
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="max-w-xs text-xs">
-                    No safe live batch endpoint is exposed in this demo.
-                    Replay mode remains cost-controlled, rate limited, and
-                    protected by demo access.
+                    {liveTooltip}
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -104,6 +136,14 @@ export function RunControls({
           <strong className="font-medium text-[--text-primary]">Process</strong> in that section.
         </p>
       )}
+      <p className="text-xs text-[--text-secondary] mt-3 border-t border-[--border-subtle] pt-3">
+        {liveHelper}
+        {systemStatusError ? (
+          <span className="block mt-1 text-[--text-muted]">
+            Backend status could not be confirmed, so live controls stay disabled.
+          </span>
+        ) : null}
+      </p>
     </div>
   );
 }

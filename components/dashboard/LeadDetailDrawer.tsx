@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { ExternalLink, ChevronDown, ChevronUp, Loader2, RefreshCw } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -16,8 +16,17 @@ import { ProfileSalesAnglesCard } from "./ProfileSalesAnglesCard";
 import { LeadAgentActivityPanel } from "./LeadAgentActivityPanel";
 import { LiveResearchPanel } from "./LiveResearchPanel";
 import { ReviewAssistantPanel } from "./ReviewAssistantPanel";
+import { ApiError, postRegenerateEmailDraft } from "@/lib/api/client";
 import { downloadLeadCsv } from "@/lib/export/lead-export";
 import type { B2BProfilePack } from "@/lib/b2b-profile-packs";
+import type {
+  EmailRegenerateResponse,
+  SystemStatusResponse,
+} from "@/lib/api/types";
+import {
+  DEMO_ACCESS_REQUIRED_MESSAGE,
+  apiDetail,
+} from "@/lib/intake/intake-errors";
 import { mockLeadDetail } from "@/lib/mock-data";
 import type { Lead, LeadDetail, EvidenceCard } from "@/lib/types";
 
@@ -37,6 +46,7 @@ interface LeadDetailDrawerProps {
   detail?: LeadDetail | null;
   onStatusChange: (leadId: string, status: Lead["status"]) => void;
   profilePack?: B2BProfilePack;
+  systemStatus?: SystemStatusResponse | null;
 }
 
 function getFitScoreStyles(score: number) {
@@ -75,6 +85,38 @@ function getConfidenceColor(confidence: EvidenceCard["confidence"]) {
   }
 }
 
+
+function employeeBucketToCount(value: string | null | undefined): number | null {
+  if (!value) return null;
+  if (value === "11-50") return 50;
+  if (value === "51-200") return 200;
+  if (value === "201-500") return 500;
+  if (value === "501-1000") return 1000;
+  if (value === "1000+") return 1000;
+  const parsed = Number.parseInt(value.replace(/[^0-9]/g, ""), 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function describeRegenerateError(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.status === 401 || err.status === 403) {
+      return DEMO_ACCESS_REQUIRED_MESSAGE;
+    }
+    if (err.status === 429) {
+      return "Regenerate draft is rate limited for this public demo. Please wait a moment and try again.";
+    }
+    if (err.status === 503) {
+      return "Regenerate draft requires controlled backend live mode. Replay draft remains available.";
+    }
+    const detail = apiDetail(err.body);
+    return detail
+      ? `Regenerate draft failed (HTTP ${err.status}): ${detail}`
+      : `Regenerate draft failed with HTTP ${err.status}. Replay draft remains available.`;
+  }
+  if (err instanceof Error) return err.message;
+  return "Unexpected error regenerating the draft.";
+}
+
 export function LeadDetailDrawer({
   isOpen,
   onClose,
@@ -82,13 +124,26 @@ export function LeadDetailDrawer({
   detail: detailProp,
   onStatusChange,
   profilePack,
+  systemStatus,
 }: LeadDetailDrawerProps) {
   const [showPersonalizationNotes, setShowPersonalizationNotes] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [draftOverride, setDraftOverride] = useState<EmailRegenerateResponse | null>(null);
+  const [regenerateResult, setRegenerateResult] =
+    useState<EmailRegenerateResponse | null>(null);
+  const [regenerateError, setRegenerateError] = useState<string | null>(null);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    setDraftOverride(null);
+    setRegenerateResult(null);
+    setRegenerateError(null);
+    setIsRegenerating(false);
+  }, [lead?.id, detailProp?.id]);
 
   // Resolution order:
   //   1. Caller-provided `detailProp` (Phase 7.1 API mode, or any
@@ -98,14 +153,72 @@ export function LeadDetailDrawer({
   // The mock fallback preserves the drawer's visual output when
   // DATA_SOURCE === "mock" or when a consumer does not pass
   // `detail` at all.
-  const detail: LeadDetail =
+  const baseDetail: LeadDetail =
     detailProp ?? (lead ? { ...mockLeadDetail, ...lead } : mockLeadDetail);
+  const detail: LeadDetail = draftOverride
+    ? {
+        ...baseDetail,
+        email_subject: draftOverride.email_subject || baseDetail.email_subject,
+        email_body: draftOverride.email_body || baseDetail.email_body,
+        personalization_notes: draftOverride.personalization_notes.length
+          ? draftOverride.personalization_notes
+          : baseDetail.personalization_notes,
+        est_cost: draftOverride.estimated_cost ?? baseDetail.est_cost,
+        est_total_latency: draftOverride.latency ?? baseDetail.est_total_latency,
+        est_tokens: draftOverride.tokens ?? baseDetail.est_tokens,
+        model_used: draftOverride.model ?? baseDetail.model_used,
+        run_mode: draftOverride.mode === "live_groq" ? "Live" : baseDetail.run_mode,
+      }
+    : baseDetail;
   const fitStyles = getFitScoreStyles(detail.fit_score);
   const intakeWarnings = detail.intake_warnings ?? [];
+  const regenerateAvailable =
+    systemStatus?.live_email_regenerate_configured === true &&
+    systemStatus.live_single_lead_only === true &&
+    systemStatus.public_live_batch_enabled === false;
+  const regenerateDisabled = isRegenerating || !lead || !regenerateAvailable;
+  const regenerateHelper = regenerateAvailable
+    ? "Draft-only live Groq regeneration for this selected lead. Backend demo access, rate limits, and cost controls apply. No email is sent and no CRM is updated."
+    : "Regenerate requires controlled backend live mode. Replay draft remains available.";
 
   const handleStatusChange = (status: Lead["status"]) => {
     if (lead) {
       onStatusChange(lead.id, status);
+    }
+  };
+
+
+
+  const handleRegenerateDraft = async () => {
+    if (!lead || regenerateDisabled) return;
+    setIsRegenerating(true);
+    setRegenerateError(null);
+    setRegenerateResult(null);
+    try {
+      const result = await postRegenerateEmailDraft(lead.id, {
+        lead: {
+          company_name: detail.company || lead.company,
+          website: detail.website || null,
+          industry: detail.industry || null,
+          country: detail.country || null,
+          employee_count: employeeBucketToCount(detail.employees),
+          contact_name: detail.contact_name || null,
+          contact_role: detail.contact_role || null,
+          company_summary: detail.company_summary || "",
+          pain_hypothesis: detail.pain_hypothesis || "",
+          sales_angle: detail.sales_angle || "",
+          core_message: detail.core_message || "",
+          personalization_notes: detail.personalization_notes ?? [],
+        },
+      });
+      setRegenerateResult(result);
+      if (result.status === "ok" || result.status === "deterministic_fallback") {
+        setDraftOverride(result);
+      }
+    } catch (err) {
+      setRegenerateError(describeRegenerateError(err));
+    } finally {
+      setIsRegenerating(false);
     }
   };
 
@@ -355,7 +468,33 @@ export function LeadDetailDrawer({
 
             {/* Email Draft */}
             <section>
-              <h3 className="text-xs uppercase tracking-widest text-[--text-muted] font-mono mb-4">Email Draft</h3>
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-xs uppercase tracking-widest text-[--text-muted] font-mono">Email Draft</h3>
+                  <p className="mt-1 text-[10px] text-[--text-muted]">
+                    Draft-only review surface. LeadForge never sends email.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRegenerateDraft}
+                  disabled={regenerateDisabled}
+                  title={regenerateHelper}
+                  className="btn-secondary !px-3 !py-1.5 !text-xs disabled:cursor-not-allowed"
+                >
+                  {isRegenerating ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Regenerating…
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-3 w-3" />
+                      Regenerate draft
+                    </>
+                  )}
+                </button>
+              </div>
               <div className="bg-[--bg-elevated] border border-[--border-default] rounded-lg overflow-hidden">
                 <div className="px-4 py-3 border-b border-[--border-subtle]">
                   <span className="text-xs text-[--text-muted]">Subject: </span>
@@ -367,6 +506,61 @@ export function LeadDetailDrawer({
                   </p>
                 </div>
               </div>
+
+              <p className="mt-2 text-[10px] text-[--text-muted]">
+                {regenerateHelper}
+              </p>
+
+              {regenerateError && (
+                <div
+                  className="mt-3 rounded-lg border border-[--color-error]/30 bg-[--color-error-bg]/30 px-3 py-2 text-xs text-[--color-error]"
+                  role="alert"
+                >
+                  {regenerateError}
+                </div>
+              )}
+
+              {regenerateResult && (
+                <div
+                  className={`mt-3 rounded-lg border px-3 py-2 text-xs ${
+                    regenerateResult.status === "ok"
+                      ? "border-[--color-success]/30 bg-[--color-success-bg]/20 text-[--color-success]"
+                      : regenerateResult.status === "deterministic_fallback"
+                        ? "border-[--color-warning]/30 bg-[--color-warning-bg]/30 text-[--color-warning]"
+                        : "border-[--border-default] bg-[--bg-overlay] text-[--text-secondary]"
+                  }`}
+                  role="status"
+                >
+                  <p>{regenerateResult.user_message}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] opacity-90">
+                    <span>
+                      Mode: <span className="font-mono">{regenerateResult.mode}</span>
+                    </span>
+                    {regenerateResult.model && (
+                      <span>
+                        Model: <span className="font-mono">{regenerateResult.model}</span>
+                      </span>
+                    )}
+                    {regenerateResult.latency && (
+                      <span>
+                        Latency: <span className="font-mono">{regenerateResult.latency}</span>
+                      </span>
+                    )}
+                    {regenerateResult.estimated_cost && (
+                      <span>
+                        Est. cost: <span className="font-mono">{regenerateResult.estimated_cost}</span>
+                      </span>
+                    )}
+                  </div>
+                  {regenerateResult.warnings.length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {regenerateResult.warnings.map((warning) => (
+                        <li key={warning}>· {warning}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
 
               {/* Personalization Notes Toggle */}
               <button

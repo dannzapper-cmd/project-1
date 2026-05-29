@@ -38,6 +38,7 @@ def test_system_status_exposes_safe_booleans(monkeypatch) -> None:
     monkeypatch.setenv("ENABLE_LIVE_RESEARCH", "true")
     monkeypatch.setenv("EXA_API_KEY", "test-key")
     monkeypatch.setenv("ENABLE_LLM_ASSISTANT", "true")
+    monkeypatch.setenv("ENABLE_LIVE_MODEL_PIPELINE", "true")
     monkeypatch.setenv("GROQ_API_KEY", "test-key")
     monkeypatch.setenv("BUILD_SHA", "abc1234")
     get_settings.cache_clear()
@@ -55,6 +56,10 @@ def test_system_status_exposes_safe_booleans(monkeypatch) -> None:
     assert body["demo_access_required"] is True
     assert body["live_research_configured"] is True
     assert body["assistant_configured"] is True
+    assert body["live_model_pipeline_configured"] is True
+    assert body["live_email_regenerate_configured"] is True
+    assert body["live_single_lead_only"] is True
+    assert body["public_live_batch_enabled"] is False
     assert body["rate_limit_enabled"] is True
     assert body["storage_mode"] == "ephemeral"
     assert body["build_sha"] == "abc1234"

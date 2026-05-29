@@ -24,6 +24,10 @@ from app.schemas.agents import (
     StrategistAgentOutput,
 )
 from app.schemas.demo import DemoCompanyResearch, DemoSummary
+from app.schemas.email_regenerate import (
+    EmailRegenerateRequest,
+    EmailRegenerateResponse,
+)
 from app.schemas.evaluation import (
     LeadEvaluationReport,
     LeadTraceReport,
@@ -613,6 +617,156 @@ def get_agents_email_drafter_groq_for_lead(
     except DemoDataError as exc:
         _raise_500(exc)
         raise  # pragma: no cover
+
+
+@router.post(
+    "/email/regenerate-draft/{lead_id}",
+    response_model=EmailRegenerateResponse,
+)
+def post_regenerate_email_draft_for_lead(
+    lead_id: str,
+    payload: EmailRegenerateRequest,
+) -> EmailRegenerateResponse:
+    """Regenerate one reviewable email draft via controlled backend Groq.
+
+    One selected lead context enters, one draft-only response leaves. This
+    route never sends email, never writes CRM, and never exposes a batch live
+    model surface. The global safety middleware protects it with demo access
+    and live request rate limits when configured.
+    """
+
+    settings = get_settings()
+    if not settings.enable_live_model_pipeline:
+        return EmailRegenerateResponse(
+            status="disabled",
+            mode="off",
+            lead_id=lead_id,
+            user_message="Regenerate draft requires controlled backend live mode.",
+            warnings=[
+                "ENABLE_LIVE_MODEL_PIPELINE is not enabled on this backend.",
+            ],
+        )
+    if not settings.groq_api_key:
+        return EmailRegenerateResponse(
+            status="unavailable",
+            mode="off",
+            lead_id=lead_id,
+            user_message="Regenerate draft requires backend Groq configuration.",
+            warnings=["No frontend API key is accepted or exposed."],
+        )
+    if not settings.rate_limit_enabled or not (settings.demo_access_code or "").strip():
+        return EmailRegenerateResponse(
+            status="disabled",
+            mode="off",
+            lead_id=lead_id,
+            user_message="Regenerate draft requires demo access and live rate limits.",
+            warnings=[
+                "Live draft generation stays disabled until demo access and "
+                "rate limiting are configured.",
+            ],
+        )
+
+    from app.agents.email_drafter_agent import EmailDrafterAgentService
+    from app.schemas.agents import EmailDrafterAgentInput
+
+    context = payload.lead
+    personalization_notes = [
+        note.strip()[:300]
+        for note in context.personalization_notes
+        if isinstance(note, str) and note.strip()
+    ][:5]
+    if not personalization_notes:
+        personalization_notes = [
+            "Use only the selected lead context and keep the draft exploratory."
+        ]
+
+    agent_input = EmailDrafterAgentInput(
+        lead=LeadIn(
+            lead_id=lead_id,
+            company_name=context.company_name,
+            website=context.website,
+            industry=context.industry,
+            country=context.country,
+            employee_count=context.employee_count,
+            contact_name=context.contact_name,
+            contact_role=context.contact_role,
+            notes=None,
+        ),
+        company_summary=context.company_summary or "",
+        pain_hypothesis=(
+            context.pain_hypothesis
+            or "Explore whether the team is spending too much time on manual lead qualification."
+        ),
+        sales_angle=(
+            context.sales_angle
+            or "Use a concise, low-pressure sales-operations angle based on available context."
+        ),
+        core_message=(
+            context.core_message
+            or "Offer a reviewable example of how LeadForge prioritizes and drafts outreach."
+        ),
+        personalization_notes=personalization_notes,
+        run_id=f"email_regenerate_{lead_id}",
+    )
+
+    try:
+        groq_service = GroqModelService(default_model=settings.groq_default_model)
+        output = EmailDrafterAgentService(
+            model_service=groq_service,
+            use_model_synthesis=True,
+        ).run(agent_input)
+    except ValueError:
+        return EmailRegenerateResponse(
+            status="provider_error",
+            mode="off",
+            lead_id=lead_id,
+            user_message=(
+                "The backend could not regenerate this draft. Replay draft "
+                "remains available."
+            ),
+            warnings=["Provider configuration or response validation failed."],
+        )
+
+    metadata = output.result.metadata
+    if output.result.success and not metadata.simulated:
+        response_status = "ok"
+        response_mode = "live_groq"
+        message = "Live Groq draft regenerated for this lead only. Draft not sent."
+        warnings: list[str] = []
+    elif output.result.success:
+        response_status = "deterministic_fallback"
+        response_mode = "deterministic_fallback"
+        message = (
+            "Live draft failed guardrails, so the deterministic replay draft "
+            "was kept for review."
+        )
+        warnings = list(output.personalization_notes[-1:])
+    else:
+        response_status = "provider_error"
+        response_mode = "off"
+        message = (
+            "The backend could not regenerate this draft. Replay draft remains "
+            "available."
+        )
+        warnings = [
+            "Provider generation failed before a safe live draft was produced.",
+        ]
+
+    return EmailRegenerateResponse(
+        status=response_status,
+        mode=response_mode,
+        lead_id=output.lead_id,
+        email_subject=output.email_subject,
+        email_body=output.email_body,
+        personalization_notes=list(output.personalization_notes),
+        provider="groq" if response_mode == "live_groq" else "none",
+        model=metadata.model,
+        latency=metadata.latency,
+        tokens=metadata.tokens,
+        estimated_cost=metadata.cost,
+        user_message=message,
+        warnings=warnings,
+    )
 
 
 # --------------------------------------------------------------------------- #
