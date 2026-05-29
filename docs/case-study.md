@@ -4,7 +4,7 @@ A controlled B2B sales intelligence workflow for revenue teams who need traceabl
 
 **Live demo:** [https://v0-project-1-delta-lovat.vercel.app](https://v0-project-1-delta-lovat.vercel.app)
 
-**Demo video playlist:** [LeadForge production-like walkthrough and product demo](https://youtube.com/playlist?list=PLWHDR1oCK8kv8BKlhIce515TlO6OkWOVP&si=FNxQ2KqgrcAjoSHL) — the recorded demo shows the stable replay-mode public demo; some final polish may differ slightly from the latest deployed version, including controlled regenerate/live-mode affordances. See [`demo-video.md`](./demo-video.md).
+**Demo video playlist:** [LeadForge production-like walkthrough and product demo](https://youtube.com/playlist?list=PLWHDR1oCK8kv8BKlhIce515TlO6OkWOVP&si=FNxQ2KqgrcAjoSHL) — the recorded demo shows the stable replay-mode public demo; controlled live-mode affordances may differ slightly in the latest deployed version. See [`demo-video.md`](./demo-video.md).
 
 ---
 
@@ -122,6 +122,8 @@ Orchestration is **linear in-process Python** — LangGraph is **deferred** per 
 ---
 
 ## Demo safety and cost control
+
+The public demo runs in replay mode for reliability and cost control — stable for recruiters and portfolio visitors, with no surprise API spend and no public live batch Groq execution. For controlled technical demos, LeadForge can enable a backend-only Groq path for single-lead draft regeneration, protected by demo access, rate limits, and cost tracking. That path remains draft-only: LeadForge never sends email and never writes to a CRM. The trade-off is intentional: replay protects the public surface; opt-in live Groq is rate-limited, demo-access gated, and scoped to one lead at a time.
 
 | Control | Effect |
 |---------|--------|
