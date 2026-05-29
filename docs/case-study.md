@@ -4,6 +4,8 @@ A controlled B2B sales intelligence workflow for revenue teams who need traceabl
 
 **Live demo:** [https://v0-project-1-delta-lovat.vercel.app](https://v0-project-1-delta-lovat.vercel.app)
 
+**Demo video playlist:** [LeadForge production-like walkthrough and product demo](https://youtube.com/playlist?list=PLWHDR1oCK8kv8BKlhIce515TlO6OkWOVP&si=FNxQ2KqgrcAjoSHL) — the recorded demo shows the stable replay-mode public demo; some final polish may differ slightly from the latest deployed version, including controlled regenerate/live-mode affordances. See [`demo-video.md`](./demo-video.md).
+
 ---
 
 ## Problem
@@ -182,6 +184,7 @@ Based on industry benchmarks, teams using similar tooling report meaningful rese
 - [README](../README.md)  
 - [Business case](./business-case.md)  
 - [Demo script](./demo-script.md)  
+- [Demo video](./demo-video.md)  
 - [Portfolio narrative](./portfolio-narrative.md)  
 - [Deployment](./deployment.md)  
 - [Operations runbook](./operations.md)

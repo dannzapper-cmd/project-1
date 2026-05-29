@@ -4,6 +4,8 @@ Use this document for interviews, LinkedIn, and portfolio copy. LeadForge is pos
 
 **Demo:** [https://v0-project-1-delta-lovat.vercel.app](https://v0-project-1-delta-lovat.vercel.app)
 
+**Demo video playlist:** [LeadForge production-like walkthrough and product demo](https://youtube.com/playlist?list=PLWHDR1oCK8kv8BKlhIce515TlO6OkWOVP&si=FNxQ2KqgrcAjoSHL) — recorded replay-mode walkthrough; see [`demo-video.md`](./demo-video.md) for versioning notes.
+
 ---
 
 ## Short project pitch (30 seconds)
@@ -74,5 +76,6 @@ For B2B sales and RevOps, LeadForge reduces manual research and inconsistent qua
 
 - [Case study](./case-study.md)  
 - [Demo script](./demo-script.md)  
+- [Demo video](./demo-video.md)  
 - [README](../README.md)  
 - [Business case](./business-case.md)

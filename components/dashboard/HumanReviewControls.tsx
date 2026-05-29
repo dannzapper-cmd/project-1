@@ -113,33 +113,6 @@ export function HumanReviewControls({
           </Button>
 
           {/*
-            Regenerate Email and Export Lead are intentionally inert
-            in this demo. The dashboard has no backend write surface
-            for email regeneration (no model is invoked from the UI)
-            and no export pipeline. We disable both buttons rather
-            than hide them so reviewers can still see the planned
-            human-in-the-loop affordances; tooltips state the demo
-            limitation explicitly.
-          */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span>
-                <Button
-                  disabled
-                  aria-disabled="true"
-                  variant="outline"
-                  className="px-4 py-2 text-sm border-[--border-default] text-[--text-secondary] opacity-50 cursor-not-allowed"
-                >
-                  Regenerate email (coming soon)
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Regenerate — not available in demo mode. No model is called from the dashboard.</p>
-            </TooltipContent>
-          </Tooltip>
-
-          {/*
             Block 7.4: Export becomes a real local CSV download once
             the lead has been reviewed (status !== "Pending Review"
             and onExportLead is wired). For pending leads the button
@@ -185,6 +158,12 @@ export function HumanReviewControls({
       </TooltipProvider>
 
       <p className="text-xs text-[--text-muted] mt-3">
+        Draft regeneration is available from the Email Draft section when controlled backend
+        live mode is enabled. Regenerate is draft-only — LeadForge never sends email and never
+        writes to a CRM. Replay mode remains the safe default public path; there is no unlimited
+        public Groq usage.
+      </p>
+      <p className="text-xs text-[--text-muted] mt-2">
         Approving a lead only marks it locally for review in this demo. No email is sent,
         no data is written to the backend, and the status is not persisted across page reloads.
         Exporting downloads a CSV to your computer — it does not push the lead anywhere.
