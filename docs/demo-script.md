@@ -4,6 +4,8 @@ Product-focused walkthrough scripts for LeadForge-Agentic Core. Use these for a 
 
 **Public demo:** [https://v0-project-1-delta-lovat.vercel.app](https://v0-project-1-delta-lovat.vercel.app)
 
+**Demo video playlist:** [LeadForge production-like walkthrough and product demo](https://youtube.com/playlist?list=PLWHDR1oCK8kv8BKlhIce515TlO6OkWOVP&si=FNxQ2KqgrcAjoSHL) — see [`demo-video.md`](./demo-video.md) for versioning notes.
+
 **Before you demo:** Confirm backend is reachable if showing Add Leads → Process (see [deployment.md](./deployment.md)). Prefer synthetic or anonymized B2B sample data. Do not display API keys, `.env` files, or real personal data on screen.
 
 **Recorded demo note:** Recorded demo assets show the stable replay-mode public demo. Later polish may improve controlled live-mode messaging, regenerate draft affordances, selector contrast, and assistant guidance; do not imply the video shows those changes unless it is re-recorded.

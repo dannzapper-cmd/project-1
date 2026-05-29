@@ -12,6 +12,10 @@ Revenue teams lose time to manual research, inconsistent qualification, generic 
 
 **[https://v0-project-1-delta-lovat.vercel.app](https://v0-project-1-delta-lovat.vercel.app)** — landing and `/demo` dashboard. Add Leads → Preview → Process requires the Render backend (`NEXT_PUBLIC_API_URL`). The public demo uses **replay/cost-controlled behavior** by default; **live batch Groq execution is intentionally unavailable** in the UI.
 
+**Demo video playlist:** [LeadForge production-like walkthrough and product demo](https://youtube.com/playlist?list=PLWHDR1oCK8kv8BKlhIce515TlO6OkWOVP&si=FNxQ2KqgrcAjoSHL)
+
+The recorded demo shows the stable replay-mode public demo. Some final polish may differ slightly from the latest deployed version, including controlled regenerate/live-mode affordances. See [`docs/demo-video.md`](docs/demo-video.md) for details.
+
 ### Core user flow
 
 ```
@@ -498,6 +502,7 @@ Post-v1 items are **design intent** until shipped and reflected in the capabilit
 | [Portfolio narrative](docs/portfolio-narrative.md) | CV bullets, interview talking points |
 | [Architecture overview](docs/architecture-overview.md) | System design, diagrams, production gaps |
 | [Demo script](docs/demo-script.md) | 2–4 min video script + shorter walkthroughs |
+| [Demo video](docs/demo-video.md) | Recorded playlist link and versioning notes |
 | [Deployment guide](docs/deployment.md) | Render backend deployment and Vercel wiring |
 | [Operations runbook](docs/operations.md) | Env vars, smoke checks, rollback, rate-limit notes |
 | [Screenshots checklist](docs/screenshots-checklist.md) | Capture guide and safety rules |
