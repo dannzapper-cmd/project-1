@@ -4,7 +4,7 @@ Use this document for interviews, LinkedIn, and portfolio copy. LeadForge is pos
 
 **Demo:** [https://v0-project-1-delta-lovat.vercel.app](https://v0-project-1-delta-lovat.vercel.app)
 
-**Demo video playlist:** [LeadForge production-like walkthrough and product demo](https://youtube.com/playlist?list=PLWHDR1oCK8kv8BKlhIce515TlO6OkWOVP&si=FNxQ2KqgrcAjoSHL) — recorded replay-mode walkthrough; see [`demo-video.md`](./demo-video.md) for versioning notes.
+**Demo video playlist:** [LeadForge production-like walkthrough and product demo](https://youtube.com/playlist?list=PLWHDR1oCK8kv8BKlhIce515TlO6OkWOVP&si=FNxQ2KqgrcAjoSHL) — recorded replay-mode walkthrough; controlled live-mode affordances may differ slightly in the latest deployed version. See [`demo-video.md`](./demo-video.md).
 
 ---
 
@@ -47,16 +47,17 @@ For B2B sales and RevOps, LeadForge reduces manual research and inconsistent qua
 
 1. **Why human-in-the-loop?** Outreach and qualification carry compliance and brand risk; AI prepares drafts and evidence, humans approve export.  
 2. **Why deterministic baseline?** Replay-safe demos, CI without API spend, and a canonical oracle for live-model comparison.  
-3. **Why restrict public live batch Groq?** Cost control, abuse prevention, and honest portfolio boundaries — live path exists API-side for experiments.  
-4. **Why defer LangGraph?** Linear orchestration meets current requirements; ADR documents revisit criteria when branching/checkpoints are needed.  
-5. **What is ephemeral storage?** Runs and review are not durable across Render restarts — stated upfront to avoid false SaaS claims.  
-6. **How do you handle messy intake?** Column mapping, row validation, warnings for incomplete B2B fields — processable with low-evidence flags.  
+3. **Why restrict public live batch Groq?** Cost control, abuse prevention, and honest portfolio boundaries — live path exists API-side for controlled technical demos, not as unlimited public usage.  
+4. **Public replay vs controlled live Groq?** In the public version, I keep replay mode as the default to protect reliability and cost. For a controlled technical demo, I can enable backend-only Groq regeneration for one selected lead. That path is demo-access gated, rate-limited, draft-only, and never sends email or writes to CRM.  
+5. **Why defer LangGraph?** Linear orchestration meets current requirements; ADR documents revisit criteria when branching/checkpoints are needed.  
+6. **What is ephemeral storage?** Runs and review are not durable across Render restarts — stated upfront to avoid false SaaS claims.  
+7. **How do you handle messy intake?** Column mapping, row validation, warnings for incomplete B2B fields — processable with low-evidence flags.  
 
 ---
 
 ## Trade-off explanation (use verbatim if helpful)
 
-> I intentionally restricted public live model execution to protect cost, reliability, and safety. The dashboard defaults to replay mode; deterministic batch processing is available when the backend is wired; live Groq remains a single-lead, opt-in backend API for comparison experiments — not an open public batch endpoint.
+> The public demo runs in replay mode for reliability and cost control. For a controlled technical demo, I enable a backend-only Groq path for single-lead draft regeneration — demo-access gated, rate-limited, and cost-tracked where available. It is never unlimited public live AI: no public live batch Groq, no email sending, and no CRM writes.
 
 ---
 

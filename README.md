@@ -14,7 +14,22 @@ Revenue teams lose time to manual research, inconsistent qualification, generic 
 
 **Demo video playlist:** [LeadForge production-like walkthrough and product demo](https://youtube.com/playlist?list=PLWHDR1oCK8kv8BKlhIce515TlO6OkWOVP&si=FNxQ2KqgrcAjoSHL)
 
-The recorded demo shows the stable replay-mode public demo. Some final polish may differ slightly from the latest deployed version, including controlled regenerate/live-mode affordances. See [`docs/demo-video.md`](docs/demo-video.md) for details.
+The recorded demo shows the stable replay-mode public demo. Controlled live-mode affordances may differ slightly in the latest deployed version. See [`docs/demo-video.md`](docs/demo-video.md) for details.
+
+### Public demo vs controlled technical demo
+
+The public demo runs in **cost-safe replay mode** for reliability and cost control. For **controlled technical demos**, LeadForge can enable a **backend-only Groq path** for **single-lead draft regeneration**, protected by demo access, rate limits, and cost tracking where available. Live Groq is not positioned as always-on public usage.
+
+| | **Public demo** | **Controlled technical / interview demo** |
+|---|-----------------|-------------------------------------------|
+| Default mode | Replay / cost-safe | Backend Groq opt-in via configuration |
+| Audience | Recruiters, portfolio visitors | Technical review, interviews |
+| API spend | No surprise model cost on the public path | Provider usage only when explicitly enabled |
+| Live batch Groq | **Not** exposed in the UI | **Not** available — single-lead only |
+| Regenerate | Replay draft by default | Single-lead draft regeneration when backend status allows |
+| Secrets | No Groq keys in the frontend | Backend-only (`GROQ_API_KEY`, env flags) |
+| Gates | Rate limits, max leads per run | Demo-access gated, rate-limited |
+| Outreach | Draft-only, human-in-the-loop | Draft-only — **no email sending**, **no CRM writes** |
 
 ### Core user flow
 
@@ -359,7 +374,7 @@ Groq live smoke tests are opt-in (`RUN_GROQ_LIVE_TESTS` / key present); default 
 |------|------|----------|
 | **Replay demo** (default on Vercel) | **$0** | Bundled sample results; no live model batch runs |
 | **Add Leads + deterministic process** | **$0** (no Groq in deterministic path) | Requires reachable backend; capped at 10 leads per run |
-| **Live Groq** (backend API only) | Provider usage | Opt-in env flag; single-lead; not exposed as public batch UI |
+| **Live Groq** (backend API only) | Provider usage | Opt-in env flag; single-lead draft regeneration; not exposed as public batch UI |
 
 Public deployment protections: optional **demo access code**, **in-memory rate limits** (reset on Render restart), **max leads per run**, upload size caps, and **ephemeral storage** (pipeline/review/telemetry not durable across restarts). See [`docs/operations.md`](docs/operations.md).
 
