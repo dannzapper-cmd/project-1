@@ -1,6 +1,6 @@
 # LeadForge screenshot assets
 
-Real local project evidence for README, portfolio, and case-study use. Captures reflect the public Vercel demo and `/demo` dashboard unless noted otherwise.
+Real local project evidence for README, portfolio, and case-study use. PNGs in `latest/` are published from real LeadForge demo captures (source bundle: `screenshots.pdf`).
 
 ## Where files live
 
@@ -16,11 +16,11 @@ All README image paths are relative to the repository root, e.g. `docs/assets/sc
 
 | File | Label | Represents |
 |------|-------|------------|
-| `01-landing-hero.png` | Landing / Positioning | Landing-page agent pipeline and controlled AI sales intelligence positioning |
-| `02-dashboard-overview.png` | Demo Dashboard | Replay-safe dashboard — agent workflow strip and review guidance |
+| `01-landing-hero.png` | Landing / Positioning | Landing page agent-pipeline section — controlled sales intelligence positioning (not a classic above-the-fold hero) |
+| `02-dashboard-overview.png` | Demo Workflow | Agent workflow strip and review guidance for the sales intelligence process |
 | `03-lead-table.png` | Lead Table | Processed leads with fit, priority, QA, and review status |
 | `04-lead-detail-drawer.png` | Lead Detail | Evidence-backed lead detail with research cards and agent outputs |
-| `05-agent-trace.png` | Agent Trace | Per-agent trace entries across the pipeline |
+| `05-agent-trace.png` | Agent Trace | Partial trace view — visible agent steps, status, and structured outputs (not the full pipeline in one frame) |
 | `06-qa-evaluation.png` | QA Evaluation | QA scores, hallucination risk, and review recommendation |
 | `07-human-review.png` | Human Review | Draft outreach with local approve / reject / needs-edit controls |
 | `09-telemetry.png` | Run quality & telemetry | Batch run mode, model, QA aggregates, and cost visibility |

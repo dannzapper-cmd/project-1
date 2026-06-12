@@ -30,7 +30,7 @@ Traceable, review-first workflow: structured lead intake, deterministic agent co
 
 ## Technical signals
 
-- Five-agent pipeline: Research, Qualifier, Strategist, Email Drafter, QA Evaluator
+- Five core intelligence agents — Research, Qualifier, Strategist, Email Drafter, QA Evaluator — preceded by intake/normalization
 - Next.js demo dashboard with lead table, detail drawer, traces, QA, and review state
 - FastAPI backend with health, demo pipeline, intake preview, and telemetry endpoints
 - Smart intake: paste, CSV, Excel, and text-based PDF preview/validation
@@ -38,7 +38,7 @@ Traceable, review-first workflow: structured lead intake, deterministic agent co
 - Backend-only opt-in Groq single-lead comparison path
 - Local browser-only human review and CSV export
 - Rate limits, optional demo access code, request IDs, security headers, safe status endpoints
-- Summary-safe telemetry with bounded retention
+- Summary-safe, in-memory telemetry with capped recent-run listing
 
 ## Boundaries (safe claims)
 
@@ -57,17 +57,19 @@ Traceable, review-first workflow: structured lead intake, deterministic agent co
 
 ## Screenshot evidence (`docs/assets/screenshots/latest/`)
 
-| File | Label |
-|------|-------|
-| `01-landing-hero.png` | Landing / Positioning |
-| `02-dashboard-overview.png` | Demo Dashboard |
-| `03-lead-table.png` | Lead Table |
-| `04-lead-detail-drawer.png` | Lead Detail |
-| `05-agent-trace.png` | Agent Trace |
-| `06-qa-evaluation.png` | QA Evaluation |
-| `07-human-review.png` | Human Review |
-| `09-telemetry.png` | Run quality & telemetry |
-| `10-intake-preview.png` | Intake preview |
+Local PNG assets derived from real LeadForge demo captures.
+
+| File | Label | Caption |
+|------|-------|---------|
+| `01-landing-hero.png` | Landing / Positioning | Landing page evidence showing controlled sales intelligence positioning and agent-pipeline narrative |
+| `02-dashboard-overview.png` | Demo Workflow | Demo workflow section showing agent stages and review guidance |
+| `03-lead-table.png` | Lead Table | Processed leads with fit, priority, and QA-oriented outputs |
+| `04-lead-detail-drawer.png` | Lead Detail | Evidence-backed lead detail with agent outputs |
+| `05-agent-trace.png` | Agent Trace | Partial trace view showing visible agent execution steps and structured outputs |
+| `06-qa-evaluation.png` | QA Evaluation | Quality gate, recommendation, and risk signals before human review |
+| `07-human-review.png` | Human Review | Local human review of draft outreach before export |
+| `09-telemetry.png` | Run quality & telemetry | Summary-safe run metadata: mode, model, QA aggregates, and cost visibility |
+| `10-intake-preview.png` | Intake preview | Smart intake foundation with column mapping and row-level validation |
 
 Skipped: `08-csv-export.png` (no standalone asset yet).
 
