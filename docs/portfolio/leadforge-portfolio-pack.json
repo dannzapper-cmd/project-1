@@ -1,0 +1,120 @@
+{
+  "projectNumber": "Project 1",
+  "title": "LeadForge",
+  "fullTitle": "LeadForge — Agentic B2B Sales Intelligence",
+  "subtitle": "Traceable B2B sales intelligence with controlled AI workflow and human decisions.",
+  "category": "Agentic AI / Revenue Ops / B2B Sales Intelligence",
+  "status": "Completed / Portfolio Release",
+  "links": {
+    "github": "https://github.com/dannzapper-cmd/project-1",
+    "demo": "https://v0-project-1-delta-lovat.vercel.app/demo",
+    "landing": "https://v0-project-1-delta-lovat.vercel.app",
+    "video": "https://youtube.com/playlist?list=PLWHDR1oCK8kv8BKlhIce515TlO6OkWOVP&si=FNxQ2KqgrcAjoSHL"
+  },
+  "problem": "Revenue teams lose time to manual account research, inconsistent qualification, generic outreach, and low visibility into why an AI suggested a message or priority.",
+  "solution": "Traceable, review-first workflow: structured lead intake, deterministic agent collaboration, QA scoring, transparent traces, local human review, and exportable reviewed outputs without sending emails or writing to a CRM.",
+  "technicalSignals": [
+    "Five-agent pipeline: Research, Qualifier, Strategist, Email Drafter, QA Evaluator",
+    "Next.js demo dashboard with lead table, detail drawer, traces, QA, and review state",
+    "FastAPI backend with health, demo pipeline, intake preview, and telemetry endpoints",
+    "Smart intake foundation: paste, CSV, Excel, and text-based PDF preview/validation",
+    "Replay/cost-safe public demo mode",
+    "Backend-only opt-in Groq single-lead comparison path",
+    "Local browser-only human review and CSV export",
+    "Rate limits, optional demo access code, request IDs, security headers, and safe status endpoints",
+    "Summary-safe telemetry with bounded retention"
+  ],
+  "boundaries": [
+    "No email sending",
+    "No CRM writes",
+    "No autonomous outbound",
+    "No public live Groq batch automation",
+    "Synthetic/curated demo intelligence — not live company research by default"
+  ],
+  "allowedWording": [
+    "controlled workflow",
+    "traceable agent pipeline",
+    "review-first sales intelligence",
+    "draft-only outreach copy",
+    "local human review",
+    "replay/cost-safe public demo",
+    "backend-only opt-in Groq comparison",
+    "portfolio release",
+    "production-minded demo",
+    "applied AI product engineering"
+  ],
+  "forbiddenWording": [
+    "sends emails automatically",
+    "writes to CRM",
+    "replaces SDRs",
+    "guarantees reply rates",
+    "uses LangGraph runtime today",
+    "performs live web research by default",
+    "public live Groq batch automation",
+    "production multi-tenant SaaS",
+    "fully autonomous outbound",
+    "real company intelligence for synthetic demo data"
+  ],
+  "screenshots": {
+    "basePath": "docs/assets/screenshots/latest",
+    "assets": [
+      {
+        "file": "01-landing-hero.png",
+        "label": "Landing / Positioning",
+        "caption": "Product landing and controlled AI sales intelligence positioning."
+      },
+      {
+        "file": "02-dashboard-overview.png",
+        "label": "Demo Dashboard",
+        "caption": "Replay-safe dashboard for lead intelligence and review workflow."
+      },
+      {
+        "file": "03-lead-table.png",
+        "label": "Lead Table",
+        "caption": "Processed leads with fit, priority, and QA-oriented outputs."
+      },
+      {
+        "file": "04-lead-detail-drawer.png",
+        "label": "Lead Detail",
+        "caption": "Evidence-backed lead detail with agent outputs."
+      },
+      {
+        "file": "05-agent-trace.png",
+        "label": "Agent Trace",
+        "caption": "Traceable Research → Qualifier → Strategist → Drafter → QA pipeline."
+      },
+      {
+        "file": "06-qa-evaluation.png",
+        "label": "QA Evaluation",
+        "caption": "Quality gate, recommendation, and risk signals before human review."
+      },
+      {
+        "file": "07-human-review.png",
+        "label": "Human Review",
+        "caption": "Local human review of draft outreach before export."
+      },
+      {
+        "file": "09-telemetry.png",
+        "label": "Run quality & telemetry",
+        "caption": "Summary-safe run metadata: mode, model, QA aggregates, and cost visibility."
+      },
+      {
+        "file": "10-intake-preview.png",
+        "label": "Intake preview",
+        "caption": "Smart intake foundation with column mapping and row-level validation."
+      }
+    ],
+    "skipped": [
+      {
+        "file": "08-csv-export.png",
+        "reason": "No standalone capture published in latest/"
+      }
+    ]
+  },
+  "stack": {
+    "frontend": ["Next.js", "TypeScript", "Tailwind CSS", "Radix UI"],
+    "backend": ["FastAPI", "Pydantic", "SQLAlchemy", "SQLite"],
+    "orchestration": "Plain Python (LangGraph deferred)",
+    "optionalModel": "Groq API (backend-only, gated)"
+  }
+}
