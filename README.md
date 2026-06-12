@@ -20,19 +20,19 @@ The public demo runs in **replay/cost-safe** mode by default. Add Leads → Prev
 
 ## Visual evidence
 
-Screenshots are real captures from the deployed demo and dashboard. Demo leads use **synthetic/curated context** — not live company intelligence.
+Local PNG evidence assets derived from real LeadForge demo captures. Demo leads use **synthetic/curated context** — not live company intelligence.
 
 ### Landing / Positioning
 
-![LeadForge landing — controlled agentic sales intelligence positioning](docs/assets/screenshots/latest/01-landing-hero.png)
+![LeadForge landing — agent pipeline positioning](docs/assets/screenshots/latest/01-landing-hero.png)
 
-*Product landing and controlled AI sales intelligence positioning.*
+*Landing page evidence showing LeadForge's controlled sales intelligence positioning and agent-pipeline narrative.*
 
-### Demo Dashboard
+### Demo Workflow
 
-![LeadForge demo dashboard — agent workflow and review guidance](docs/assets/screenshots/latest/02-dashboard-overview.png)
+![LeadForge demo workflow — agent stages and review guidance](docs/assets/screenshots/latest/02-dashboard-overview.png)
 
-*Replay-safe dashboard for lead intelligence and review workflow.*
+*Demo workflow section showing agent stages and review guidance for the sales intelligence process.*
 
 ### Lead Table
 
@@ -48,9 +48,9 @@ Screenshots are real captures from the deployed demo and dashboard. Demo leads u
 
 ### Agent Trace
 
-![LeadForge agent trace — Research through QA pipeline](docs/assets/screenshots/latest/05-agent-trace.png)
+![LeadForge agent trace — partial pipeline trace view](docs/assets/screenshots/latest/05-agent-trace.png)
 
-*Traceable Research → Qualifier → Strategist → Drafter → QA pipeline.*
+*Partial trace view showing visible agent execution steps and structured outputs.*
 
 ### QA Evaluation
 
@@ -80,9 +80,9 @@ Screenshots are real captures from the deployed demo and dashboard. Demo leads u
 
 ## What it does
 
-LeadForge runs a **deterministic sales intelligence pipeline** over curated demo leads and user-supplied intake rows:
+LeadForge runs a **deterministic sales intelligence pipeline** over curated demo leads and user-supplied intake rows. **Five core intelligence agents** — Research, Qualifier, Strategist, Email Drafter, and QA Evaluator — run after an intake/normalization step:
 
-**Research → Qualifier → Strategist → Email Drafter → QA Evaluator**
+**Intake → Research → Qualifier → Strategist → Email Drafter → QA Evaluator**
 
 Each step produces structured outputs and trace metadata. A Next.js dashboard surfaces leads, agent results, traces, QA scores, **local human review**, and **local CSV export** of reviewed leads. A FastAPI backend serves demo data, runs the pipeline, exposes **read-only telemetry**, and optionally supports a **backend-only, opt-in Groq single-lead path** with **deterministic-vs-live comparison**.
 
@@ -110,8 +110,9 @@ Landing → Demo dashboard → Add Leads (paste/upload) → Preview (valid/warni
 User
   → Next.js Frontend (/demo)
   → FastAPI Backend
+  → Intake / normalization
   → Deterministic Pipeline (plain Python)
-  → Agent Services (Research → Qualifier → Strategist → Drafter → QA)
+  → Five core agents (Research → Qualifier → Strategist → Drafter → QA)
   → Trace + QA Evaluation
   → Human Review (browser-local)
   → Local Export (CSV)
@@ -143,7 +144,7 @@ POST /api/demo/pipeline/live-groq/{lead_id}
 
 | Area | Implementation |
 |------|----------------|
-| **Agent pipeline** | Five-agent pipeline: Research, Qualifier, Strategist, Email Drafter, QA Evaluator |
+| **Agent pipeline** | Five core agents (Research, Qualifier, Strategist, Email Drafter, QA Evaluator) preceded by intake/normalization |
 | **Frontend** | Next.js demo dashboard — lead table, detail drawer, traces, QA, review state |
 | **Backend** | FastAPI — health, demo pipeline, intake preview, telemetry endpoints |
 | **Smart intake** | Paste, CSV, Excel, and text-based PDF preview/validation (max 10 leads/run) |
@@ -151,7 +152,7 @@ POST /api/demo/pipeline/live-groq/{lead_id}
 | **Live comparison** | Backend-only opt-in Groq single-lead path; no public batch automation |
 | **Human review** | Browser-only approve/reject/flag; local CSV export |
 | **Safety layer** | Rate limits, optional demo access code, request IDs, security headers, safe status endpoints |
-| **Telemetry** | Summary-safe in-memory records with bounded retention |
+| **Telemetry** | Summary-safe, in-memory telemetry with capped recent-run listing |
 | **Orchestration** | Plain Python (`pipeline_service.py`) — LangGraph **deferred**, not used today |
 
 **Tech stack:** Next.js (App Router), React, TypeScript, Tailwind CSS, Radix UI · FastAPI, Pydantic v2, SQLAlchemy 2.x, SQLite · optional Groq via backend-only `GroqModelService`.
@@ -221,7 +222,7 @@ Relevant deep dives: [`docs/case-study.md`](docs/case-study.md) · [`docs/portfo
 
 | Capability | Notes |
 |------------|--------|
-| Deterministic five-agent pipeline | Plain-Python orchestration; see `backend/app/services/pipeline_service.py` |
+| Deterministic five-agent pipeline | Five core agents after intake/normalization; plain-Python orchestration — see `backend/app/services/pipeline_service.py` |
 | Batch deterministic pipeline | Up to 10 demo leads per batch run |
 | Next.js dashboard | `/demo` — lead table, lead detail drawer |
 | Smart lead intake foundation | CSV, Excel, PDF, and pasted table preview/validation in `/demo` |
@@ -231,7 +232,7 @@ Relevant deep dives: [`docs/case-study.md`](docs/case-study.md) · [`docs/portfo
 | Local browser-only human review | Not persisted to backend |
 | Local reviewed-lead CSV export | Browser download only |
 | FastAPI backend | Health, demo pipeline, agents, intake preview, telemetry |
-| Safe in-memory telemetry | Summary metadata only; bounded retention |
+| Safe in-memory telemetry | Summary metadata only; capped recent-run listing |
 | Backend-only opt-in live Groq (single lead) | `POST /api/demo/pipeline/live-groq/{lead_id}`; off by default |
 | LangGraph deferred | Per [ADR-001](docs/adr/langgraph-decision.md) — **not** a graph runtime today |
 

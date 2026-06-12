@@ -26,3 +26,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# screenshot extraction temp (not published assets)
+docs/assets/screenshots/latest/_embedded/

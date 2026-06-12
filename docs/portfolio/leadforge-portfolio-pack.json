@@ -14,7 +14,7 @@
   "problem": "Revenue teams lose time to manual account research, inconsistent qualification, generic outreach, and low visibility into why an AI suggested a message or priority.",
   "solution": "Traceable, review-first workflow: structured lead intake, deterministic agent collaboration, QA scoring, transparent traces, local human review, and exportable reviewed outputs without sending emails or writing to a CRM.",
   "technicalSignals": [
-    "Five-agent pipeline: Research, Qualifier, Strategist, Email Drafter, QA Evaluator",
+    "Five core intelligence agents — Research, Qualifier, Strategist, Email Drafter, QA Evaluator — preceded by intake/normalization",
     "Next.js demo dashboard with lead table, detail drawer, traces, QA, and review state",
     "FastAPI backend with health, demo pipeline, intake preview, and telemetry endpoints",
     "Smart intake foundation: paste, CSV, Excel, and text-based PDF preview/validation",
@@ -22,7 +22,7 @@
     "Backend-only opt-in Groq single-lead comparison path",
     "Local browser-only human review and CSV export",
     "Rate limits, optional demo access code, request IDs, security headers, and safe status endpoints",
-    "Summary-safe telemetry with bounded retention"
+    "Summary-safe, in-memory telemetry with capped recent-run listing"
   ],
   "boundaries": [
     "No email sending",
@@ -61,12 +61,12 @@
       {
         "file": "01-landing-hero.png",
         "label": "Landing / Positioning",
-        "caption": "Product landing and controlled AI sales intelligence positioning."
+        "caption": "Landing page evidence showing LeadForge's controlled sales intelligence positioning and agent-pipeline narrative."
       },
       {
         "file": "02-dashboard-overview.png",
-        "label": "Demo Dashboard",
-        "caption": "Replay-safe dashboard for lead intelligence and review workflow."
+        "label": "Demo Workflow",
+        "caption": "Demo workflow section showing agent stages and review guidance for the sales intelligence process."
       },
       {
         "file": "03-lead-table.png",
@@ -81,7 +81,7 @@
       {
         "file": "05-agent-trace.png",
         "label": "Agent Trace",
-        "caption": "Traceable Research → Qualifier → Strategist → Drafter → QA pipeline."
+        "caption": "Partial trace view showing visible agent execution steps and structured outputs."
       },
       {
         "file": "06-qa-evaluation.png",
