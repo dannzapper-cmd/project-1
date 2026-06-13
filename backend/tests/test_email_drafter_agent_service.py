@@ -322,6 +322,7 @@ def test_s15_valid_path_metadata_is_groq_json_v1_and_not_simulated() -> None:
         == "email_drafter_agent_groq_json_v1"
     )
     assert output.result.metadata.simulated is False
+    assert output.result.metadata.run_mode == RunMode.LIVE
     assert output.result.metadata.model == "llama-3.1-8b-instant"
 
 

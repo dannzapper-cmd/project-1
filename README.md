@@ -128,14 +128,19 @@ User
 
 Orchestration is **linear** and **in-process** — not a LangGraph graph. See [`docs/architecture-overview.md`](docs/architecture-overview.md) and [ADR-001](docs/adr/langgraph-decision.md).
 
-**Optional live path (backend-only, opt-in):**
+**Optional live paths (off by default):**
 
 ```
 POST /api/demo/pipeline/live-groq/{lead_id}
   → single lead
   → token/cost limited
   → deterministic-vs-live comparison
-  → no frontend trigger yet
+  → API-only full-pipeline comparison
+
+POST /api/demo/email/regenerate-draft/{lead_id}
+  → selected lead context only
+  → draft-only live Groq regeneration
+  → controlled lead-drawer action when backend status allows
 ```
 
 ---
@@ -149,7 +154,7 @@ POST /api/demo/pipeline/live-groq/{lead_id}
 | **Backend** | FastAPI — health, demo pipeline, intake preview, telemetry endpoints |
 | **Smart intake** | Paste, CSV, Excel, and text-based PDF preview/validation (max 10 leads/run) |
 | **Public demo** | Replay/cost-safe mode — bundled sample results, no surprise model spend |
-| **Live comparison** | Backend-only opt-in Groq single-lead path; no public batch automation |
+| **Live comparison** | Backend-only opt-in Groq single-lead pipeline; no public batch automation |
 | **Human review** | Browser-only approve/reject/flag; local CSV export |
 | **Safety layer** | Rate limits, optional demo access code, request IDs, security headers, safe status endpoints |
 | **Telemetry** | Summary-safe, in-memory telemetry with capped recent-run listing |
@@ -169,7 +174,7 @@ LeadForge **prepares review-ready sales intelligence**; it does **not** run a fu
 | CRM writes | **Never** — export stays local |
 | Human review | Browser-local state; not persisted to backend |
 | Public demo | Replay/cost-safe by default; live batch Groq **not** in UI |
-| Live Groq | Opt-in env flag; single-lead API only; failures explicit |
+| Live Groq | Opt-in env flag; single-lead only; controlled regenerate is draft-only and failures are explicit |
 | Demo data | Synthetic/curated intelligence — not real-time market research |
 | Telemetry | Summary metadata only — no full prompt store |
 
@@ -191,7 +196,9 @@ The recorded demo shows the stable replay-mode public demo. Controlled live-mode
 
 ### Demo access code
 
-Use demo code `55558` to access or run the guided demo experience.
+If the deployed demo is configured with `DEMO_ACCESS_CODE`, enter the code
+shared with the demo link. The code is not shipped in frontend environment
+variables and is stored only in the current browser tab's `sessionStorage`.
 
 ### Public demo vs controlled technical demo
 
@@ -238,6 +245,7 @@ Relevant deep dives: [`docs/case-study.md`](docs/case-study.md) · [`docs/portfo
 | FastAPI backend | Health, demo pipeline, agents, intake preview, telemetry |
 | Safe in-memory telemetry | Summary metadata only; capped recent-run listing |
 | Backend-only opt-in live Groq (single lead) | `POST /api/demo/pipeline/live-groq/{lead_id}`; off by default |
+| Controlled live draft regeneration | `POST /api/demo/email/regenerate-draft/{lead_id}`; single selected lead, demo-access gated, draft-only |
 | LangGraph deferred | Per [ADR-001](docs/adr/langgraph-decision.md) — **not** a graph runtime today |
 
 ---
@@ -249,7 +257,7 @@ Relevant deep dives: [`docs/case-study.md`](docs/case-study.md) · [`docs/portfo
 - CRM integration or backend sync of review state
 - Email sending or deliverability tooling
 - Durable telemetry database or long-term eval history store
-- Frontend “Run live Groq” button (live path is API-only)
+- Frontend batch “Run live Groq” button or automatic live pipeline execution
 - Full authentication, payments, or multi-tenancy
 - Guaranteed reply rates or “AI replaces SDRs” automation
 

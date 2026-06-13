@@ -15,7 +15,7 @@ uses Render + Vercel, in-memory safety controls, and manual smoke checks.
 | `RATE_LIMIT_LIVE_REQUESTS_PER_MINUTE` | `5` | Live research, assistant, and Groq-backed paths. |
 | `MAX_LEADS_PER_RUN` | `10` | Public demo intake/process cap. |
 | `INTAKE_MAX_UPLOAD_MB` | `5` | CSV/XLSX/text-PDF upload cap. `MAX_UPLOAD_SIZE_MB` is also accepted. |
-| `DEMO_ACCESS_CODE` | optional private value | If set, protected demo actions require `X-LeadForge-Demo-Key`. Do not expose in frontend env. |
+| `DEMO_ACCESS_CODE` | optional server-side access code | If set, protected demo actions require `X-LeadForge-Demo-Key`. Do not expose in frontend env. |
 | `BUILD_SHA` | optional commit SHA | Returned as safe deployment traceability in `/api/system/status`. |
 
 Optional live features:
@@ -24,7 +24,7 @@ Optional live features:
 | --- | --- |
 | `ENABLE_LIVE_RESEARCH=true` + `EXA_API_KEY` | Enables manual Exa research only. Keep `LIVE_RESEARCH_DAILY_LIMIT` low. |
 | `ENABLE_LLM_ASSISTANT=true` + `GROQ_API_KEY` | Enables manual contextual assistant only. |
-| `ENABLE_LIVE_MODEL_PIPELINE=true` + `GROQ_API_KEY` | API-only single-lead Groq comparison path. |
+| `ENABLE_LIVE_MODEL_PIPELINE=true` + `GROQ_API_KEY` | Enables opt-in single-lead Groq paths. The frontend regenerate action also requires `RATE_LIMIT_ENABLED=true` and `DEMO_ACCESS_CODE`. |
 
 ## Required frontend env vars on Vercel
 
@@ -70,7 +70,7 @@ user at runtime and stored only in `sessionStorage` for the current browser tab.
 ## Functional smoke: Add Leads -> Preview -> Process
 
 1. Open `/demo`.
-2. If `DEMO_ACCESS_CODE` is set on Render, enter the private code in the
+2. If `DEMO_ACCESS_CODE` is set on Render, enter the code shared with the
    "Private demo access" panel.
 3. In Add Leads, paste sample rows or upload a CSV/XLSX/text-based PDF under
    the configured size cap.

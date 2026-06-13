@@ -136,8 +136,8 @@ Optional:
 | `APP_VERSION` | `0.1.0` | Metadata in `/health`. |
 | `LOG_LEVEL` | `INFO` | Backend log level. |
 | `DATABASE_URL` | `sqlite:///./leadforge.db` | Local SQLite schema init only; do not treat as production persistence on Render. |
-| `GROQ_API_KEY` | unset | Required only if you intentionally enable the backend-only live Groq endpoint. |
-| `GROQ_DEFAULT_MODEL` | `llama-3.1-8b-instant` | Optional Groq model id for the live endpoint. |
+| `GROQ_API_KEY` | unset | Required only if you intentionally enable backend Groq-backed demo paths. |
+| `GROQ_DEFAULT_MODEL` | `llama-3.1-8b-instant` | Optional Groq model id for live Groq-backed paths. |
 | `GROQ_TIMEOUT_SECONDS` | `30` | Optional Groq request timeout. |
 | `ENABLE_LIVE_RESEARCH` | `false` | Block 10E live web research master switch. Off by default. |
 | `EXA_API_KEY` | unset | Backend-only Exa key. Never set this as a `NEXT_PUBLIC_*` variable. |
@@ -333,8 +333,9 @@ storage belongs to a later backend deployment block.
 - If `DEMO_ACCESS_CODE` is set, protected demo actions require the
   `X-LeadForge-Demo-Key` header. This is abuse deterrence, not full auth.
 - Deterministic and intake routes do not require API keys.
-- Live Groq/model routes are backend-only, single-lead, opt-in, and guarded by
-  `ENABLE_LIVE_MODEL_PIPELINE=true` plus `GROQ_API_KEY`.
+- Live Groq/model routes are backend-keyed, single-lead, opt-in, and guarded by
+  `ENABLE_LIVE_MODEL_PIPELINE=true` plus `GROQ_API_KEY`; the controlled
+  regenerate action also requires demo access and live rate limits.
 - App startup does not require Groq or other model keys.
 - No email sending is implemented.
 - No CRM writes are implemented.

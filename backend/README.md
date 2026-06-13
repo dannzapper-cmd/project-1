@@ -85,6 +85,13 @@ cd backend
 pytest -q
 ```
 
+Real Groq smoke tests are opt-in only and are skipped unless both
+`GROQ_API_KEY` and `RUN_GROQ_LIVE_TESTS=1` are set:
+
+```bash
+GROQ_API_KEY=... RUN_GROQ_LIVE_TESTS=1 pytest -q tests/test_groq_live_smoke.py
+```
+
 ## Environment variables
 
 See `.env.example`. Variables below are read by the application code:
@@ -103,11 +110,16 @@ See `.env.example`. Variables below are read by the application code:
 | `GROQ_DEFAULT_MODEL` | `llama-3.1-8b-instant`      | Default Groq model when key is set |
 | `GROQ_TIMEOUT_SECONDS` | `30`                      | Groq request timeout |
 | `ENABLE_LIVE_MODEL_PIPELINE` | `false`             | Block 8.3 opt-in for the live Groq single-lead pipeline |
+| `RATE_LIMIT_ENABLED` | `true`                     | Enables in-memory public-demo throttling |
+| `RATE_LIMIT_REQUESTS_PER_MINUTE` | `30`             | Default protected-action per-IP minute limit |
+| `RATE_LIMIT_LIVE_REQUESTS_PER_MINUTE` | `5`        | Live Groq/research/assistant per-IP minute limit |
+| `DEMO_ACCESS_CODE` | (unset)                     | Optional server-side code required by protected demo actions |
+| `MAX_LEADS_PER_RUN` | `10`                       | Deterministic batch lead cap |
+| `INTAKE_MAX_UPLOAD_MB` | `5`                     | Intake upload cap |
 
 Optional Groq settings (`GROQ_API_KEY`, `GROQ_DEFAULT_MODEL`,
 `GROQ_TIMEOUT_SECONDS`) are read when set; the app runs without them.
-Other future-phase variables (cost caps, feature flags) in `.env.example`
-are documented but not read yet.
+Commented future-phase variables in `.env.example` remain documentation only.
 
 ## Public backend deployment
 
@@ -190,6 +202,39 @@ remains the safe, network-free baseline.
 
 The architecture decision to defer LangGraph for this block is recorded
 in [`docs/adr/langgraph-decision.md`](../docs/adr/langgraph-decision.md).
+
+## Block 11C.4 — Controlled live draft regeneration
+
+`POST /api/demo/email/regenerate-draft/{lead_id}` regenerates one reviewable
+email draft for the selected lead context. It is the only frontend-triggered
+Groq demo action and remains disabled unless all of these server-side gates are
+configured:
+
+```text
+ENABLE_LIVE_MODEL_PIPELINE=true
+GROQ_API_KEY=<server-side key>
+RATE_LIMIT_ENABLED=true
+DEMO_ACCESS_CODE=<code shared with the demo link>
+```
+
+The frontend checks `/api/system/status` and enables the lead-drawer control
+only when `live_email_regenerate_configured=true`,
+`live_single_lead_only=true`, and `public_live_batch_enabled=false`.
+
+Safety boundaries:
+
+* The request accepts structured lead context only; there is no arbitrary
+  prompt field.
+* The endpoint returns one draft only. It never sends email and never writes to
+  a CRM.
+* `GROQ_API_KEY` stays backend-only and is never returned by status or
+  regenerate responses.
+* Invalid JSON or guardrail failures are labeled
+  `status: "deterministic_fallback"` / `mode: "deterministic_fallback"` and
+  the replay draft remains available.
+* Rate limits are in-memory per process and reset on backend restart. This is
+  suitable for the portfolio demo, not production SaaS authentication or quota
+  accounting.
 
 ## Block 10A — Real intake preview and user-lead batch processing
 
