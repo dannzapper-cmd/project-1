@@ -48,6 +48,13 @@ export function DemoAccessCodePanel() {
             Live Research, and the live assistant require the code shared with the
             demo link. It is stored only in this tab&apos;s sessionStorage.
           </p>
+          <p className="mt-2 text-xs text-[--text-secondary]">
+            Demo code:{" "}
+            <span className="font-mono font-medium text-[--accent-primary]">
+              55558
+            </span>
+            . Use this code to access the sample LeadForge demo.
+          </p>
           {hasStoredCode && (
             <p className="mt-1 text-xs text-[--color-success]">
               Access code is saved for this browser tab.
