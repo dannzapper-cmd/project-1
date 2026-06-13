@@ -428,7 +428,7 @@ def _synthesis_metadata(
 ) -> AgentExecutionMetadata:
     return AgentExecutionMetadata(
         agent_name=_AGENT_NAME,
-        run_mode=RunMode.SIMULATION,
+        run_mode=RunMode.SIMULATION if simulated else RunMode.LIVE,
         model=response.model_name,
         prompt_version=prompt_version,
         latency=response.latency,

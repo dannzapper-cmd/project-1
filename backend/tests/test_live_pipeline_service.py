@@ -370,6 +370,37 @@ def test_live_pipeline_uses_groq_default_model_from_settings(
     assert response.failed_agent == "research_agent"
 
 
+def test_live_pipeline_default_factory_uses_groq_timeout_from_settings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured_kwargs: dict[str, object] = {}
+
+    class _FakeGroqService:
+        def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
+            captured_kwargs.update(kwargs)
+
+        def complete(self, request):  # noqa: ANN001
+            raise RuntimeError("timeout-routing test")
+
+    monkeypatch.setenv("ENABLE_LIVE_MODEL_PIPELINE", "true")
+    monkeypatch.setenv("GROQ_API_KEY", "test-only-not-a-real-key")
+    monkeypatch.setenv("GROQ_DEFAULT_MODEL", "llama-3.1-70b-versatile")
+    monkeypatch.setenv("GROQ_TIMEOUT_SECONDS", "9")
+    monkeypatch.setattr("app.services.model_service.GroqModelService", _FakeGroqService)
+    get_settings.cache_clear()
+
+    try:
+        response = run_live_groq_pipeline_for_lead(_DEMO_LEAD_ID)
+    finally:
+        get_settings.cache_clear()
+
+    assert response.live_success is False
+    assert response.error_code == "provider_timeout"
+    assert captured_kwargs["api_key"] == "test-only-not-a-real-key"
+    assert captured_kwargs["default_model"] == "llama-3.1-70b-versatile"
+    assert captured_kwargs["timeout_seconds"] == 9
+
+
 def test_resolve_live_groq_model_falls_back_when_setting_is_blank(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
