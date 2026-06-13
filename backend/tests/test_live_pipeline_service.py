@@ -395,7 +395,7 @@ def test_live_pipeline_default_factory_uses_groq_timeout_from_settings(
         get_settings.cache_clear()
 
     assert response.live_success is False
-    assert response.error_code == "provider_error"
+    assert response.error_code == "provider_timeout"
     assert captured_kwargs["api_key"] == "test-only-not-a-real-key"
     assert captured_kwargs["default_model"] == "llama-3.1-70b-versatile"
     assert captured_kwargs["timeout_seconds"] == 9
