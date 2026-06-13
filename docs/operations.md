@@ -25,6 +25,7 @@ Optional live features:
 | `ENABLE_LIVE_RESEARCH=true` + `EXA_API_KEY` | Enables manual Exa research only. Keep `LIVE_RESEARCH_DAILY_LIMIT` low. |
 | `ENABLE_LLM_ASSISTANT=true` + `GROQ_API_KEY` | Enables manual contextual assistant only. |
 | `ENABLE_LIVE_MODEL_PIPELINE=true` + `GROQ_API_KEY` | Enables opt-in single-lead Groq paths. The frontend regenerate action also requires `RATE_LIMIT_ENABLED=true` and `DEMO_ACCESS_CODE`. |
+| `LIVE_MODE_ENABLED=true` + `GROQ_API_KEY` + `LIVE_DEMO_UNLOCK_CODE` | Enables controlled `/api/demo/live/*` dashboard flow. The demo owner shares the unlock code with reviewers; do not expose it in frontend env or public docs. |
 
 ## Required frontend env vars on Vercel
 
@@ -35,6 +36,9 @@ Optional live features:
 
 Never set `NEXT_PUBLIC_DEMO_ACCESS_CODE`. The demo access code is entered by the
 user at runtime and stored only in `sessionStorage` for the current browser tab.
+Never set `NEXT_PUBLIC_LIVE_DEMO_UNLOCK_CODE` or any `NEXT_PUBLIC_GROQ_*`
+variable. Groq Live Demo Mode stores only the returned
+`X-LeadForge-Live-Session` token in browser `sessionStorage`.
 
 ## Render deployment checks
 
@@ -99,6 +103,20 @@ Expected failure modes:
 5. If live features are disabled, confirm the UI shows unavailable/disabled
    states rather than stack traces.
 
+## Functional smoke: Groq Live Demo Mode
+
+1. Keep Replay mode as the default and process a normal demo batch first.
+2. If `LIVE_MODE_ENABLED=true` and `GROQ_API_KEY` are configured, open the
+   **Groq Live Demo Mode** panel.
+3. Enter the reviewer unlock code shared by the demo owner. The backend returns
+   a live session token; the frontend stores that token in `sessionStorage` and
+   sends it as `X-LeadForge-Live-Session` on live run requests.
+4. Select at most `MAX_LIVE_LEADS_PER_RUN` leads and run Groq live. Confirm the
+   result badges distinguish Replay, Deterministic, Groq Live, and Fallback.
+5. Wrong unlock codes, missing backend key, disabled live mode, rate limits, and
+   too many selected leads should show clear disabled/error states. None of
+   these paths should expose `GROQ_API_KEY` or the configured unlock code.
+
 ## Rollback notes
 
 - Backend rollback: redeploy the previous Git commit in Render.
@@ -116,6 +134,8 @@ Expected failure modes:
   production SaaS.
 - Live research and assistant services also keep in-process counters; those
   reset on restart as documented in their env settings.
+- Groq Live Demo Mode unlock sessions, session/IP counters, concurrency, and
+  estimated budget are also in-process only and reset on backend restart.
 - Keep live feature daily limits low. Manual single-lead triggers protect cost
   better than automatic background calls.
 - Do not add keepalive pings to avoid Render Free sleep; document cold starts

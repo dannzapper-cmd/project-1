@@ -278,7 +278,7 @@ def _estimate_pipeline_cost(pipeline: LivePipelineResponse) -> tuple[int, float]
         tokens = estimate_token_count("live demo pipeline estimate")
     cost_config = ModelConfig(
         provider=ModelProvider.GROQ,
-        model=pipeline.live_model_used,
+        model_name=pipeline.live_model_used,
     )
     cost = estimate_model_cost(
         input_tokens=max(1, tokens // 2),

@@ -1,6 +1,6 @@
 # LeadForge Architecture Overview
 
-This document describes how LeadForge-Agentic Core is structured today: a controlled, traceable B2B sales intelligence pipeline with a deterministic baseline, optional backend-only live model comparison, local human review, and safe in-memory telemetry. It aligns with [ADR-001: LangGraph Integration Decision](./adr/langgraph-decision.md) and the [Advanced capabilities roadmap](./roadmap/advanced-capabilities.md).
+This document describes how LeadForge-Agentic Core is structured today: a controlled, traceable B2B sales intelligence pipeline with a deterministic baseline, optional Groq Live Demo Mode, backend-only live model comparison, local human review, and safe in-memory telemetry. It aligns with [ADR-001: LangGraph Integration Decision](./adr/langgraph-decision.md) and the [Advanced capabilities roadmap](./roadmap/advanced-capabilities.md).
 
 **The current product is not a fully autonomous LangGraph runtime.** Orchestration is linear, in-process plain Python (`pipeline_service.py`, `live_pipeline_service.py`).
 
@@ -22,6 +22,14 @@ User
 ### Optional live paths (off by default)
 
 ```
+GET  /api/demo/live/status
+POST /api/demo/live/unlock
+POST /api/demo/live/run
+  → dashboard GroqLiveModePanel
+  → X-LeadForge-Live-Session session token
+  → max 3 leads by default, session/IP/budget/concurrency limits
+  → explicit Replay / Deterministic / Groq Live / Fallback labels
+
 POST /api/demo/pipeline/live-groq/{lead_id}
   → single lead only
   → GroqModelService (when ENABLE_LIVE_MODEL_PIPELINE=true + GROQ_API_KEY)
@@ -202,7 +210,7 @@ LeadForge-Agentic Core is an engineering demo product, not a production SaaS. No
 | Outreach | Drafts only | No SMTP, no CRM write |
 | Research | Demo/fixture context | No live web research or scraping |
 | Intake | CSV/paste preview plus CSV/XLSX/text-PDF table extraction and max-10 deterministic processing | No image/OCR |
-| Live model | API-only full-pipeline Groq plus controlled single-lead draft regeneration | No frontend batch live Groq button |
+| Live model | Controlled `/api/demo/live/*` dashboard flow plus API-only full-pipeline Groq and controlled single-lead draft regeneration | No automatic live Groq runs |
 | Orchestration | Linear Python | LangGraph deferred per ADR |
 | Data | Synthetic demo leads | Not real-time company intelligence |
 
@@ -211,8 +219,8 @@ LeadForge-Agentic Core is an engineering demo product, not a production SaaS. No
 ## Security and cost boundaries
 
 - **Secrets:** Keep `GROQ_API_KEY` in `backend/.env`; never commit keys or pass them inline in shell history.  
-- **Live pipeline off by default:** `ENABLE_LIVE_MODEL_PIPELINE=false` unless explicitly enabled for comparison experiments.  
-- **Cost control:** Single-lead requests, token cap per run, no automatic retries on 429.  
+- **Live mode off by default:** `LIVE_MODE_ENABLED=false` for the dashboard live-demo flow and `ENABLE_LIVE_MODEL_PIPELINE=false` for the legacy comparison endpoint unless explicitly enabled.
+- **Cost control:** Single-lead/small-batch requests, token caps, budget/session/IP/concurrency limits, no automatic retries on 429.
 - **Telemetry privacy:** Summary metadata only in telemetry payloads.  
 - **CORS:** Configured for local frontend origin (`CORS_ORIGINS`).  
 - **No auth:** Do not expose an internet-facing instance without additional hardening.  

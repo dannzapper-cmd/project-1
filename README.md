@@ -84,7 +84,7 @@ LeadForge runs a **deterministic sales intelligence pipeline** over curated demo
 
 **Intake → Research → Qualifier → Strategist → Email Drafter → QA Evaluator**
 
-Each step produces structured outputs and trace metadata. A Next.js dashboard surfaces leads, agent results, traces, QA scores, **local human review**, and **local CSV export** of reviewed leads. A FastAPI backend serves demo data, runs the pipeline, exposes **read-only telemetry**, and optionally supports a **backend-only, opt-in Groq single-lead path** with **deterministic-vs-live comparison**.
+Each step produces structured outputs and trace metadata. A Next.js dashboard surfaces leads, agent results, traces, QA scores, **local human review**, and **local CSV export** of reviewed leads. A FastAPI backend serves demo data, runs the pipeline, exposes **read-only telemetry**, and optionally supports a controlled **Groq Live Demo Mode** plus a backend-only single-lead comparison path.
 
 **Core user flow**
 
@@ -168,7 +168,7 @@ POST /api/demo/email/regenerate-draft/{lead_id}
 | **Backend** | FastAPI — health, demo pipeline, intake preview, telemetry endpoints |
 | **Smart intake** | Paste, CSV, Excel, and text-based PDF preview/validation (max 10 leads/run) |
 | **Public demo** | Replay/cost-safe mode — bundled sample results, no surprise model spend |
-| **Live comparison** | Backend-only opt-in Groq single-lead pipeline; no public batch automation |
+| **Live comparison** | Controlled Groq Live Demo Mode plus backend-only single-lead pipeline; no automatic public live automation |
 | **Human review** | Browser-only approve/reject/flag; local CSV export |
 | **Safety layer** | Rate limits, optional demo access code, request IDs, security headers, safe status endpoints |
 | **Telemetry** | Summary-safe, in-memory telemetry with capped recent-run listing |
@@ -260,6 +260,7 @@ Relevant deep dives: [`docs/case-study.md`](docs/case-study.md) · [`docs/portfo
 | Local reviewed-lead CSV export | Browser download only |
 | FastAPI backend | Health, demo pipeline, agents, intake preview, telemetry |
 | Safe in-memory telemetry | Summary metadata only; capped recent-run listing |
+| Controlled Groq Live Demo Mode | `/api/demo/live/status`, `/unlock`, `/run` plus `GroqLiveModePanel`; off by default |
 | Backend-only opt-in live Groq (single lead) | `POST /api/demo/pipeline/live-groq/{lead_id}`; off by default |
 | Controlled live draft regeneration | `POST /api/demo/email/regenerate-draft/{lead_id}`; single selected lead, demo-access gated, draft-only |
 | LangGraph deferred | Per [ADR-001](docs/adr/langgraph-decision.md) — **not** a graph runtime today |
@@ -323,7 +324,7 @@ The app and tests start **without** `GROQ_API_KEY`. To try real Groq live runs l
 ```bash
 # backend/.env
 LIVE_MODE_ENABLED=true
-GROQ_API_KEY=your_key_here
+GROQ_API_KEY=<server-side-key>
 GROQ_DEFAULT_MODEL=llama-3.1-8b-instant
 ```
 

@@ -48,7 +48,7 @@ For B2B sales and RevOps, LeadForge reduces manual research and inconsistent qua
 1. **Why human-in-the-loop?** Outreach and qualification carry compliance and brand risk; AI prepares drafts and evidence, humans approve export.  
 2. **Why deterministic baseline?** Replay-safe demos, CI without API spend, and a canonical oracle for live-model comparison.  
 3. **Why restrict public live batch Groq?** Cost control, abuse prevention, and honest portfolio boundaries — live path exists API-side for controlled technical demos, not as unlimited public usage.  
-4. **Public replay vs controlled live Groq?** In the public version, I keep replay mode as the default to protect reliability and cost. For a controlled technical demo, I can enable backend-only Groq regeneration for one selected lead. That path is demo-access gated, rate-limited, draft-only, and never sends email or writes to CRM.  
+4. **Public replay vs controlled live Groq?** In the public version, I keep replay mode as the default to protect reliability and cost. For a controlled technical demo, I can enable Groq Live Demo Mode in the dashboard for selected leads. That path is backend-keyed, reviewer-unlocked, rate-limited, draft-only/review-only, and never sends email or writes to CRM.
 5. **Why defer LangGraph?** Linear orchestration meets current requirements; ADR documents revisit criteria when branching/checkpoints are needed.  
 6. **What is ephemeral storage?** Runs and review are not durable across Render restarts — stated upfront to avoid false SaaS claims.  
 7. **How do you handle messy intake?** Column mapping, row validation, warnings for incomplete B2B fields — processable with low-evidence flags.  
@@ -57,7 +57,7 @@ For B2B sales and RevOps, LeadForge reduces manual research and inconsistent qua
 
 ## Trade-off explanation (use verbatim if helpful)
 
-> The public demo runs in replay mode for reliability and cost control. For a controlled technical demo, I enable a backend-only Groq path for single-lead draft regeneration — demo-access gated, rate-limited, and cost-tracked where available. It is never unlimited public live AI: no public live batch Groq, no email sending, and no CRM writes.
+> The public demo runs in replay mode for reliability and cost control. For a controlled technical demo, I enable Groq Live Demo Mode with backend configuration, reviewer unlock, session tokens, rate limits, and cost tracking where available. It is never unlimited public live AI: no automatic live batch Groq, no email sending, and no CRM writes.
 
 ---
 

@@ -90,7 +90,7 @@ export function RunControls({
             )}
           </span>
           <p className="text-xs text-[--text-muted] mt-2">
-            Replay demo is safe and $0. Live Groq is controlled, backend-only,
+            Replay demo is safe and $0. Live Groq is controlled, backend-keyed,
             and single-lead where enabled; public live batch model runs are not
             exposed.
           </p>

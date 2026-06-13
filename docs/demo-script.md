@@ -87,7 +87,7 @@ Extend the 60-second script with:
 | 0:30 | Deterministic pipeline | Dashboard (`api` or `mock` mode) | Open lead, show five agent sections | "Orchestration is plain Python: Research → Qualifier → Strategist → Email Drafter → QA Evaluator. No LangGraph runtime — deferred per ADR when linear orchestration is enough." |
 | 1:00 | Agent contracts | Lead detail drawer | Point at structured fields | "Agents share explicit contracts; outputs feed forward deterministically for tests and demos." |
 | 1:20 | Telemetry | `GET /api/demo/telemetry/runs` (browser or curl) **or** mention if no UI | Show JSON summaries | "In-memory telemetry records summary metadata only — no full prompts or raw provider payloads. Read-only endpoints; not a durable observability DB." |
-| 1:40 | Live Groq (optional) | Terminal with backend running | `curl -X POST .../live-groq/lead_001` only if env enabled | "Live paths are backend-only, opt-in, one lead per request, token-capped or rate-limited. The public UI does not expose live batch Groq; controlled single-lead draft regeneration appears only when backend status says it is safe." |
+| 1:40 | Live Groq (optional) | Dashboard Groq Live panel or terminal with backend running | Unlock reviewer session, then `POST /api/demo/live/run` for selected leads only if env enabled | "Live paths are opt-in, backend-keyed, session-gated, token-capped or rate-limited. The public UI does not expose automatic live batch Groq; controlled live runs appear only when backend status says it is safe." |
 | 2:10 | LangGraph ADR | `docs/adr/langgraph-decision.md` | Open Status + Decision | "LangGraph is deferred: we don't need branching, durable checkpoints, or parallel tool fan-out today. Revisit when ADR criteria become real requirements." |
 | 2:30 | Human review + export | Dashboard | Toggle review, export CSV | "Review state is browser-local; backend does not persist review decisions." |
 | 2:50 | Roadmap | `docs/roadmap/advanced-capabilities.md` | Scroll capability table | "Smart Intake, durable telemetry, public batch live controls, and production SaaS features are roadmap — clearly separated from what ships today." |
@@ -136,7 +136,7 @@ Extend the 60-second script with:
 - **QA before action:** Evaluator scores drafts; product does not send email.  
 - **Human-in-the-loop:** Local review and export; AI prepares, humans decide.  
 - **Honest scope:** Demo leads and research context are synthetic/curated — not live company intelligence.  
-- **Optional live comparison:** Backend-only Groq path when explicitly enabled; comparison with deterministic output.  
+- **Optional live comparison:** Groq Live Demo Mode or backend-only comparison path when explicitly enabled; comparison with deterministic output remains explicit.
 - **Documentation:** ADR for LangGraph; roadmap for future capabilities.
 
 ---

@@ -123,7 +123,7 @@ Orchestration is **linear in-process Python** — LangGraph is **deferred** per 
 
 ## Demo safety and cost control
 
-The public demo runs in replay mode for reliability and cost control — stable for recruiters and portfolio visitors, with no surprise API spend and no public live batch Groq execution. For controlled technical demos, LeadForge can enable a backend-only Groq path for single-lead draft regeneration, protected by demo access, rate limits, and cost tracking. That path remains draft-only: LeadForge never sends email and never writes to a CRM. The trade-off is intentional: replay protects the public surface; opt-in live Groq is rate-limited, demo-access gated, and scoped to one lead at a time.
+The public demo runs in replay mode for reliability and cost control — stable for recruiters and portfolio visitors, with no surprise API spend and no public live batch Groq execution. For controlled technical demos, LeadForge can enable Groq Live Demo Mode in the dashboard, protected by backend configuration, reviewer unlock, session tokens, rate limits, and cost tracking. That path remains draft-only/review-only: LeadForge never sends email and never writes to a CRM. The trade-off is intentional: replay protects the public surface; opt-in live Groq is rate-limited, gated, and scoped to a few selected leads at a time.
 
 | Control | Effect |
 |---------|--------|

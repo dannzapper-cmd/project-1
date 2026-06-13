@@ -209,6 +209,38 @@ remains the safe, network-free baseline.
 The architecture decision to defer LangGraph for this block is recorded
 in [`docs/adr/langgraph-decision.md`](../docs/adr/langgraph-decision.md).
 
+## Controlled Groq Live Demo Mode (`/api/demo/live/*`)
+
+This is the dashboard-facing live demo contract. Replay/deterministic mode
+remains the default, and all three endpoints are safe to call without exposing
+secrets:
+
+| Endpoint | Behavior |
+|----------|----------|
+| `GET /api/demo/live/status` | Returns `live_mode_enabled`, `groq_configured`, `available`, unavailable reasons, and configured limits. It never returns `GROQ_API_KEY` or the unlock code. |
+| `POST /api/demo/live/unlock` | Validates the submitted code against server-side `LIVE_DEMO_UNLOCK_CODE` and returns a live session token on success. Wrong codes return HTTP 403. |
+| `POST /api/demo/live/run` | Requires `X-LeadForge-Live-Session`, `LIVE_MODE_ENABLED=true`, and backend `GROQ_API_KEY`. Enforces max leads before model calls, then uses the existing live Groq pipeline. |
+
+Frontend behavior:
+
+* `GroqLiveModePanel` fetches `/api/demo/live/status`.
+* The reviewer enters the unlock code shared by the demo owner; the code is not
+  displayed by the UI or returned by the backend.
+* The returned session token is stored in browser `sessionStorage` and sent as
+  `X-LeadForge-Live-Session` for live runs.
+* Result metadata labels actual model output as `groq_live`, deterministic
+  baselines as `deterministic`, and failed/guardrail paths as `fallback`.
+
+Safety limits:
+
+* `LIVE_MODE_ENABLED=false` by default.
+* `MAX_LIVE_LEADS_PER_RUN` rejects oversized run requests before model calls.
+* Session/IP/daily-budget/concurrency counters are in-process and reset on
+  backend restart.
+* `GROQ_TIMEOUT_SECONDS` is passed to `GroqModelService` construction.
+* No endpoint sends email, writes CRM data, browses the web, scrapes, or accepts
+  arbitrary user prompts.
+
 ## Block 11C.4 — Controlled live draft regeneration
 
 `POST /api/demo/email/regenerate-draft/{lead_id}` regenerates one reviewable
