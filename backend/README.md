@@ -103,6 +103,12 @@ See `.env.example`. Variables below are read by the application code:
 | `GROQ_DEFAULT_MODEL` | `llama-3.1-8b-instant`      | Default Groq model when key is set |
 | `GROQ_TIMEOUT_SECONDS` | `30`                      | Groq request timeout |
 | `ENABLE_LIVE_MODEL_PIPELINE` | `false`             | Block 8.3 opt-in for the live Groq single-lead pipeline |
+| `LIVE_MODE_ENABLED` | `false` | Opt-in for `/api/demo/live/*` Groq Live Demo Mode |
+| `LIVE_DEMO_UNLOCK_CODE` | `555588` | Unlock code for Groq Live Demo Mode (server-validated) |
+| `MAX_LIVE_LEADS_PER_RUN` | `3` | Max leads per `POST /api/demo/live/run` |
+| `MAX_LIVE_RUNS_PER_SESSION_PER_DAY` | `3` | Session daily cap |
+| `MAX_LIVE_RUNS_PER_IP_PER_DAY` | `10` | IP daily cap (best-effort) |
+| `DAILY_LIVE_DEMO_BUDGET_USD` | `1.00` | In-process daily spend cap (estimate-based) |
 
 Optional Groq settings (`GROQ_API_KEY`, `GROQ_DEFAULT_MODEL`,
 `GROQ_TIMEOUT_SECONDS`) are read when set; the app runs without them.

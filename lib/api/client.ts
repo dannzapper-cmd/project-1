@@ -10,6 +10,7 @@
 
 import { API_BASE_URL } from "./config.ts";
 import { getDemoAccessHeaders } from "./demo-access.ts";
+import { getLiveSessionHeaders } from "./live-demo-access.ts";
 import type {
   AssistantRequest,
   AssistantResponse,
@@ -21,6 +22,10 @@ import type {
   IntakePreviewResponse,
   LeadIn,
   LeadPipelineContractOutput,
+  LiveDemoRunRequest,
+  LiveDemoRunResponse,
+  LiveDemoStatusResponse,
+  LiveDemoUnlockResponse,
   LiveResearchRequest,
   LiveResearchResponse,
   PipelineRunContractOutput,
@@ -69,6 +74,7 @@ async function getJson<T>(path: string, opts: ApiClientOptions = {}): Promise<T>
     headers: {
       Accept: "application/json",
       ...getDemoAccessHeaders(),
+      ...getLiveSessionHeaders(),
       ...(opts.headers ?? {}),
     },
     signal: opts.signal,
@@ -102,6 +108,7 @@ async function postJson<T>(
       Accept: "application/json",
       "Content-Type": "application/json",
       ...getDemoAccessHeaders(),
+      ...getLiveSessionHeaders(),
       ...(opts.headers ?? {}),
     },
     body: JSON.stringify(body),
@@ -134,6 +141,7 @@ async function postForm<T>(
     headers: {
       Accept: "application/json",
       ...getDemoAccessHeaders(),
+      ...getLiveSessionHeaders(),
       ...(opts.headers ?? {}),
     },
     body,
@@ -270,6 +278,30 @@ export function postRegenerateEmailDraft(
     request,
     opts,
   );
+}
+
+export function getLiveDemoStatus(
+  opts: ApiClientOptions = {},
+): Promise<LiveDemoStatusResponse> {
+  return getJson<LiveDemoStatusResponse>("/api/demo/live/status", opts);
+}
+
+export function postLiveDemoUnlock(
+  unlockCode: string,
+  opts: ApiClientOptions = {},
+): Promise<LiveDemoUnlockResponse> {
+  return postJson<LiveDemoUnlockResponse>(
+    "/api/demo/live/unlock",
+    { unlock_code: unlockCode },
+    opts,
+  );
+}
+
+export function postLiveDemoRun(
+  request: LiveDemoRunRequest,
+  opts: ApiClientOptions = {},
+): Promise<LiveDemoRunResponse> {
+  return postJson<LiveDemoRunResponse>("/api/demo/live/run", request, opts);
 }
 
 // --------------------------------------------------------------------------- //

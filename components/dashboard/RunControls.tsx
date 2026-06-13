@@ -7,6 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { LiveDemoStatusResponse } from "@/lib/api/types";
 import type { SystemStatusResponse } from "@/lib/api/types";
 
 interface RunControlsProps {
@@ -15,6 +16,8 @@ interface RunControlsProps {
   leadsCount?: number;
   systemStatus?: SystemStatusResponse | null;
   systemStatusError?: string | null;
+  liveDemoStatus?: LiveDemoStatusResponse | null;
+  pipelineMode?: "replay" | "groq_live";
 }
 
 export function RunControls({
@@ -22,6 +25,8 @@ export function RunControls({
   leadsCount = 0,
   systemStatus = null,
   systemStatusError = null,
+  liveDemoStatus = null,
+  pipelineMode = "replay",
 }: RunControlsProps = {}) {
   const scrollToIntake = () => {
     document.getElementById("lead-intake")?.scrollIntoView({
@@ -40,18 +45,28 @@ export function RunControls({
   };
 
   const controlledLiveAvailable =
-    systemStatus?.live_email_regenerate_configured === true &&
-    systemStatus.live_single_lead_only === true &&
-    systemStatus.public_live_batch_enabled === false;
-  const liveButtonLabel = controlledLiveAvailable
-    ? "Live Groq mode — controlled"
-    : "Live Groq mode — backend required";
-  const liveHelper = controlledLiveAvailable
-    ? "Replay mode is active. Controlled Live Groq is backend-protected for one selected lead in the lead drawer; public batch live Groq is not exposed."
-    : "Replay mode is active. Live Groq runs require controlled backend configuration, demo access, rate limits, and cost tracking.";
-  const liveTooltip = controlledLiveAvailable
-    ? "Single-lead draft regeneration is available after selecting a lead. Replay remains the default safe mode."
-    : "Replay mode is active. Live Groq runs require controlled backend configuration.";
+    liveDemoStatus?.available === true ||
+    (systemStatus?.live_email_regenerate_configured === true &&
+      systemStatus.live_single_lead_only === true &&
+      systemStatus.public_live_batch_enabled === false);
+  const liveButtonLabel =
+    pipelineMode === "groq_live"
+      ? "Groq Live Mode"
+      : controlledLiveAvailable
+        ? "Groq Live Mode — unlock below"
+        : "Groq Live Mode — backend required";
+  const liveHelper =
+    pipelineMode === "groq_live"
+      ? "Groq Live Demo Mode is active for controlled runs. Replay remains available for safe demos."
+      : controlledLiveAvailable
+        ? "Replay mode is active. Unlock Groq Live Demo Mode below for rate-limited real model calls."
+        : "Replay mode is active. Groq Live runs require backend configuration, unlock code, and rate limits.";
+  const liveTooltip =
+    pipelineMode === "groq_live"
+      ? "Controlled Groq live runs are enabled for this session."
+      : controlledLiveAvailable
+        ? "Enter unlock code 555588 in the Groq Live panel to enable controlled live runs."
+        : "Replay mode is active. Groq Live requires backend configuration.";
 
   return (
     <div className="surface-card rounded-lg p-5">
@@ -85,7 +100,7 @@ export function RunControls({
           <div className="flex items-center rounded-lg border border-[--border-default] p-1 bg-[--bg-overlay]">
             <button
               type="button"
-              aria-pressed="true"
+              aria-pressed={pipelineMode === "replay"}
               className="px-3 py-1.5 rounded-md text-xs font-semibold bg-[--accent-primary] text-white"
             >
               Replay Mode
@@ -96,13 +111,13 @@ export function RunControls({
                   <span>
                     <button
                       type="button"
-                      disabled={!controlledLiveAvailable}
-                      aria-disabled={!controlledLiveAvailable}
-                      onClick={controlledLiveAvailable ? scrollToResults : undefined}
+                      disabled={pipelineMode !== "groq_live"}
+                      aria-pressed={pipelineMode === "groq_live"}
+                      aria-disabled={pipelineMode !== "groq_live"}
                       title={liveTooltip}
                       className={
-                        controlledLiveAvailable
-                          ? "btn-secondary !px-3 !py-1.5 !text-xs !font-semibold !shadow-none"
+                        pipelineMode === "groq_live"
+                          ? "px-3 py-1.5 rounded-md text-xs font-semibold bg-[--accent-primary] text-white"
                           : "btn-disabled !px-3 !py-1.5 !text-xs !font-semibold !shadow-none"
                       }
                     >
