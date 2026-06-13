@@ -191,7 +191,7 @@ The recorded demo shows the stable replay-mode public demo. Controlled live-mode
 
 ### Demo access code
 
-Use demo code `555588` to access or run the guided demo experience.
+Use demo code `55558` to access or run the guided demo experience.
 
 ### Public demo vs controlled technical demo
 

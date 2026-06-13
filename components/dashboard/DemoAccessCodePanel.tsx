@@ -51,7 +51,7 @@ export function DemoAccessCodePanel() {
           <p className="mt-2 text-xs text-[--text-secondary]">
             Demo code:{" "}
             <span className="font-mono font-medium text-[--accent-primary]">
-              555588
+              55558
             </span>
             . Use this code to access the sample LeadForge demo.
           </p>
