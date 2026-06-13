@@ -448,7 +448,7 @@ export interface LiveDemoLimits {
 
 export interface LiveDemoStatusResponse {
   available: boolean;
-  groq_api_key_configured: boolean;
+  groq_configured: boolean;
   live_mode_enabled: boolean;
   live_mode_unlocked: boolean;
   unlock_required: boolean;

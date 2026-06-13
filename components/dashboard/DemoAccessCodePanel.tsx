@@ -45,15 +45,9 @@ export function DemoAccessCodePanel() {
           </h2>
           <p className="mt-1 text-xs leading-relaxed text-[--text-secondary]">
             If the backend has a demo access code configured, Add Leads, Process,
-            Live Research, and the live assistant require the code shared with the
-            demo link. It is stored only in this tab&apos;s sessionStorage.
-          </p>
-          <p className="mt-2 text-xs text-[--text-secondary]">
-            Demo code:{" "}
-            <span className="font-mono font-medium text-[--accent-primary]">
-              55558
-            </span>
-            . Use this code to access the sample LeadForge demo.
+            Live Research, live draft regeneration, and the live assistant require
+            the code shared with the demo link. It is stored only in this
+            tab&apos;s sessionStorage.
           </p>
           {hasStoredCode && (
             <p className="mt-1 text-xs text-[--color-success]">

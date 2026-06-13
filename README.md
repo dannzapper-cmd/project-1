@@ -132,19 +132,29 @@ Orchestration is **linear** and **in-process** — not a LangGraph graph. See [`
 
 ```
 GET  /api/demo/live/status
-POST /api/demo/live/unlock   (code 555588)
+POST /api/demo/live/unlock   (server-side code validation)
 POST /api/demo/live/run      (max 3 leads, rate-limited)
   → real Groq model calls when enabled
   → explicit Replay / Deterministic / Groq Live / Fallback badges
   → no live web research, no email sending, no CRM writes
 ```
 
-Replay/demo mode remains the default. The dashboard Groq Live panel is optional and disabled until unlocked.
+Replay/demo mode remains the default. The dashboard Groq Live panel is optional
+and disabled until the demo owner shares an unlock code with the reviewer.
 
-**Legacy single-lead API (still supported):**
+**Supporting internal live paths (still supported):**
 
 ```
 POST /api/demo/pipeline/live-groq/{lead_id}
+  → single lead
+  → token/cost limited
+  → deterministic-vs-live comparison
+  → API-only full-pipeline comparison
+
+POST /api/demo/email/regenerate-draft/{lead_id}
+  → selected lead context only
+  → draft-only live Groq regeneration
+  → controlled lead-drawer action when backend status allows
 ```
 
 ---
@@ -158,7 +168,7 @@ POST /api/demo/pipeline/live-groq/{lead_id}
 | **Backend** | FastAPI — health, demo pipeline, intake preview, telemetry endpoints |
 | **Smart intake** | Paste, CSV, Excel, and text-based PDF preview/validation (max 10 leads/run) |
 | **Public demo** | Replay/cost-safe mode — bundled sample results, no surprise model spend |
-| **Live comparison** | Backend-only opt-in Groq single-lead path; no public batch automation |
+| **Live comparison** | Backend-only opt-in Groq single-lead pipeline; no public batch automation |
 | **Human review** | Browser-only approve/reject/flag; local CSV export |
 | **Safety layer** | Rate limits, optional demo access code, request IDs, security headers, safe status endpoints |
 | **Telemetry** | Summary-safe, in-memory telemetry with capped recent-run listing |
@@ -178,7 +188,7 @@ LeadForge **prepares review-ready sales intelligence**; it does **not** run a fu
 | CRM writes | **Never** — export stays local |
 | Human review | Browser-local state; not persisted to backend |
 | Public demo | Replay/cost-safe by default; Groq Live is opt-in and unlock-gated |
-| Live Groq | `LIVE_MODE_ENABLED` + `GROQ_API_KEY` + unlock code; session/IP/budget limits |
+| Live Groq | `LIVE_MODE_ENABLED` + `GROQ_API_KEY` + server-side unlock; session/IP/budget limits |
 | Live research | **Not** part of Groq Live Demo Mode — no scraping or citations |
 | Fallbacks | Explicitly labeled — never presented as Groq Live |
 | Demo data | Synthetic/curated intelligence — not real-time market research |
@@ -202,7 +212,9 @@ The recorded demo shows the stable replay-mode public demo. Controlled live-mode
 
 ### Demo access code
 
-Use demo code `55558` to access or run the guided demo experience.
+If the deployed demo is configured with `DEMO_ACCESS_CODE`, enter the code
+shared with the demo link. The code is not shipped in frontend environment
+variables and is stored only in the current browser tab's `sessionStorage`.
 
 ### Public demo vs controlled technical demo
 
@@ -249,6 +261,7 @@ Relevant deep dives: [`docs/case-study.md`](docs/case-study.md) · [`docs/portfo
 | FastAPI backend | Health, demo pipeline, agents, intake preview, telemetry |
 | Safe in-memory telemetry | Summary metadata only; capped recent-run listing |
 | Backend-only opt-in live Groq (single lead) | `POST /api/demo/pipeline/live-groq/{lead_id}`; off by default |
+| Controlled live draft regeneration | `POST /api/demo/email/regenerate-draft/{lead_id}`; single selected lead, demo-access gated, draft-only |
 | LangGraph deferred | Per [ADR-001](docs/adr/langgraph-decision.md) — **not** a graph runtime today |
 
 ---
@@ -260,7 +273,7 @@ Relevant deep dives: [`docs/case-study.md`](docs/case-study.md) · [`docs/portfo
 - CRM integration or backend sync of review state
 - Email sending or deliverability tooling
 - Durable telemetry database or long-term eval history store
-- Frontend Groq Live Demo panel (unlock code `555588`, rate-limited runs)
+- Frontend batch “Run live Groq” button or automatic live pipeline execution
 - Full authentication, payments, or multi-tenancy
 - Guaranteed reply rates or “AI replaces SDRs” automation
 
@@ -318,7 +331,7 @@ Then on the dashboard (`/demo`):
 
 1. Process leads in **Replay** mode (default).
 2. Open the **Groq Live Demo Mode** panel.
-3. Enter unlock code **`555588`**.
+3. Enter the unlock code shared by the demo owner for that session.
 4. Select a lead (click a row) and click **Run Groq live**.
 
 Limits (defaults): max **3** leads per run, **3** session runs/day, **$1.00** daily budget, **30s** timeout. Fallback outputs are labeled explicitly — never as Groq Live. LeadForge **never sends email automatically** and live mode performs **no live web research**.

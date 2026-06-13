@@ -87,7 +87,6 @@ class Settings(BaseSettings):
     max_live_agent_steps_per_lead: int = Field(default=6, ge=1, le=20)
     max_live_tokens_per_lead: int = Field(default=6000, ge=500, le=50_000)
     daily_live_demo_budget_usd: float = Field(default=1.0, ge=0.01, le=100.0)
-    live_model_timeout_seconds: int = Field(default=30, ge=5, le=120)
     live_concurrency_limit: int = Field(default=1, ge=1, le=5)
     live_demo_unlock_code: str = "555588"
 

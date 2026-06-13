@@ -149,9 +149,9 @@ export function GroqLiveModePanel({
   const disabledReason = (() => {
     if (statusError) return "Backend unavailable";
     if (!status) return "Loading live mode status…";
-    if (!status.groq_api_key_configured) return "GROQ_API_KEY not configured";
+    if (!status.groq_configured) return "GROQ_API_KEY not configured";
     if (!status.live_mode_enabled) return "Live mode disabled on backend";
-    if (!unlocked) return "Enter unlock code 555588";
+    if (!unlocked) return "Enter the reviewer unlock code";
     if (tooManyLeads) {
       return `Too many leads selected (max ${status.limits.max_live_leads_per_run})`;
     }

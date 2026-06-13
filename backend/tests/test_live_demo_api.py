@@ -67,8 +67,28 @@ def test_live_status_unavailable_when_groq_api_key_missing(
     assert response.status_code == 200
     body = response.json()
     assert body["available"] is False
-    assert body["groq_api_key_configured"] is False
+    assert body["groq_configured"] is False
     assert "groq_api_key_missing" in body["unavailable_reasons"]
+
+
+def test_live_status_unavailable_when_live_mode_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("LIVE_MODE_ENABLED", raising=False)
+    monkeypatch.setenv("GROQ_API_KEY", "test-only-not-a-real-key")
+    get_settings.cache_clear()
+    try:
+        with TestClient(app) as client:
+            response = client.get(_STATUS_URL)
+    finally:
+        get_settings.cache_clear()
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["available"] is False
+    assert body["live_mode_enabled"] is False
+    assert body["groq_configured"] is True
+    assert "live_mode_disabled" in body["unavailable_reasons"]
 
 
 def test_correct_demo_code_unlocks_live_mode(
@@ -97,10 +117,8 @@ def test_wrong_code_does_not_unlock_live_mode(
     finally:
         get_settings.cache_clear()
 
-    assert response.status_code == 200
-    body = response.json()
-    assert body["unlocked"] is False
-    assert body["session_token"] is None
+    assert response.status_code == 403
+    assert "Incorrect unlock code" in response.json()["detail"]
 
 
 def test_live_run_rejects_without_unlock(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -114,10 +132,56 @@ def test_live_run_rejects_without_unlock(monkeypatch: pytest.MonkeyPatch) -> Non
     finally:
         get_settings.cache_clear()
 
-    assert response.status_code == 200
-    body = response.json()
-    assert body["results"] == []
-    assert "unlock" in (body["message"] or "").lower()
+    assert response.status_code == 403
+    assert "session" in response.json()["detail"].lower()
+
+
+def test_live_run_rejects_invalid_session(monkeypatch: pytest.MonkeyPatch) -> None:
+    _enable_live_demo(monkeypatch)
+    try:
+        with TestClient(app) as client:
+            response = client.post(
+                _RUN_URL,
+                json={"lead_ids": [_DEMO_LEAD_ID]},
+                headers={live_demo_module.LIVE_SESSION_HEADER: "not-a-real-token"},
+            )
+    finally:
+        get_settings.cache_clear()
+
+    assert response.status_code == 403
+    assert "session" in response.json()["detail"].lower()
+
+
+def test_live_run_rejects_when_live_mode_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("LIVE_MODE_ENABLED", raising=False)
+    monkeypatch.setenv("GROQ_API_KEY", "test-only-not-a-real-key")
+    get_settings.cache_clear()
+    try:
+        with TestClient(app) as client:
+            response = client.post(_RUN_URL, json={"lead_ids": [_DEMO_LEAD_ID]})
+    finally:
+        get_settings.cache_clear()
+
+    assert response.status_code == 503
+    assert "disabled" in response.json()["detail"].lower()
+
+
+def test_live_run_rejects_when_groq_key_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LIVE_MODE_ENABLED", "true")
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    get_settings.cache_clear()
+    try:
+        with TestClient(app) as client:
+            response = client.post(_RUN_URL, json={"lead_ids": [_DEMO_LEAD_ID]})
+    finally:
+        get_settings.cache_clear()
+
+    assert response.status_code == 503
+    assert "groq" in response.json()["detail"].lower()
 
 
 def test_max_leads_per_live_run_is_enforced(
@@ -264,6 +328,7 @@ def test_status_response_contains_no_secrets(
     text = json.dumps(response.json())
     assert "test-only-not-a-real-key" not in text
     assert "GROQ_API_KEY" not in text
+    assert _UNLOCK_CODE not in text
 
 
 def test_no_email_sending_introduced(monkeypatch: pytest.MonkeyPatch) -> None:

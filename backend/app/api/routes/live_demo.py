@@ -16,6 +16,7 @@ from app.schemas.live_demo import (
 from app.services.demo_live_mode_service import (
     LIVE_SESSION_HEADER,
     build_live_demo_status,
+    demo_live_mode_store,
     run_live_demo,
     unlock_live_demo,
 )
@@ -34,7 +35,13 @@ def get_live_demo_status(request: Request) -> LiveDemoStatusResponse:
 
 @router.post("/unlock", response_model=LiveDemoUnlockResponse)
 def post_live_demo_unlock(body: LiveDemoUnlockRequest) -> LiveDemoUnlockResponse:
-    return unlock_live_demo(body.unlock_code)
+    response = unlock_live_demo(body.unlock_code)
+    if not response.unlocked:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=response.message,
+        )
+    return response
 
 
 @router.post("/run", response_model=LiveDemoRunResponse)
@@ -53,8 +60,23 @@ def post_live_demo_run(body: LiveDemoRunRequest, request: Request) -> LiveDemoRu
                 f"Maximum is {settings.max_live_leads_per_run}."
             ),
         )
+    if not settings.live_mode_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Live mode is disabled on this backend.",
+        )
+    if not settings.groq_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Groq is not configured on this backend.",
+        )
 
     session_token = request.headers.get(LIVE_SESSION_HEADER, "").strip() or None
+    if not demo_live_mode_store.is_valid_session(session_token):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Valid Groq Live demo session required.",
+        )
     return run_live_demo(
         lead_ids=body.lead_ids,
         leads=body.leads,

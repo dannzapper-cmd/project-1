@@ -31,7 +31,7 @@ class LiveDemoStatusResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     available: bool
-    groq_api_key_configured: bool
+    groq_configured: bool
     live_mode_enabled: bool
     live_mode_unlocked: bool = False
     unlock_required: bool = True

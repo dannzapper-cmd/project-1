@@ -65,7 +65,7 @@ export function RunControls({
     pipelineMode === "groq_live"
       ? "Controlled Groq live runs are enabled for this session."
       : controlledLiveAvailable
-        ? "Enter unlock code 555588 in the Groq Live panel to enable controlled live runs."
+        ? "Enter the reviewer unlock code in the Groq Live panel to enable controlled live runs."
         : "Replay mode is active. Groq Live requires backend configuration.";
 
   return (

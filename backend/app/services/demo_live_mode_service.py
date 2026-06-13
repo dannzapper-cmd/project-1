@@ -174,7 +174,7 @@ def _limits_snapshot(settings: Settings) -> LiveDemoLimits:
         max_live_agent_steps_per_lead=settings.max_live_agent_steps_per_lead,
         max_live_tokens_per_lead=settings.max_live_tokens_per_lead,
         daily_live_demo_budget_usd=settings.daily_live_demo_budget_usd,
-        live_model_timeout_seconds=settings.live_model_timeout_seconds,
+        live_model_timeout_seconds=settings.groq_timeout_seconds,
         live_concurrency_limit=settings.live_concurrency_limit,
     )
 
@@ -219,7 +219,7 @@ def build_live_demo_status(
 
     return LiveDemoStatusResponse(
         available=available,
-        groq_api_key_configured=bool(settings.groq_api_key),
+        groq_configured=bool(settings.groq_api_key),
         live_mode_enabled=settings.live_mode_enabled,
         live_mode_unlocked=unlocked,
         unlock_required=True,
