@@ -136,9 +136,17 @@ Optional:
 | `APP_VERSION` | `0.1.0` | Metadata in `/health`. |
 | `LOG_LEVEL` | `INFO` | Backend log level. |
 | `DATABASE_URL` | `sqlite:///./leadforge.db` | Local SQLite schema init only; do not treat as production persistence on Render. |
-| `GROQ_API_KEY` | unset | Required only if you intentionally enable the backend-only live Groq endpoint. |
-| `GROQ_DEFAULT_MODEL` | `llama-3.1-8b-instant` | Optional Groq model id for the live endpoint. |
+| `GROQ_API_KEY` | unset | Required only if you intentionally enable backend Groq-backed demo paths. |
+| `GROQ_DEFAULT_MODEL` | `llama-3.1-8b-instant` | Optional Groq model id for live Groq-backed paths. |
 | `GROQ_TIMEOUT_SECONDS` | `30` | Optional Groq request timeout. |
+| `LIVE_MODE_ENABLED` | `false` | Controlled `/api/demo/live/*` dashboard flow. Off by default. |
+| `LIVE_DEMO_UNLOCK_CODE` | unset/managed in Render | Server-side reviewer unlock code for Groq Live Demo Mode. Never set as `NEXT_PUBLIC_*`. |
+| `MAX_LIVE_LEADS_PER_RUN` | `3` | Max selected leads accepted by `POST /api/demo/live/run`. |
+| `MAX_LIVE_RUNS_PER_SESSION_PER_DAY` | `3` | In-process per-session daily cap; resets on backend restart. |
+| `MAX_LIVE_RUNS_PER_IP_PER_DAY` | `10` | Best-effort in-process per-IP daily cap; resets on backend restart. |
+| `MAX_LIVE_TOKENS_PER_LEAD` | `6000` | Conservative token limit surfaced to the live demo response metadata. |
+| `DAILY_LIVE_DEMO_BUDGET_USD` | `1.00` | In-process estimated daily budget cap; resets on backend restart. |
+| `LIVE_CONCURRENCY_LIMIT` | `1` | In-process live demo concurrency cap. |
 | `ENABLE_LIVE_RESEARCH` | `false` | Block 10E live web research master switch. Off by default. |
 | `EXA_API_KEY` | unset | Backend-only Exa key. Never set this as a `NEXT_PUBLIC_*` variable. |
 | `LIVE_RESEARCH_MAX_RESULTS` | `3` | Hard cap on Exa results per request. |
@@ -333,8 +341,13 @@ storage belongs to a later backend deployment block.
 - If `DEMO_ACCESS_CODE` is set, protected demo actions require the
   `X-LeadForge-Demo-Key` header. This is abuse deterrence, not full auth.
 - Deterministic and intake routes do not require API keys.
-- Live Groq/model routes are backend-only, single-lead, opt-in, and guarded by
-  `ENABLE_LIVE_MODEL_PIPELINE=true` plus `GROQ_API_KEY`.
+- Groq Live Demo Mode is backend-keyed, opt-in, and guarded by
+  `LIVE_MODE_ENABLED=true`, `GROQ_API_KEY`, server-side unlock validation, and
+  `X-LeadForge-Live-Session` on live runs. The dashboard flow never receives a
+  Groq key or unlock-code value from status responses.
+- The legacy full-pipeline comparison endpoint remains guarded by
+  `ENABLE_LIVE_MODEL_PIPELINE=true` plus `GROQ_API_KEY`; the controlled
+  regenerate action also requires demo access and live rate limits.
 - App startup does not require Groq or other model keys.
 - No email sending is implemented.
 - No CRM writes are implemented.

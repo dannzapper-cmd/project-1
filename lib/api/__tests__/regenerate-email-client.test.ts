@@ -6,6 +6,11 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
 import { ApiError, getSystemStatus, postRegenerateEmailDraft } from "../client.ts";
+import {
+  clearStoredDemoAccessCode,
+  DEMO_ACCESS_HEADER,
+  setStoredDemoAccessCode,
+} from "../demo-access.ts";
 import type {
   EmailRegenerateRequest,
   EmailRegenerateResponse,
@@ -87,24 +92,36 @@ describe("controlled live status and regenerate draft client", () => {
   it("posts selected lead context to the single-lead regenerate endpoint", async () => {
     let capturedUrl = "";
     let capturedBody = "";
+    let capturedHeaders: HeadersInit | undefined;
     const fakeFetch = (async (url: string, init?: RequestInit) => {
       capturedUrl = url;
       capturedBody = String(init?.body ?? "");
+      capturedHeaders = init?.headers;
       return new Response(JSON.stringify(regenerateBody()), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
     }) as unknown as typeof fetch;
 
-    const response = await postRegenerateEmailDraft("lead_001", requestBody(), {
-      baseUrl: "https://api.test",
-      fetchImpl: fakeFetch,
-    });
+    setStoredDemoAccessCode("demo-code");
+    try {
+      const response = await postRegenerateEmailDraft("lead_001", requestBody(), {
+        baseUrl: "https://api.test",
+        fetchImpl: fakeFetch,
+      });
+
+      assert.equal(response.status, "ok");
+      assert.equal(response.draft_only, true);
+    } finally {
+      clearStoredDemoAccessCode();
+    }
 
     assert.equal(capturedUrl, "https://api.test/api/demo/email/regenerate-draft/lead_001");
     assert.equal(JSON.parse(capturedBody).lead.company_name, "Acme Corp");
-    assert.equal(response.status, "ok");
-    assert.equal(response.draft_only, true);
+    assert.equal(
+      (capturedHeaders as Record<string, string>)[DEMO_ACCESS_HEADER],
+      "demo-code",
+    );
   });
 
   it("throws ApiError on protected-route HTTP failures", async () => {

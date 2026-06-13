@@ -710,7 +710,10 @@ def post_regenerate_email_draft_for_lead(
     )
 
     try:
-        groq_service = GroqModelService(default_model=settings.groq_default_model)
+        groq_service = GroqModelService(
+            default_model=settings.groq_default_model,
+            timeout_seconds=settings.groq_timeout_seconds,
+        )
         output = EmailDrafterAgentService(
             model_service=groq_service,
             use_model_synthesis=True,

@@ -30,6 +30,7 @@ from app.api.routes import assistant as assistant_routes
 from app.api.routes import demo as demo_routes
 from app.api.routes import health as health_routes
 from app.api.routes import intake as intake_routes
+from app.api.routes import live_demo as live_demo_routes
 from app.api.routes import research as research_routes
 from app.api.routes import telemetry as telemetry_routes
 from app.core.config import get_settings
@@ -98,6 +99,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health_routes.router)
     app.include_router(demo_routes.router)
+    app.include_router(live_demo_routes.router)
     app.include_router(intake_routes.router)
     app.include_router(research_routes.router)
     app.include_router(assistant_routes.router)

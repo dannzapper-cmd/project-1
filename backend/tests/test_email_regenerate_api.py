@@ -77,16 +77,114 @@ def test_regenerate_draft_requires_demo_access_when_configured(monkeypatch) -> N
     assert response.json()["error"] == "demo_access_required"
 
 
-def test_regenerate_draft_returns_live_draft_with_safe_metadata(monkeypatch) -> None:
+def test_regenerate_draft_rejects_wrong_demo_access_code(monkeypatch) -> None:
     monkeypatch.setenv("ENABLE_LIVE_MODEL_PIPELINE", "true")
     monkeypatch.setenv("GROQ_API_KEY", "test-key")
     monkeypatch.setenv("DEMO_ACCESS_CODE", "demo-code")
     monkeypatch.setenv("RATE_LIMIT_ENABLED", "true")
     get_settings.cache_clear()
 
+    try:
+        test_app = create_app()
+        with TestClient(test_app) as client:
+            response = client.post(
+                _URL,
+                json=_payload(),
+                headers={"X-LeadForge-Demo-Key": "wrong-code"},
+            )
+    finally:
+        get_settings.cache_clear()
+
+    assert response.status_code == 403
+    assert response.json()["error"] == "demo_access_required"
+
+
+def test_regenerate_draft_requires_rate_limits_and_demo_code(monkeypatch) -> None:
+    monkeypatch.setenv("ENABLE_LIVE_MODEL_PIPELINE", "true")
+    monkeypatch.setenv("GROQ_API_KEY", "test-key")
+    monkeypatch.delenv("DEMO_ACCESS_CODE", raising=False)
+    monkeypatch.setenv("RATE_LIMIT_ENABLED", "false")
+    get_settings.cache_clear()
+
+    try:
+        test_app = create_app()
+        with TestClient(test_app) as client:
+            response = client.post(_URL, json=_payload())
+    finally:
+        get_settings.cache_clear()
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "disabled"
+    assert body["provider"] == "none"
+    assert "demo access and live rate limits" in body["user_message"]
+
+
+def test_regenerate_draft_live_rate_limit_is_enforced(monkeypatch) -> None:
+    monkeypatch.setenv("ENABLE_LIVE_MODEL_PIPELINE", "true")
+    monkeypatch.setenv("GROQ_API_KEY", "test-key")
+    monkeypatch.setenv("DEMO_ACCESS_CODE", "demo-code")
+    monkeypatch.setenv("RATE_LIMIT_ENABLED", "true")
+    monkeypatch.setenv("RATE_LIMIT_LIVE_REQUESTS_PER_MINUTE", "1")
+    get_settings.cache_clear()
+
     class _FakeGroqService:
         def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
             pass
+
+        def complete(self, request):  # noqa: ANN001
+            return ModelResponse(
+                request_id=request.request_id,
+                provider=ModelProvider.GROQ,
+                model_name="llama-3.1-8b-instant",
+                content=json.dumps(
+                    {
+                        "email_subject": "Idea for NovaBridge",
+                        "email_body": "Hi Jordan,\n\nThis is a draft only for human review, based only on the selected lead context.\n\nBest,\nLeadForge",
+                        "personalization_notes": ["Used selected lead context only."],
+                        "confidence": "medium",
+                    }
+                ),
+                usage=ModelUsage(input_tokens=100, output_tokens=80, total_tokens=180),
+                cost=ModelCostEstimate(
+                    input_cost=0.0,
+                    output_cost=0.0,
+                    total_cost=0.001,
+                    display_cost="$0.001",
+                ),
+                latency="1.2s",
+                simulated=False,
+            )
+
+    monkeypatch.setattr("app.api.routes.demo.GroqModelService", _FakeGroqService)
+
+    try:
+        test_app = create_app()
+        with TestClient(test_app) as client:
+            first = client.post(_URL, json=_payload(), headers=_HEADERS)
+            second = client.post(_URL, json=_payload(), headers=_HEADERS)
+    finally:
+        get_settings.cache_clear()
+
+    assert first.status_code == 200
+    assert first.json()["status"] == "ok"
+    assert second.status_code == 429
+    assert second.json()["error"] == "rate_limited"
+
+
+def test_regenerate_draft_returns_live_draft_with_safe_metadata(monkeypatch) -> None:
+    monkeypatch.setenv("ENABLE_LIVE_MODEL_PIPELINE", "true")
+    monkeypatch.setenv("GROQ_API_KEY", "test-key")
+    monkeypatch.setenv("GROQ_TIMEOUT_SECONDS", "7")
+    monkeypatch.setenv("DEMO_ACCESS_CODE", "demo-code")
+    monkeypatch.setenv("RATE_LIMIT_ENABLED", "true")
+    get_settings.cache_clear()
+
+    captured_kwargs: dict[str, object] = {}
+
+    class _FakeGroqService:
+        def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
+            captured_kwargs.update(kwargs)
 
         def complete(self, request):  # noqa: ANN001
             content = json.dumps(
@@ -130,3 +228,53 @@ def test_regenerate_draft_returns_live_draft_with_safe_metadata(monkeypatch) -> 
     assert body["provider"] == "groq"
     assert body["tokens"] == 180
     assert "Draft not sent" in body["user_message"]
+    assert captured_kwargs["default_model"] == "llama-3.1-8b-instant"
+    assert captured_kwargs["timeout_seconds"] == 7
+
+
+def test_regenerate_draft_labels_invalid_json_as_deterministic_fallback(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("ENABLE_LIVE_MODEL_PIPELINE", "true")
+    monkeypatch.setenv("GROQ_API_KEY", "test-key")
+    monkeypatch.setenv("DEMO_ACCESS_CODE", "demo-code")
+    monkeypatch.setenv("RATE_LIMIT_ENABLED", "true")
+    get_settings.cache_clear()
+
+    class _FakeGroqService:
+        def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
+            pass
+
+        def complete(self, request):  # noqa: ANN001
+            return ModelResponse(
+                request_id=request.request_id,
+                provider=ModelProvider.GROQ,
+                model_name="llama-3.1-8b-instant",
+                content="not valid json",
+                usage=ModelUsage(input_tokens=100, output_tokens=80, total_tokens=180),
+                cost=ModelCostEstimate(
+                    input_cost=0.0,
+                    output_cost=0.0,
+                    total_cost=0.001,
+                    display_cost="$0.001",
+                ),
+                latency="1.2s",
+                simulated=False,
+            )
+
+    monkeypatch.setattr("app.api.routes.demo.GroqModelService", _FakeGroqService)
+
+    try:
+        test_app = create_app()
+        with TestClient(test_app) as client:
+            response = client.post(_URL, json=_payload(), headers=_HEADERS)
+    finally:
+        get_settings.cache_clear()
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "deterministic_fallback"
+    assert body["mode"] == "deterministic_fallback"
+    assert body["provider"] == "none"
+    assert body["tokens"] == 180
+    assert "deterministic replay draft" in body["user_message"]

@@ -432,6 +432,103 @@ export interface EmailRegenerateResponse {
 }
 
 // --------------------------------------------------------------------------- //
+// Groq Live Demo Mode                                                        //
+// --------------------------------------------------------------------------- //
+
+export interface LiveDemoLimits {
+  max_live_leads_per_run: number;
+  max_live_runs_per_session_per_day: number;
+  max_live_runs_per_ip_per_day: number;
+  max_live_agent_steps_per_lead: number;
+  max_live_tokens_per_lead: number;
+  daily_live_demo_budget_usd: number;
+  live_model_timeout_seconds: number;
+  live_concurrency_limit: number;
+}
+
+export interface LiveDemoStatusResponse {
+  available: boolean;
+  groq_configured: boolean;
+  live_mode_enabled: boolean;
+  live_mode_unlocked: boolean;
+  unlock_required: boolean;
+  model_name: string | null;
+  limits: LiveDemoLimits;
+  unavailable_reasons: string[];
+  session_runs_remaining_today: number | null;
+  ip_runs_remaining_today: number | null;
+  daily_budget_remaining_usd: number | null;
+}
+
+export interface LiveDemoUnlockResponse {
+  unlocked: boolean;
+  session_token: string | null;
+  message: string;
+}
+
+export type LiveDemoRunMode = "replay" | "deterministic" | "groq_live" | "fallback";
+
+export interface LiveDemoRunMetadata {
+  run_mode: LiveDemoRunMode;
+  model_provider: string | null;
+  model_name: string | null;
+  estimated_tokens: number | null;
+  estimated_cost_usd: number | null;
+  latency_ms: number | null;
+  parse_success: boolean | null;
+  fallback_used: boolean;
+  warnings: string[];
+  limits_applied: string[];
+  live_mode_unlocked: boolean;
+}
+
+export interface LivePipelineComparison {
+  fit_score_delta: number | null;
+  priority_changed: boolean | null;
+  qa_score_delta: number | null;
+  email_subject_changed: boolean | null;
+  risk_level_changed: boolean | null;
+  live_summary: string | null;
+  deterministic_summary: string | null;
+  comparison_notes: string;
+}
+
+export interface LivePipelineResponse {
+  run_id: string;
+  lead_id: string;
+  run_mode: string;
+  live_success: boolean;
+  live_model_used: string;
+  fallback_used: boolean;
+  fallback_reason: string | null;
+  deterministic_baseline_available: boolean;
+  failed_agent: string | null;
+  failure_stage: string | null;
+  error_code: string | null;
+  deterministic_result: LeadPipelineContractOutput | null;
+  live_result: LeadPipelineContractOutput | null;
+  comparison: LivePipelineComparison;
+}
+
+export interface LiveDemoLeadResult {
+  lead_id: string;
+  pipeline: LivePipelineResponse | null;
+  metadata: LiveDemoRunMetadata;
+  error: string | null;
+}
+
+export interface LiveDemoRunRequest {
+  lead_ids: string[];
+  leads?: LeadIn[];
+}
+
+export interface LiveDemoRunResponse {
+  results: LiveDemoLeadResult[];
+  rejected_lead_ids: string[];
+  message: string | null;
+}
+
+// --------------------------------------------------------------------------- //
 // Block 10G — Contextual LLM Lead Assistant                                  //
 //                                                                            //
 // Mirrors `app/schemas/assistant.py`. The endpoint always returns HTTP 200;  //

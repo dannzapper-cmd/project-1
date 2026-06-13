@@ -42,6 +42,8 @@ _PROTECTED_EXACT_POST_PATHS: frozenset[str] = frozenset(
         "/api/demo/email/regenerate-draft",
         "/api/research/live-company",
         "/api/assistant/lead-question",
+        "/api/demo/live/unlock",
+        "/api/demo/live/run",
     }
 )
 
@@ -51,6 +53,7 @@ _LIVE_PATH_PREFIXES: tuple[str, ...] = (
     "/api/demo/pipeline/live-groq/",
     "/api/demo/email/regenerate-draft/",
     "/api/demo/model-service/groq-check",
+    "/api/demo/live/run",
 )
 
 _GROQ_AGENT_MARKERS: tuple[str, ...] = (

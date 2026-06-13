@@ -560,6 +560,7 @@ def run_live_groq_pipeline_for_lead(
     lead_id: str,
     *,
     groq_service_factory: Any | None = None,
+    require_enable_flag: bool = True,
 ) -> LivePipelineResponse:
     """Run the live Groq pipeline for exactly one demo lead.
 
@@ -598,7 +599,7 @@ def run_live_groq_pipeline_for_lead(
         if env_flag_raw is not None
         else settings.enable_live_model_pipeline
     )
-    if not env_flag:
+    if require_enable_flag and not env_flag:
         raise LivePipelineDisabledError(
             "Live model pipeline is disabled. Set "
             "ENABLE_LIVE_MODEL_PIPELINE=true to opt in."
@@ -633,7 +634,11 @@ def run_live_groq_pipeline_for_lead(
         def _default_factory() -> Any:
             from app.services.model_service import GroqModelService
 
-            return GroqModelService(api_key=api_key, default_model=live_model_used)
+            return GroqModelService(
+                api_key=api_key,
+                default_model=live_model_used,
+                timeout_seconds=settings.groq_timeout_seconds,
+            )
 
         groq_service_factory = _default_factory
 

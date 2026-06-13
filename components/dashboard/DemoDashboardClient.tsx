@@ -28,11 +28,12 @@ import { BusinessValueSection } from "./BusinessValueSection";
 import { DemoNextSteps } from "./DemoNextSteps";
 import { LeadIntakePanel } from "./LeadIntakePanel";
 import { RunControls } from "./RunControls";
+import { GroqLiveModePanel } from "./GroqLiveModePanel";
 import { LeadTable } from "./LeadTable";
 import { MetricsRow } from "./MetricsRow";
 import { RunQualityPanel } from "./RunQualityPanel";
 import { DashboardEmptyState } from "./DashboardEmptyState";
-import { getSystemStatus, joinBatchWithLeads } from "@/lib/api/client";
+import { getLiveDemoStatus, getSystemStatus, joinBatchWithLeads } from "@/lib/api/client";
 import {
   toAgentStatuses,
   toLeadDetail,
@@ -42,6 +43,8 @@ import {
 import type {
   EnrichedBatch,
   LeadIn,
+  LiveDemoRunResponse,
+  LiveDemoStatusResponse,
   PipelineRunContractOutput,
   SystemStatusResponse,
 } from "@/lib/api/types";
@@ -89,6 +92,9 @@ export function DemoDashboardClient({ sampleCsvContent }: DemoDashboardClientPro
   const [userBatch, setUserBatch] = useState<EnrichedBatch | null>(null);
   const [systemStatus, setSystemStatus] = useState<SystemStatusResponse | null>(null);
   const [systemStatusError, setSystemStatusError] = useState<string | null>(null);
+  const [liveDemoStatus, setLiveDemoStatus] = useState<LiveDemoStatusResponse | null>(null);
+  const [liveSelectedLeadIds, setLiveSelectedLeadIds] = useState<string[]>([]);
+  const [pipelineMode, setPipelineMode] = useState<"replay" | "groq_live">("replay");
   const [profilePackId, setProfilePackId] =
     useState<B2BProfilePackId>(DEFAULT_PROFILE_PACK_ID);
   const profilePack = useMemo(
@@ -120,6 +126,18 @@ export function DemoDashboardClient({ sampleCsvContent }: DemoDashboardClientPro
           err instanceof Error ? err.message : "Backend status unavailable",
         );
       });
+    getLiveDemoStatus()
+      .then((status) => {
+        if (cancelled) return;
+        setLiveDemoStatus(status);
+        if (status.live_mode_unlocked) {
+          setPipelineMode("groq_live");
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLiveDemoStatus(null);
+      });
     return () => {
       cancelled = true;
     };
@@ -140,6 +158,17 @@ export function DemoDashboardClient({ sampleCsvContent }: DemoDashboardClientPro
         detailById.get(leadId) ?? null,
     };
   }, [userBatch]);
+
+  const handleLiveResult = (response: LiveDemoRunResponse) => {
+    if (response.results.some((item) => item.metadata.run_mode === "groq_live")) {
+      setPipelineMode("groq_live");
+    }
+    void getLiveDemoStatus().then(setLiveDemoStatus).catch(() => undefined);
+  };
+
+  const handleLeadOpen = (leadId: string) => {
+    setLiveSelectedLeadIds([leadId]);
+  };
 
   const handleBatchProcessed = (
     batch: PipelineRunContractOutput,
@@ -175,6 +204,12 @@ export function DemoDashboardClient({ sampleCsvContent }: DemoDashboardClientPro
           hasLoadedResults={false}
           systemStatus={systemStatus}
           systemStatusError={systemStatusError}
+          liveDemoStatus={liveDemoStatus}
+          pipelineMode={pipelineMode}
+        />
+        <GroqLiveModePanel
+          selectedLeadIds={liveSelectedLeadIds}
+          onLiveResult={handleLiveResult}
         />
         <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
         <DashboardError message={error} onRetry={refresh} />
@@ -189,6 +224,12 @@ export function DemoDashboardClient({ sampleCsvContent }: DemoDashboardClientPro
           hasLoadedResults={false}
           systemStatus={systemStatus}
           systemStatusError={systemStatusError}
+          liveDemoStatus={liveDemoStatus}
+          pipelineMode={pipelineMode}
+        />
+        <GroqLiveModePanel
+          selectedLeadIds={liveSelectedLeadIds}
+          onLiveResult={handleLiveResult}
         />
         <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
         <DashboardEmptyState sampleCsvContent={sampleCsvContent} />
@@ -203,6 +244,18 @@ export function DemoDashboardClient({ sampleCsvContent }: DemoDashboardClientPro
         leadsCount={displayLeads.length}
         systemStatus={systemStatus}
         systemStatusError={systemStatusError}
+        liveDemoStatus={liveDemoStatus}
+        pipelineMode={pipelineMode}
+      />
+      <GroqLiveModePanel
+        selectedLeadIds={
+          liveSelectedLeadIds.length > 0
+            ? liveSelectedLeadIds
+            : displayLeads[0]
+              ? [displayLeads[0].id]
+              : []
+        }
+        onLiveResult={handleLiveResult}
       />
       <LeadIntakePanel onBatchProcessed={handleBatchProcessed} />
       <B2BProfilePackPanel
@@ -237,6 +290,7 @@ export function DemoDashboardClient({ sampleCsvContent }: DemoDashboardClientPro
         getLeadDetail={displayGetLeadDetail}
         profilePack={profilePack}
         systemStatus={systemStatus}
+        onLeadOpen={handleLeadOpen}
       />
     </>
   );

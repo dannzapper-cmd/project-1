@@ -77,6 +77,19 @@ class Settings(BaseSettings):
     # live model pipeline behaviour in this phase.
     enable_live_model_pipeline: bool = False
 
+    # Groq Live Demo Mode — controlled opt-in path for /api/demo/live/*.
+    # OFF by default. Requires GROQ_API_KEY for real model calls. Replay and
+    # deterministic pipelines are unaffected when this flag is false.
+    live_mode_enabled: bool = False
+    max_live_leads_per_run: int = Field(default=3, ge=1, le=10)
+    max_live_runs_per_session_per_day: int = Field(default=3, ge=1, le=50)
+    max_live_runs_per_ip_per_day: int = Field(default=10, ge=1, le=100)
+    max_live_agent_steps_per_lead: int = Field(default=6, ge=1, le=20)
+    max_live_tokens_per_lead: int = Field(default=6000, ge=500, le=50_000)
+    daily_live_demo_budget_usd: float = Field(default=1.0, ge=0.01, le=100.0)
+    live_concurrency_limit: int = Field(default=1, ge=1, le=5)
+    live_demo_unlock_code: str = "555588"
+
     # Block 10E — Live Web Research MVP (Exa).
     #
     # All four settings are intentionally inert when ``enable_live_research``
