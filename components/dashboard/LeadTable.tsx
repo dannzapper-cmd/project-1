@@ -32,6 +32,7 @@ interface LeadTableProps {
   getLeadDetail?: (leadId: string) => LeadDetail | null;
   profilePack?: B2BProfilePack;
   systemStatus?: SystemStatusResponse | null;
+  onLeadOpen?: (leadId: string) => void;
 }
 
 type PriorityFilter = "All" | "High" | "Medium" | "Low";
@@ -87,6 +88,7 @@ export function LeadTable({
   getLeadDetail,
   profilePack,
   systemStatus,
+  onLeadOpen,
 }: LeadTableProps = {}) {
   const initialLeads = leadsProp ?? [];
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
@@ -133,6 +135,7 @@ export function LeadTable({
     setSelectedLead(lead);
     setSelectedDetail(getLeadDetail ? getLeadDetail(lead.id) : null);
     setIsDrawerOpen(true);
+    onLeadOpen?.(lead.id);
   };
 
   const handleStatusChange = (leadId: string, status: Lead["status"]) => {
