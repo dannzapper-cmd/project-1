@@ -189,6 +189,10 @@ LeadForge **prepares review-ready sales intelligence**; it does **not** run a fu
 
 The recorded demo shows the stable replay-mode public demo. Controlled live-mode affordances may differ slightly in the latest deployed version. See [`docs/demo-video.md`](docs/demo-video.md).
 
+### Demo access code
+
+Use demo code `555588` to access or run the guided demo experience.
+
 ### Public demo vs controlled technical demo
 
 | | **Public demo** | **Controlled technical / interview demo** |
