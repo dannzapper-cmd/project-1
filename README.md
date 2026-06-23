@@ -16,6 +16,8 @@ LeadForge is a **review-first sales intelligence workflow** for B2B lead qualifi
 
 The public demo runs in **replay/cost-safe** mode by default. Add Leads → Preview → Process requires a reachable FastAPI backend (`NEXT_PUBLIC_API_URL`). Live batch Groq execution is intentionally unavailable in the UI.
 
+**Code** 55558
+
 ---
 
 ## Visual evidence
