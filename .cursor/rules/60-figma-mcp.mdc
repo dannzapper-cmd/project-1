@@ -1,0 +1,15 @@
+---
+description: Figma MCP protocol — harvest sprint, no casual calls, Android output only
+alwaysApply: false
+---
+
+# Figma MCP
+
+- **Starter/View/Collab:** 6 tool calls/month (verified 2026-07-16). Treat as precious.
+- **Never** invoke Figma MCP without approved selection in `docs/design/figma-harvest/FIGMA_SELECTION_CHECKLIST.md`.
+- Follow `docs/design/figma-harvest/FIGMA_SIX_CALL_PLAN.md` call order.
+- Save raw + normalized output per call.
+- Prompts **must prohibit** React, Tailwind, HTML, Framer Motion output.
+- Require Kotlin + Jetpack Compose translation.
+- Manual Figma export (PNG/SVG/PDF) is free complement — no MCP cost.
+- 0 calls consumed in BLOCK_ART_000. Log each call in harvest raw folder.

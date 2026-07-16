@@ -1,0 +1,16 @@
+---
+description: Jetpack Compose UI — semantic components, tokens, state hoisting, previews
+globs: "**/*.{kt,kts}"
+alwaysApply: false
+---
+
+# Compose UI
+
+- Use semantic Life OS components (`LifeActionButton`, `LifeWidget`, `LiahOrb`, `QuickDial`) — not `ButtonBlue`/`CardGlass`.
+- State hoisting; UI models separate from domain.
+- Tokens from `design-system/tokens/` — no magic numbers in screens.
+- `@Preview` for states: loading, empty, error, disabled.
+- `Modifier.semantics` for accessibility on interactive elements.
+- Layer: Domain → State → UI models → Semantic components → Tokens → Motion → Render.
+- Do not alter ViewModels, reducers, or navigation graphs during visual-only work.
+- Reference: `docs/design/ART_DIRECTION_MASTER.md` § components.

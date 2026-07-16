@@ -1,0 +1,19 @@
+---
+description: Art direction — white architecture, black precision, semantic rainbow, Cognitive Glass
+globs: "**/*.{kt,kts}"
+alwaysApply: false
+---
+
+# Art Direction
+
+- White is predominant architecture — not clinical, not beige default.
+- Black for text, figures, symbols, structure, precision.
+- Rainbow = semantic vocabulary per node/action/state — not permanent iridescence.
+- Cognitive Glass ≠ transparency everywhere.
+- Reactive light on movement, pressure, orientation, state when it helps objects feel alive.
+- Intelligent fun — not infantilization, not casino patterns.
+- Combine Void Register + Living Object Register.
+- Each node may have personality within global DNA.
+- Do not make Life OS look government, banking, clinical, or generic Material clone.
+- Source: `docs/design/ART_DIRECTION_MASTER.md`, `docs/source/raw/design/LifeOS_Sistema_Direccion_Artistica_Fase2_Android_v0_1_1__80c4.md`
+- Visual PDF: `docs/source/raw/design/DISENO_d99d.pdf` (pages 1–16 require visual consult).

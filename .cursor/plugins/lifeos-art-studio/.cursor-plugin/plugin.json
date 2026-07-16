@@ -1,0 +1,15 @@
+{
+  "name": "lifeos-art-studio",
+  "description": "Life OS Phase 2 art direction studio — rules, skills, agents, hooks for Android Compose redesign",
+  "version": "0.1.0",
+  "author": {
+    "name": "Life OS / Danny",
+    "email": "pending@lifeos.local"
+  },
+  "keywords": ["lifeos", "art-direction", "compose", "figma"],
+  "rules": "../../rules",
+  "skills": "../../skills",
+  "agents": "../../agents",
+  "commands": "../../commands",
+  "hooks": "../../hooks/hooks.json"
+}

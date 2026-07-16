@@ -1,0 +1,21 @@
+---
+description: Motion choreography — interruptible, causal, Reduce Motion, performance budgets
+globs: "**/*.{kt,kts}"
+alwaysApply: false
+---
+
+# Motion & Haptics
+
+## Motion
+- Order: static aesthetics → visual states → interaction → motion → haptics → sound (last).
+- All motion interruptible and causal.
+- Respect `animateMotionAsState` / system Reduce Motion settings.
+- Pause off-screen; no decorative infinite loops at scale.
+- Structural: Compose Animation APIs. Closed loops: Lottie. Complex interactive: Rive (evaluate).
+- Light/material: `graphicsLayer`, `Brush`, Canvas, selective shaders with fallback.
+- Budgets: `docs/design/PERFORMANCE_VISUAL_BUDGETS.md`, `docs/design/MOTION_SYSTEM.md`.
+
+## Haptics
+- Semantic families only: Contact, Selection, Snap, Confirmation, Warning, Error, Protection, Emergency.
+- Not every tap vibrates. Prefer system-defined effects.
+- Reference: `docs/design/HAPTICS_SYSTEM.md`.
