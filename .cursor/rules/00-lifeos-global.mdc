@@ -1,0 +1,15 @@
+---
+description: Life OS global invariants, platform, and workflow for all agent work
+alwaysApply: true
+---
+
+# Life OS Global
+
+- **Platform:** Android native — Kotlin + Jetpack Compose only for the app.
+- **Never** introduce React, Tailwind, HTML, or Framer Motion into Life OS Android code.
+- Read `AGENTS.md` and active checkpoint before substantive work.
+- Document precedence: `docs/source/SOURCE_PRECEDENCE.md`.
+- Preserve navigation, state, reducers, mutations, receipts, Undo, persistence, contracts.
+- Danny approves final aesthetic decisions; agents propose and implement.
+- Update checkpoint at milestone close: `docs/execution/BLOCK_ART_000_CONTEXT_TOOLING_WORKING_CHECKPOINT.md`.
+- Deep docs: `docs/design/LIFEOS_ART_CONTEXT_MANIFEST.md`, `docs/source/SOURCE_INDEX.md`.

@@ -1,0 +1,15 @@
+---
+description: Accessibility — TalkBack, font scale, contrast, touch targets, Reduce Motion
+globs: "**/*.{kt,kts}"
+alwaysApply: false
+---
+
+# Accessibility
+
+- WCAG contrast on all text — especially over glass/blur surfaces.
+- Touch targets ≥ 48dp; spacing for one-handed use.
+- Test matrix: 100%, 130%, 200% font scale; TalkBack; Reduce Motion.
+- Never rely on color alone for state.
+- `contentDescription` and custom semantics for non-text controls.
+- Emergency flows: highest clarity, no motion-only cues.
+- Reference: `docs/design/ACCESSIBILITY_VISUAL_RULES.md`.

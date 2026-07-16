@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": ".cursor/hooks/license-check.sh",
+        "matcher": "npm install|pnpm add|pip install|gradle.*implementation",
+        "timeout": 10
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": ".cursor/hooks/post-token-change.sh",
+        "matcher": "design-system/tokens/",
+        "timeout": 10
+      },
+      {
+        "command": ".cursor/hooks/post-component-change.sh",
+        "matcher": "design-system/|**/ui/**",
+        "timeout": 10
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": ".cursor/hooks/visual-evidence-gate.sh",
+        "matcher": "CallMcpTool",
+        "timeout": 5
+      }
+    ],
+    "stop": [
+      {
+        "command": ".cursor/hooks/pre-session-end.sh",
+        "timeout": 15
+      }
+    ],
+    "preCompact": [
+      {
+        "command": ".cursor/hooks/post-compaction-recovery.sh",
+        "timeout": 10
+      }
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+---
+description: Evidence gates, checkpoints, and session continuity requirements
+alwaysApply: false
+---
+
+# Evidence & Checkpoints
+
+- Active checkpoint: `docs/execution/BLOCK_ART_000_CONTEXT_TOOLING_WORKING_CHECKPOINT.md`
+- Update checkpoint at every milestone close and session end.
+- Evidence at gates only — not per micro-change: baseline, approved design, main states, motion capture, a11y, performance, final.
+- No sensitive data in evidence files.
+- Post-compaction: follow recovery protocol in `AGENTS.md`.
+- Run `./scripts/lifeos/validate-art-context.sh` before closing documentation blocks.
+- Register decisions in `DECISIONS.md`; contradictions in `CONTRADICTIONS.md`.

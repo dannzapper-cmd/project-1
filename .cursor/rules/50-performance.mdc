@@ -1,0 +1,14 @@
+---
+description: Performance — recomposition, GPU, battery, jank budgets for visual work
+globs: "**/*.{kt,kts}"
+alwaysApply: false
+---
+
+# Performance
+
+- Minimize recomposition; stable keys in lists; remember expensive calculations.
+- Blur/shaders: selective surfaces only — not full-screen list backgrounds.
+- Measure jank on mid-tier devices; use Macrobenchmark when available.
+- Baseline profiles for production builds.
+- No decorative GPU-heavy effects without fallback and budget approval.
+- Reference: `docs/design/PERFORMANCE_VISUAL_BUDGETS.md`.

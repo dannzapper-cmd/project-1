@@ -1,0 +1,20 @@
+---
+description: Security, licensing, supply chain for MCPs, skills, assets, and dependencies
+alwaysApply: false
+---
+
+# Security & Licensing
+
+Before adopting any MCP, skill, plugin, font, icon, or asset:
+
+1. Verify publisher and official repository
+2. Check LICENSE compatibility (commercial use if applicable)
+3. Review permissions, telemetry, install scripts
+4. Pin version or commit when installing
+5. Register in `docs/tooling/AI_TOOL_SECURITY_REGISTRY.md` and `FREE_TIER_AND_LICENSE_REGISTRY.md`
+6. No secrets in versioned files; use Cursor dashboard secrets for cloud
+7. Figma Community: license per file — not assumed commercial
+8. Do not evade paywalls or plan limits
+9. Reject abandoned or unverified MCPs
+
+Classification: `ADOPT_NOW` | `PREPARE` | `EVALUATE` | `REFERENCE_ONLY` | `REJECT`
