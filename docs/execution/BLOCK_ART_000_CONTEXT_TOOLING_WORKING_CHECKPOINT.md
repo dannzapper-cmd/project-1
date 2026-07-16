@@ -126,8 +126,8 @@ cp uploads/* docs/source/raw/...
 
 | Prueba | Resultado |
 |---|---|
-| Validación enlaces/docs | `scripts/lifeos/validate-art-context.sh` |
-| Secretos en versionado | grep patterns en diff |
+| Validación enlaces/docs | `./scripts/lifeos/validate-art-context.sh` → **PASS** |
+| Secretos en versionado | Sin secretos obvios detectados |
 | Build Android | N/A — sin proyecto Android |
 | Tests LeadForge existentes | No ejecutados (sin cambios productivos) |
 
@@ -151,10 +151,10 @@ cp uploads/* docs/source/raw/...
 
 ## Definition of Done pendiente
 
-- [ ] Adjuntos incorporados o bloqueados honestamente — **parcial** (4/12+ fuentes)
-- [ ] Repositorio Life OS inspeccionado realmente — **bloqueado**
-- [ ] Infraestructura Cursor válida — **sí**
-- [ ] Herramientas verificadas — **sí**
-- [ ] 0 llamadas Figma — **confirmado**
-- [ ] 0 rediseño app — **confirmado**
-- [ ] PR abierto — pendiente al cierre
+- [x] Adjuntos incorporados o bloqueados honestamente — **parcial** (4/12+ fuentes; bloqueos registrados)
+- [ ] Repositorio Life OS inspeccionado realmente — **bloqueado (CON-001)**
+- [x] Infraestructura Cursor válida — **sí** (validate PASS)
+- [x] Herramientas verificadas — **sí**
+- [x] 0 llamadas Figma — **confirmado**
+- [x] 0 rediseño app — **confirmado**
+- [x] PR abierto — al cierre de sesión
